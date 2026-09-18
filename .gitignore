@@ -1,0 +1,49 @@
+# ── 依赖与构建产物 ──────────────────────────────
+node_modules/
+dist/
+build/
+out/
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.venv-*/
+
+# ── 数据文件（本地数据库与导出，绝不入库）────────
+*.sqlite
+*.sqlite3
+*.db
+*.db-journal
+*.db-wal
+data/
+exports/
+backup/
+
+# ── 环境变量与密钥（★ 误入库 = 一票否决事故）────
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+secrets/
+credentials.*
+
+# ── 编辑器与操作系统 ───────────────────────────
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── 本机助手工作记忆（含本机路径，不进公开仓库）──
+.workbuddy/
+
+# ── 日志与临时文件 ─────────────────────────────
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-error.log*
+*.tmp
+.cache/

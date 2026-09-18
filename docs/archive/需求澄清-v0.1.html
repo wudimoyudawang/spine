@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>计划管理应用 · 需求澄清文档 v0.1</title>
+<style>
+  :root{
+    --ink:#1F2329; --ink2:#40454D; --ink3:#646A73; --ink4:#8A9099;
+    --line:#E5E7EB; --line2:#EFF0F2; --bg:#F7F8FA; --card:#FFFFFF;
+    --blue:#245BDB; --blue-bg:#F5F8FF; --blue-line:#D6E4FF;
+    --green:#1A7F45; --green-bg:#F3FBF6; --green-line:#C9EBD8;
+    --orange:#B77400; --orange-bg:#FFF8EE; --orange-line:#FFE0B8;
+    --red:#D54941; --red-bg:#FFF1F0; --red-line:#FFD3CE;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; padding:40px 20px 80px; background:var(--bg); color:var(--ink);
+    font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,-apple-system,sans-serif;
+    font-size:14px; line-height:1.75; -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:900px; margin:0 auto}
+
+  header.doc{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:28px 32px; margin-bottom:22px}
+  header.doc h1{margin:0 0 12px; font-size:24px; font-weight:700; letter-spacing:-.2px}
+  .meta{display:flex; flex-wrap:wrap; gap:8px}
+  .meta span{font-size:12px; color:var(--ink3); background:var(--bg); border:1px solid var(--line); border-radius:20px; padding:3px 12px}
+  .meta span.hot{color:var(--orange); background:var(--orange-bg); border-color:var(--orange-line)}
+
+  section{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:26px 32px; margin-bottom:22px}
+  h2{font-size:17px; font-weight:700; margin:0 0 18px; padding-bottom:12px; border-bottom:1px solid var(--line2)}
+  h2 .num{display:inline-block; min-width:24px; height:24px; line-height:24px; text-align:center;
+    background:var(--blue-bg); color:var(--blue); border-radius:6px; font-size:12.5px; margin-right:10px; padding:0 6px}
+  h3{font-size:14px; font-weight:700; margin:24px 0 10px; color:var(--ink)}
+  h3:first-of-type{margin-top:0}
+  p{margin:0 0 12px; color:var(--ink2)}
+  ul,ol{margin:0 0 12px; padding-left:22px; color:var(--ink2)}
+  li{margin:5px 0}
+  strong{color:var(--ink); font-weight:600}
+  code{font-family:"SFMono-Regular",Consolas,monospace; font-size:12.5px; background:var(--bg);
+    border:1px solid var(--line); border-radius:4px; padding:1px 5px; color:var(--blue)}
+
+  table{width:100%; border-collapse:collapse; margin:0 0 16px; font-size:13px}
+  th{text-align:left; font-weight:600; color:var(--ink3); font-size:12px; background:var(--bg);
+    padding:9px 12px; border-bottom:1px solid var(--line)}
+  td{padding:10px 12px; border-bottom:1px solid var(--line2); color:var(--ink2); vertical-align:top}
+  tr:last-child td{border-bottom:none}
+  td strong{color:var(--ink)}
+  table.free th:first-child,table.free td:first-child{white-space:nowrap; width:1%}
+
+  .tldr-quote{border-left:3px solid var(--blue); background:var(--blue-bg); border-radius:0 10px 10px 0;
+    padding:14px 20px; margin:16px 0 0; color:var(--ink); font-size:14.5px}
+  .tldr-quote b{color:var(--blue)}
+
+  .card{border:1px solid var(--blue-line); background:var(--blue-bg); border-radius:10px; padding:16px 20px; margin:0 0 12px}
+  .card .tag{font-size:12.5px; font-weight:700; color:var(--blue); letter-spacing:.2px}
+  .card p:last-child{margin-bottom:0}
+  .card.g{background:var(--green-bg); border-color:var(--green-line)} .card.g .tag{color:var(--green)}
+  .card.o{background:var(--orange-bg); border-color:var(--orange-line)} .card.o .tag{color:var(--orange)}
+  .card.r{background:var(--red-bg); border-color:var(--red-line)} .card.r .tag{color:var(--red)}
+  .card.n{background:var(--bg); border-color:var(--line)} .card.n .tag{color:var(--ink3)}
+
+  .kv{margin:4px 0 0; font-size:13px; color:var(--ink2)}
+  .kv b{color:var(--ink); font-weight:600}
+
+  .arch{background:var(--bg); border:1px solid var(--line); border-radius:10px; padding:18px 20px;
+    font-family:"SFMono-Regular",Consolas,"Microsoft YaHei",monospace; font-size:12.5px;
+    line-height:2; color:var(--ink2); white-space:pre; overflow-x:auto}
+  .arch b{color:var(--ink)}
+
+  .figwrap{background:var(--bg); border:1px solid var(--line); border-radius:10px; padding:16px; margin:0 0 16px; overflow-x:auto}
+  .figwrap svg{display:block; margin:0 auto; background:transparent}
+  .figcap{font-size:12px; color:var(--ink4); text-align:center; margin:-6px 0 16px}
+
+  .no li{color:var(--ink3)}
+  .no li::marker{color:var(--red)}
+
+  .why{background:var(--bg); border-left:3px solid var(--line); padding:10px 16px; border-radius:0 8px 8px 0;
+    font-size:12.5px; color:var(--ink3); margin:0 0 12px}
+  .why b{color:var(--ink2)}
+
+  .sev{display:inline-block; font-size:11.5px; padding:1px 8px; border-radius:10px; font-weight:600}
+  .sev.h{background:var(--red-bg); color:var(--red); border:1px solid var(--red-line)}
+  .sev.m{background:var(--orange-bg); color:var(--orange); border:1px solid var(--orange-line)}
+
+  .steps{counter-reset:s; list-style:none; padding:0}
+  .steps li{counter-increment:s; position:relative; padding:10px 0 10px 42px; border-bottom:1px dashed var(--line2)}
+  .steps li:last-child{border-bottom:none}
+  .steps li::before{content:counter(s); position:absolute; left:0; top:10px; width:24px; height:24px;
+    border-radius:50%; background:var(--blue); color:#fff; font-size:12px; font-weight:700;
+    display:flex; align-items:center; justify-content:center}
+
+  footer{text-align:center; font-size:12px; color:var(--ink4); margin-top:26px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="doc">
+  <h1>计划管理应用 · 需求澄清文档</h1>
+  <div class="meta">
+    <span>版本 v0.1（澄清稿）</span>
+    <span>2026-09-18</span>
+    <span class="hot">状态：待确认第二轮问题</span>
+    <span>产出：产品战略团队 · 需求分析</span>
+  </div>
+</header>
+
+<!-- 0 -->
+<section>
+  <h2><span class="num">0</span>本轮澄清结论</h2>
+  <table>
+    <thead><tr><th>澄清项</th><th>你的回答</th><th>对产品的硬性影响</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>使用者</strong></td>
+        <td>目前自己用；后期部署在飞牛 NAS + 内网穿透，朋友可注册账号；<strong>未登录也能本地直接使用</strong>；登录后多端同步</td>
+        <td>必须做成 <strong>Local-first</strong>：本地存储是主，云端是可选增强。账号系统不能是前置条件</td>
+      </tr>
+      <tr>
+        <td><strong>核心痛点</strong></td>
+        <td>用好几个工具，信息散在各处</td>
+        <td><strong>「统一收口」是本产品的第一价值</strong>，优先级高于任何单个模块的深度</td>
+      </tr>
+      <tr>
+        <td><strong>健身 / 学习页</strong></td>
+        <td>混装：该领域的全部内容都在这一页</td>
+        <td><strong>领域是主组织轴</strong>，页面内不分形态，全部聚合</td>
+      </tr>
+      <tr>
+        <td><strong>第一版范围</strong></td>
+        <td>统一收集 + 今日视图</td>
+        <td>MVP 只做 <strong>2 个核心页面</strong>，其余全部后置</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="tldr-quote">
+    <b>产品定位一句话：</b>一个本地优先、可选云端的个人计划中枢 —— 所有事都进同一个池子，用「领域」分空间，用「形态」定交互，「今天要做什么」永远只有一屏。
+  </div>
+</section>
+
+<!-- 1 -->
+<section>
+  <h2><span class="num">1</span>核心设计决策</h2>
+
+  <h3>D1 · 统一事项模型（one record, many views）</h3>
+  <p>不按「习惯表 / 待办表 / 计划表」分家。所有事都是同一种记录 <code>Item</code>，靠<strong>标签</strong>区分：</p>
+  <div class="card">
+    <p><span class="tag">形态 type</span> —— 决定<b>怎么完成</b>：习惯 = 重复打卡，待办 = 勾选，计划 = 推进进度</p>
+    <p><span class="tag">领域 domain</span> —— 决定<b>归属哪个空间</b>：健身 / 学习 / 工作 / 个人生活</p>
+    <p><span class="tag">跨度 horizon</span> —— 决定<b>怎么排期与提醒</b>：短期 / 长期</p>
+    <p><span class="tag">状态 status</span> —— 决定<b>出现在哪个视图</b>：收件箱 / 待办 / 进行中 / 已完成</p>
+  </div>
+  <div class="why"><b>为什么这样设计：</b>你的原始需求里「健身计划」同时是习惯（每周三练）、待办（买蛋白粉）、长期目标（半年增肌 5kg）。如果按形态建三张表，它就要被录三遍。</div>
+
+  <h3>D2 · 领域是主组织轴</h3>
+  <p>你说的「健身单独一个页面、学习单独一个页面」→ 落实为 <strong>领域空间</strong>。每个空间页混装该领域下全部形态的事项，不做二级切分。领域可自定义增删，默认给 4 个：<code>健身</code> <code>学习</code> <code>工作</code> <code>个人生活</code>。</p>
+
+  <h3>D3 · 形态是交互轴，不是导航轴</h3>
+  <p>形态不在侧边栏出现，而是决定这条事项在列表里长什么样、点什么按钮：习惯行右侧是打卡按钮，待办行是勾选框，计划行是进度条。</p>
+
+  <h3>D4 · 「短期 / 长期」是属性，不是模块</h3>
+  <p>不单独开「短期计划页」和「长期计划页」。跨度只作为<strong>筛选条件</strong>和<strong>排期依据</strong>（长期 → 季度 / 年度视图，短期 → 周 / 月视图）。这是对你原始需求的一处修正建议。</p>
+
+  <h3>D5 · Local-first，云为可选</h3>
+  <ul>
+    <li><strong>不登录</strong>：数据全在本地（浏览器 IndexedDB / SQLite），功能<strong>完整可用</strong>，不是阉割版</li>
+    <li><strong>登录后</strong>：开启多端同步，本地数据与云端合并</li>
+    <li>因此：<strong>v0.1 完全不碰账号和同步</strong>，这是后续独立的一次大迭代</li>
+  </ul>
+
+  <div class="figwrap">
+    <svg width="680" height="470" viewBox="0 0 680 470" xmlns="http://www.w3.org/2000/svg" font-family="'PingFang SC','Microsoft YaHei',system-ui,sans-serif">
+      <text x="24" y="32" font-size="15" font-weight="700" fill="#1F2329">你的 7 个模块，其实混着 3 个维度</text>
+      <text x="24" y="58" font-size="12" font-weight="600" fill="#646A73">你提到的模块</text>
+      <g fill="#F2F3F5" stroke="#E5E7EB">
+        <rect x="24" y="70" width="110" height="32" rx="16"/><rect x="198" y="70" width="110" height="32" rx="16"/>
+        <rect x="372" y="70" width="110" height="32" rx="16"/><rect x="546" y="70" width="110" height="32" rx="16"/>
+        <rect x="24" y="112" width="140" height="32" rx="16"/><rect x="250" y="112" width="140" height="32" rx="16"/>
+        <rect x="476" y="112" width="180" height="32" rx="16"/>
+      </g>
+      <g fill="#1F2329" font-size="12.5" text-anchor="middle">
+        <text x="79" y="91">习惯打卡</text><text x="253" y="91">待办事项</text>
+        <text x="427" y="91">短期计划</text><text x="601" y="91">长期计划</text>
+        <text x="94" y="133">健身计划</text><text x="320" y="133">学习计划</text>
+        <text x="566" y="133">工作 / 个人区分</text>
+      </g>
+      <line x1="340" y1="158" x2="340" y2="176" stroke="#C9CDD4" stroke-width="1.5"/>
+      <polygon points="340,184 335,174 345,174" fill="#C9CDD4"/>
+      <text x="340" y="204" font-size="12" font-weight="600" fill="#646A73" text-anchor="middle">归纳为三个正交维度</text>
+      <rect x="24" y="216" width="200" height="118" rx="10" fill="#F5F8FF" stroke="#D6E4FF"/>
+      <text x="40" y="244" font-size="12.5" font-weight="700" fill="#245BDB">维度一 · 事项形态</text>
+      <text x="40" y="270" font-size="12" fill="#40454D">习惯 —— 重复发生</text>
+      <text x="40" y="292" font-size="12" fill="#40454D">待办 —— 一次性</text>
+      <text x="40" y="314" font-size="12" fill="#40454D">计划 —— 有目标有周期</text>
+      <rect x="240" y="216" width="200" height="118" rx="10" fill="#F3FBF6" stroke="#C9EBD8"/>
+      <text x="256" y="244" font-size="12.5" font-weight="700" fill="#1A7F45">维度二 · 时间跨度</text>
+      <text x="256" y="270" font-size="12" fill="#40454D">短期 —— 本周 / 本月</text>
+      <text x="256" y="292" font-size="12" fill="#40454D">长期 —— 季度 / 年度</text>
+      <text x="256" y="314" font-size="11.5" fill="#8A9099">（跨度决定排期与提醒频率）</text>
+      <rect x="456" y="216" width="200" height="118" rx="10" fill="#FFF8EE" stroke="#FFE0B8"/>
+      <text x="472" y="244" font-size="12.5" font-weight="700" fill="#B77400">维度三 · 生活领域</text>
+      <text x="472" y="270" font-size="12" fill="#40454D">健身 · 学习 · 工作</text>
+      <text x="472" y="292" font-size="12" fill="#40454D">个人生活 · 财务 · 家庭</text>
+      <text x="472" y="314" font-size="11.5" fill="#8A9099">（工作/个人 = 领域标签）</text>
+      <rect x="24" y="350" width="632" height="100" rx="10" fill="#FFF1F0" stroke="#FFD3CE"/>
+      <text x="44" y="378" font-size="12.5" font-weight="700" fill="#D54941">冲突点：「健身计划」同时横跨三个维度</text>
+      <text x="44" y="402" font-size="12" fill="#40454D">它既是习惯（每周三练）、又是待办（买蛋白粉），还是长期目标（半年增肌 5kg）。</text>
+      <text x="44" y="428" font-size="12" fill="#D54941">→ 所以「按领域开页面」和「按形态开页面」会打架，必须先定主维度。</text>
+    </svg>
+  </div>
+  <div class="figcap">图 1 · 需求三维度拆解与冲突点</div>
+
+  <div class="figwrap">
+    <svg width="680" height="460" viewBox="0 0 680 460" xmlns="http://www.w3.org/2000/svg" font-family="'PingFang SC','Microsoft YaHei',system-ui,sans-serif">
+      <text x="24" y="32" font-size="15" font-weight="700" fill="#1F2329">定案：一条统一的事项模型，页面只是筛选视图</text>
+      <rect x="180" y="52" width="320" height="132" rx="12" fill="#F5F8FF" stroke="#D6E4FF"/>
+      <text x="200" y="78" font-size="12.5" font-weight="700" fill="#245BDB">一条事项 = 一组标签</text>
+      <text x="200" y="104" font-size="11.5" fill="#1F2329">形态：习惯 · 待办 · 计划</text>
+      <text x="200" y="128" font-size="11.5" fill="#1F2329">领域：健身 · 学习 · 工作 · 个人</text>
+      <text x="200" y="152" font-size="11.5" fill="#1F2329">跨度：短期 · 长期</text>
+      <text x="200" y="176" font-size="11.5" fill="#1F2329">状态：待办 · 进行中 · 完成</text>
+      <line x1="340" y1="184" x2="340" y2="210" stroke="#C9CDD4" stroke-width="1.5"/>
+      <line x1="94" y1="210" x2="586" y2="210" stroke="#C9CDD4" stroke-width="1.5"/>
+      <g stroke="#C9CDD4" stroke-width="1.5">
+        <line x1="94" y1="210" x2="94" y2="240"/><line x1="258" y1="210" x2="258" y2="240"/>
+        <line x1="422" y1="210" x2="422" y2="240"/><line x1="586" y1="210" x2="586" y2="240"/>
+      </g>
+      <g fill="#FFFFFF" stroke="#E5E7EB">
+        <rect x="24" y="240" width="140" height="100" rx="10"/><rect x="188" y="240" width="140" height="100" rx="10"/>
+        <rect x="352" y="240" width="140" height="100" rx="10"/><rect x="516" y="240" width="140" height="100" rx="10"/>
+      </g>
+      <g font-size="12.5" font-weight="700" fill="#1F2329" text-anchor="middle">
+        <text x="94" y="270">今日视图</text><text x="258" y="270">习惯打卡</text>
+        <text x="422" y="270">健身页</text><text x="586" y="270">长期计划</text>
+      </g>
+      <g font-size="10.5" fill="#8A9099" text-anchor="middle">
+        <text x="94" y="296">筛选条件</text><text x="258" y="296">筛选条件</text>
+        <text x="422" y="296">筛选条件</text><text x="586" y="296">筛选条件</text>
+      </g>
+      <g font-size="11.5" fill="#245BDB" text-anchor="middle">
+        <text x="94" y="318">到期日 = 今天</text><text x="258" y="318">形态 = 习惯</text>
+        <text x="422" y="318">领域 = 健身</text><text x="586" y="318">跨度 = 长期</text>
+      </g>
+      <rect x="24" y="362" width="632" height="84" rx="10" fill="#F7F8FA" stroke="#E5E7EB"/>
+      <text x="44" y="388" font-size="12.5" font-weight="700" fill="#1F2329">这样更省事</text>
+      <text x="44" y="412" font-size="12" fill="#40454D">同一个健身习惯，在「健身页」看得见，在「习惯打卡」也看得见，到点还自动出现在「今日视图」。</text>
+      <text x="44" y="434" font-size="11.5" fill="#646A73">一次录入，多处复用 —— 页面是同一份数据的四种看法，而不是四份各自维护的数据。</text>
+    </svg>
+  </div>
+  <div class="figcap">图 2 · 统一事项模型与页面筛选视图（注意：领域页是「混装」的，领域内再按形态筛选）</div>
+</section>
+
+<!-- 2 -->
+<section>
+  <h2><span class="num">2</span>信息架构</h2>
+  <div class="arch"><b>今日 (Today)</b>          ← 主入口。跨领域聚合：今天该打卡的习惯 + 今天到期的待办 + 进行中的计划节点
+<b>收件箱 (Inbox)</b>        ← 3 秒速记落点，未分类事项暂存区
+<b>领域空间 ×N</b>           ← 健身 / 学习 / 工作 / 个人生活（可增删），页内混装全部形态
+    └─ 空间内筛选：全部 / 习惯 / 待办 / 计划 / 已完成
+<b>日历视图</b>              ← v0.2
+<b>统计与复盘</b>            ← v0.3
+<b>设置</b>                  ← 账号、同步、数据导出、领域管理</div>
+  <p style="margin-top:16px"><strong>导航优先级：</strong>今日 &gt; 领域空间 &gt; 收件箱。打开应用默认落在「今日」。</p>
+</section>
+
+<!-- 3 -->
+<section>
+  <h2><span class="num">3</span>MVP（v0.1）范围</h2>
+
+  <h3>目标</h3>
+  <p>任何事 3 秒记下来；今天该做什么，一屏看完。</p>
+
+  <h3>做什么（P0，全部必须）</h3>
+  <table class="free">
+    <thead><tr><th>#</th><th>能力</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td>P0-1</td><td><strong>统一收集</strong></td><td>全局速记入口，一句话录入，先落进收件箱</td></tr>
+      <tr><td>P0-2</td><td><strong>事项属性</strong></td><td>形态 / 领域 / 跨度 / 日期 / 备注，可后补</td></tr>
+      <tr><td>P0-3</td><td><strong>今日视图</strong></td><td>自动聚合今天该做的事，支持勾选完成与打卡</td></tr>
+      <tr><td>P0-4</td><td><strong>领域空间页</strong></td><td>4 个默认空间，展示该领域全部事项</td></tr>
+      <tr><td>P0-5</td><td><strong>本地持久化</strong></td><td>不登录也能完整使用，刷新 / 关闭不丢数据</td></tr>
+      <tr><td>P0-6</td><td><strong>数据导出</strong></td><td>一键导出 JSON，避免数据被锁死</td></tr>
+    </tbody>
+  </table>
+
+  <h3>明确不做（v0.1 非目标）</h3>
+  <ul class="no">
+    <li>账号体系与云同步 → v0.2</li>
+    <li>多用户 / 朋友共享 → v0.2</li>
+    <li>统计图表、连续天数、热力图 → v0.3</li>
+    <li>日历视图、甘特图、长期计划拆解 → v0.2</li>
+    <li>消息提醒推送 → 技术风险待验证，见 R2</li>
+    <li>原生 App / 微信小程序 → 见第二轮问题 1</li>
+    <li>附件、图片、富文本</li>
+  </ul>
+  <div class="why"><b>范围原则：</b>7 个模块一次全做是本项目最大的风险。MVP 只交付「收集 + 今日」两个页面，先把「信息不散」这件事解决掉，其余模块都是在这条管道上加视图。</div>
+</section>
+
+<!-- 4 -->
+<section>
+  <h2><span class="num">4</span>数据模型草案</h2>
+
+  <h3>Item（事项）</h3>
+  <table class="free">
+    <thead><tr><th>字段</th><th>类型</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td><code>id</code></td><td>string</td><td>客户端生成的 UUID，为将来同步做准备</td></tr>
+      <tr><td><code>title</code> / <code>note</code></td><td>string / string?</td><td>标题与备注</td></tr>
+      <tr><td><code>type</code></td><td>habit \| todo \| plan</td><td>形态，决定交互方式</td></tr>
+      <tr><td><code>domain</code></td><td>fitness \| study \| work \| personal \| 自定义</td><td>领域，决定归属空间</td></tr>
+      <tr><td><code>horizon</code></td><td>short \| long</td><td>跨度</td></tr>
+      <tr><td><code>status</code></td><td>inbox \| todo \| doing \| done \| archived</td><td>状态，决定出现在哪个视图</td></tr>
+      <tr><td><code>dueDate</code></td><td>date?</td><td>待办到期日</td></tr>
+      <tr><td><code>repeatRule</code></td><td>object?</td><td>习惯重复规则</td></tr>
+      <tr><td><code>startDate</code> / <code>endDate</code></td><td>date?</td><td>计划周期</td></tr>
+      <tr><td><code>progress</code></td><td>0–100?</td><td>计划进度</td></tr>
+      <tr><td><code>createdAt</code> / <code>updatedAt</code> / <code>deletedAt</code></td><td>datetime</td><td>软删除，为同步保留</td></tr>
+    </tbody>
+  </table>
+
+  <h3>HabitLog（打卡记录）</h3>
+  <p><code>habitId</code> · <code>date</code> · <code>value</code>（次数 / 时长） · <code>note</code></p>
+
+  <h3>PlanMilestone（计划里程碑）</h3>
+  <p><code>planId</code> · <code>title</code> · <code>dueDate</code> · <code>done</code></p>
+
+  <h3>同步设计预备（v0.2，v0.1 只做字段预留）</h3>
+  <p>每条记录带 <code>updatedAt</code> + <code>deviceId</code>；冲突先采用<strong>后写胜出 + 保留本地副本</strong>的简单策略，<strong>不做复杂合并</strong>。先跑通「能同步」再优化冲突。</p>
+</section>
+
+<!-- 5 -->
+<section>
+  <h2><span class="num">5</span>需要你确认的第二轮问题</h2>
+  <p>按重要性排序，<strong>前 4 个会直接影响技术选型</strong>，请优先回答。</p>
+  <table class="free">
+    <thead><tr><th>#</th><th>问题</th><th>我的建议</th></tr></thead>
+    <tbody>
+      <tr><td><strong>1</strong></td><td><strong>平台形态</strong>：做响应式 Web + PWA（手机加到桌面、电脑用浏览器、NAS 部署一份）？还是必须原生 App / 微信小程序？</td><td>推荐 <strong>Web + PWA</strong>。一套代码覆盖三端，NAS 部署最自然，符合你「自己的服务器」思路</td></tr>
+      <tr><td><strong>2</strong></td><td><strong>速记要不要自然语言解析</strong>？例如输入「明天下午3点 交周报 #工作」自动识别日期与领域</td><td>建议 v0.2 做。这是体验分水岭，但属于「智能增强」，不该挡在 MVP 前面</td></tr>
+      <tr><td><strong>3</strong></td><td><strong>「今日」的定义</strong>：只含今天到期？还是也含逾期未完成 + 今天该打卡的习惯？</td><td>建议三者都要，<strong>逾期置顶</strong>。否则「今天」会漏事，违背核心痛点</td></tr>
+      <tr><td><strong>4</strong></td><td><strong>首次登录时本地已有数据怎么处理</strong>：自动上传合并 / 让用户二选一 / 询问后合并？</td><td>建议「询问 + 默认合并 + 合并前自动备份」，这是 local-first 最容易丢数据的地方</td></tr>
+      <tr><td>5</td><td><strong>习惯重复规则支持到什么程度</strong>：每天 / 每周几 / 每月某日 / 每 N 天 / 自定义？</td><td>建议先支持前四种，自定义后置</td></tr>
+      <tr><td>6</td><td><strong>长期计划怎么推进</strong>：里程碑 + 进度条，还是拆成子待办？</td><td>建议里程碑 + 进度条，子任务结构对个人使用偏重</td></tr>
+      <tr><td>7</td><td><strong>要不要提醒</strong>？注意 iOS 浏览器对 PWA 通知限制很大</td><td>建议 v0.1 不做提醒，靠「打开即见今日」。若必须要，改用邮件或微信通知，第二期再评估</td></tr>
+      <tr><td>8</td><td><strong>朋友使用</strong>：只要各自独立账号，还是需要互相看到计划？</td><td>独立账号简单一个量级，强烈建议先只做这个</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- 6 -->
+<section>
+  <h2><span class="num">6</span>风险登记</h2>
+  <table class="free">
+    <thead><tr><th>编号</th><th>风险</th><th>影响</th><th>应对</th></tr></thead>
+    <tbody>
+      <tr><td>R1</td><td><strong>Local-first + 多端同步</strong>是本项目最大技术难点</td><td><span class="sev h">高</span></td><td>v0.1 不碰；v0.2 用「整库快照 + 时间戳」起步，不上 CRDT</td></tr>
+      <tr><td>R2</td><td>iOS 浏览器推送限制，提醒能力可能只能做到「打开应用时提醒」</td><td><span class="sev m">中</span></td><td>MVP 不做提醒，不对外承诺推送能力</td></tr>
+      <tr><td>R3</td><td>范围膨胀 —— 7 个模块一次全做</td><td><span class="sev h">高</span></td><td>MVP 锁死 2 个页面，新需求必须换掉一项或延期</td></tr>
+      <tr><td>R4</td><td>飞牛 NAS 内网穿透的上行带宽决定同步体验</td><td><span class="sev m">中</span></td><td>同步只传结构化文本，不传附件；确认上行带宽</td></tr>
+      <tr><td>R5</td><td>浏览器本地存储可能被清理（清缓存 / 换浏览器）</td><td><span class="sev m">中</span></td><td>v0.1 就提供一键导出；申请浏览器持久化存储权限</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- 7 -->
+<section>
+  <h2><span class="num">7</span>下一步</h2>
+  <ol class="steps">
+    <li>你回答第 5 节的 8 个问题（可只答前 4 个）</li>
+    <li>我出正式 <strong>PRD v1.0</strong>，补齐用户故事、验收标准、成功指标</li>
+    <li>拆 Sprint → 进入实现</li>
+  </ol>
+</section>
+
+<footer>本文档为澄清稿，随每轮沟通更新。所有标「建议」的内容均为待你拍板的方案，不是既定结论。</footer>
+
+</div>
+</body>
+</html>

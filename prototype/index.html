@@ -1,0 +1,1991 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>个人计划中枢 · 设计原型 v0.4</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#F5F6F8;--card:#FFFFFF;--line:#E6E8EE;--line2:#D8DCE4;--text:#1F2430;--sub:#5A6272;--muted:#8A93A3;--accent:#2F6FEB;--accent-bg:#EAF1FE;--ok:#0F7A5A;--ok-bg:#E8F6F1;--warn:#A85B00;--warn-bg:#FDF3E3;--danger:#C0392B;--danger-bg:#FDECEA;--r:12px}
+body{background:var(--bg);color:var(--text);font:14px/1.6 system-ui,-apple-system,"Segoe UI","Microsoft YaHei",sans-serif}
+.app{display:flex;min-height:100vh}
+.side{width:212px;flex:none;background:var(--card);border-right:1px solid var(--line);padding:18px 12px;display:flex;flex-direction:column;gap:16px}
+.brand{padding:2px 8px 8px}
+.brand-t{font-size:15px;font-weight:500}
+.brand-s{font-size:12px;color:var(--muted);margin-top:2px}
+.nav{display:flex;flex-direction:column;gap:2px}
+.navi{display:block;width:100%;text-align:left;padding:9px 12px;border:0;background:none;border-radius:8px;font:inherit;font-size:13px;color:var(--sub);cursor:pointer}
+.navi:hover{background:var(--bg)}
+.navi.is-on{background:var(--accent-bg);color:var(--accent);font-weight:500}
+.navi-sub{font-size:12px;color:var(--muted)}
+.navi-q{display:flex;align-items:center;gap:8px}
+.dot{width:5px;height:5px;border-radius:50%;background:var(--accent);flex:none}
+.side-q{padding-top:12px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:2px}
+.side-q-h{font-size:11px;color:var(--muted);padding:0 12px 6px;letter-spacing:.02em}
+.side-empty{font-size:11px;color:var(--muted);padding:2px 12px 4px;line-height:1.6}
+.side-foot{margin-top:auto;border-top:1px solid var(--line);padding-top:10px;display:flex;flex-direction:column;gap:2px}
+.main{flex:1;min-width:0;padding:18px 22px 40px}
+.topbar{display:flex;align-items:baseline;gap:12px;margin-bottom:16px}
+.ptitle{font-size:18px;font-weight:500}
+.pdate{font-size:12px;color:var(--muted)}
+.pages{max-width:760px}
+.page{display:none}
+.page.is-on{display:block}
+.quick{display:flex;gap:8px;margin-bottom:16px}
+.quick-in{flex:1;min-width:0;padding:11px 14px;border:1px solid var(--line2);border-radius:10px;background:var(--card);font:inherit;font-size:13px;color:var(--text)}
+.quick-in:focus{outline:none;border-color:var(--accent)}
+.quick-btn{padding:0 16px;border:0;border-radius:10px;background:var(--accent);color:#fff;font:inherit;font-size:13px;cursor:pointer}
+.block{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;margin-bottom:12px}
+.block-danger{border-color:#F3C9C4;background:var(--danger-bg)}
+.block-h{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.tag{font-size:12px;font-weight:500;color:var(--sub)}
+.tag-danger{color:var(--danger)}
+.block-note{margin-left:auto;font-size:12px;color:var(--muted)}
+.list{list-style:none;display:flex;flex-direction:column;gap:2px}
+.row{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line)}
+.row:first-child{border-top:0}
+.cbox{width:16px;height:16px;flex:none;border:1.5px solid var(--line2);border-radius:4px}
+.row-main{flex:1;min-width:0;display:flex;flex-direction:column}
+.row-name{font-size:13px}
+.row-meta{font-size:12px;color:var(--muted)}
+.row-empty{padding:4px 0;font-size:12px;color:var(--muted)}
+.tick{flex:none;padding:4px 12px;border:1px solid var(--line2);border-radius:14px;background:var(--card);font:inherit;font-size:12px;color:var(--sub);cursor:pointer}
+.tick-on{background:var(--ok-bg);border-color:#A9DCC9;color:var(--ok)}
+.bar{flex:1;height:6px;border-radius:3px;background:var(--line);overflow:hidden}
+.bar-fill{display:block;height:100%;background:var(--accent)}
+.row-val{flex:none;font-size:12px;color:var(--sub);min-width:34px;text-align:right}
+.barrow{display:flex;align-items:center;gap:10px;padding:7px 0}
+.barrow-n{width:52px;flex:none;font-size:13px}
+.barrow-v{width:78px;flex:none;text-align:right;font-size:12px;color:var(--sub)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.chip{padding:7px 14px;border:1px solid var(--line2);border-radius:16px;background:var(--card);font:inherit;font-size:12px;color:var(--sub);cursor:pointer}
+.chip:hover{border-color:var(--accent);color:var(--accent)}
+.grid{display:grid;gap:12px}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.g4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.card{position:relative;background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;cursor:pointer}
+.card:hover{border-color:var(--accent)}
+.card-t{font-size:14px;font-weight:500;margin-bottom:2px;padding-right:22px}
+.card-s{font-size:12px;color:var(--muted)}
+.card-ops{position:absolute;top:8px;right:8px}
+.iconbtn{width:24px;height:24px;border:0;border-radius:6px;background:none;color:var(--muted);font:inherit;font-size:14px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.iconbtn:hover{background:var(--bg);color:var(--text)}
+.iconbtn.is-on{color:#B8860B;background:var(--warn-bg)}
+.card-add{border-style:dashed;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;min-height:76px;color:var(--muted)}
+.card-add:hover{color:var(--accent)}
+.card-add .card-t{color:inherit;padding-right:0}
+.inline-in{width:100%;padding:8px 10px;border:1px solid var(--line2);border-radius:8px;background:var(--card);font:inherit;font-size:12px;color:var(--text)}
+.inline-in:focus{outline:none;border-color:var(--accent)}
+.stat{margin-bottom:14px}
+.stat-v{font-size:24px;font-weight:500;line-height:1.2}
+.stat-k{font-size:12px;color:var(--muted)}
+.note{font-size:12px;color:var(--muted);margin-top:10px;line-height:1.7}
+.noteitem{border-top:1px solid var(--line);padding:12px 0}
+.noteitem:first-child{border-top:0}
+.noteitem-d{font-size:12px;color:var(--muted);margin-bottom:4px}
+.noteitem-c{font-size:13px}
+.ta{width:100%;min-height:96px;padding:12px 14px;border:1px solid var(--line2);border-radius:10px;background:var(--card);font:inherit;font-size:13px;color:var(--text);resize:vertical}
+.ta:focus{outline:none;border-color:var(--accent)}
+.hint{font-size:13px;color:var(--muted);opacity:.55;padding:6px 2px 10px}
+.kv{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-top:1px solid var(--line);font-size:13px}
+.kv:first-child{border-top:0}
+.kv-k{color:var(--sub)}
+.kv-v{text-align:right}
+.btn{padding:9px 16px;border:1px solid var(--line2);border-radius:10px;background:var(--card);font:inherit;font-size:13px;color:var(--text);cursor:pointer}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn-main{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn-main:hover{color:#fff}
+.btn-armed{border-color:#E9AEA5;background:var(--danger-bg);color:var(--danger)}
+.seg{display:inline-flex;border:1px solid var(--line2);border-radius:10px;overflow:hidden;margin-bottom:14px}
+.seg button{padding:7px 16px;border:0;background:var(--card);font:inherit;font-size:12px;color:var(--sub);cursor:pointer}
+.seg button.is-on{background:var(--accent-bg);color:var(--accent);font-weight:500}
+.stackrow{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:6px}
+.stackrow-t{width:76px;flex:none;font-size:13px;font-weight:500}
+.stackrow-s{flex:1;min-width:0;font-size:12px;color:var(--sub)}
+.stackrow-w{flex:none;font-size:11px;color:var(--muted);border:1px solid var(--line2);border-radius:6px;padding:2px 8px}
+.now .stackrow-t,.now .stackrow-s{color:var(--accent)}
+.now{border-color:#BBD4F8;background:var(--accent-bg)}
+/* --- 速记条（首页／全局唤起） --- */
+.capture{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:12px;margin-bottom:16px;transition:border-color .15s,box-shadow .15s}
+.capture-hot{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-bg)}
+.capture-row{display:flex;gap:8px}
+.capture-in{flex:1;min-width:0;padding:11px 14px;border:1px solid var(--line2);border-radius:10px;background:var(--card);font:inherit;font-size:13px;color:var(--text)}
+.capture-in:focus{outline:none;border-color:var(--accent)}
+.capture-btn{padding:0 16px;border:0;border-radius:10px;background:var(--accent);color:#fff;font:inherit;font-size:13px;cursor:pointer}
+.capture-types{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.capture-foot{display:flex;align-items:flex-start;gap:8px;margin-top:10px}
+.capture-foot .capture-types{margin-top:0;flex:1;min-width:0}
+.mchip-cfg{flex:none;white-space:nowrap;border-style:dashed}
+.mchip{padding:5px 12px;border:1px solid var(--line2);border-radius:14px;background:var(--card);font:inherit;font-size:12px;color:var(--sub);cursor:pointer}
+.mchip:hover{border-color:var(--accent);color:var(--accent)}
+.mchip.is-on{background:var(--accent-bg);border-color:#BBD4F8;color:var(--accent);font-weight:500}
+.capture-res{display:flex;align-items:center;gap:6px;margin-top:10px;padding:8px 10px;border-radius:8px;background:var(--bg);font-size:12px;color:var(--sub);line-height:1.5}
+.capture-res b{color:var(--text);font-weight:500}
+.res-fix{margin-left:auto;color:var(--accent);cursor:pointer;white-space:nowrap}
+.kbd{border:1px solid var(--line2);border-bottom-width:2px;border-radius:5px;padding:0 5px;font-size:11px;color:var(--muted);background:var(--card)}
+/* --- 记录行与记录项 --- */
+.logrow{display:flex;gap:10px;align-items:baseline;padding:7px 0;border-top:1px solid var(--line);font-size:13px}
+.logrow:first-child{border-top:0}
+.logrow-d{width:74px;flex:none;font-size:12px;color:var(--muted)}
+.logrow-v{flex:1;min-width:0}
+.logrow-n{flex:none;font-size:12px;color:var(--sub);font-variant-numeric:tabular-nums}
+.rt{border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:8px}
+.rt:last-child{margin-bottom:0}
+.rt-h{display:flex;align-items:center;gap:8px}
+.rt-t{font-size:13px;font-weight:500}
+.rt-kind{font-size:11px;color:var(--muted);border:1px solid var(--line2);border-radius:6px;padding:1px 7px;white-space:nowrap}
+.rt-act{margin-left:auto;display:flex;gap:6px}
+.mini{padding:3px 10px;border:1px solid var(--line2);border-radius:12px;background:var(--card);font:inherit;font-size:11px;color:var(--sub);cursor:pointer}
+.mini:hover{border-color:var(--accent);color:var(--accent)}
+.rt-body{margin-top:6px}
+.rt-form{margin-top:8px;padding-top:8px;border-top:1px dashed var(--line2);display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.segsm{display:inline-flex;border:1px solid var(--line2);border-radius:8px;overflow:hidden}
+.segsm button{padding:5px 12px;border:0;background:var(--card);font:inherit;font-size:12px;color:var(--sub);cursor:pointer}
+.segsm button.is-on{background:var(--accent-bg);color:var(--accent);font-weight:500}
+/* --- 速记自定义面板：出现哪些类目 + 自动判断规则 --- */
+.capcfg{margin-top:10px;padding-top:10px;border-top:1px dashed var(--line2)}
+.capcfg-h{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.capcfg-t{font-size:12px;font-weight:500;color:var(--sub)}
+.capcfg-note{font-size:11px;color:var(--muted);margin-left:auto}
+.cfgrow{display:flex;align-items:center;gap:10px;padding:7px 0;border-top:1px solid var(--line)}
+.cfgrow:first-of-type{border-top:0}
+.cfgrow-n{flex:1;min-width:0;font-size:13px}
+.cfgrow-s{font-size:11px;color:var(--muted)}
+.sw{flex:none;width:34px;height:20px;border-radius:10px;border:1px solid var(--line2);background:var(--bg);position:relative;cursor:pointer;padding:0}
+.sw::after{content:"";position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#fff;border:1px solid var(--line2);transition:left .15s}
+.sw.is-on{background:var(--accent);border-color:var(--accent)}
+.sw.is-on::after{left:16px;border-color:var(--accent)}
+.sw.is-lock{opacity:.45;cursor:default}
+.rule{border:1px solid var(--line);border-radius:10px;padding:9px 11px;margin-bottom:7px}
+.rule.is-off{opacity:.5}
+.rule-h{display:flex;align-items:center;gap:8px}
+.rule-t{flex:1;min-width:0;font-size:13px}
+.rule-m{font-size:11px;color:var(--muted);margin-top:4px;word-break:break-word;line-height:1.6}
+.rule-to{flex:none;font-size:11px;color:var(--accent);border:1px solid #BBD4F8;background:var(--accent-bg);border-radius:6px;padding:1px 7px;white-space:nowrap}
+.rule-sys{flex:none;font-size:10px;color:var(--muted);border:1px solid var(--line2);border-radius:5px;padding:0 5px}
+.testbox{margin-top:10px;padding:10px 11px;border-radius:9px;background:var(--bg)}
+.test-in{width:100%;padding:9px 11px;border:1px solid var(--line2);border-radius:8px;background:var(--card);font:inherit;font-size:12px;color:var(--text)}
+.test-in:focus{outline:none;border-color:var(--accent)}
+.sel{padding:9px 10px;border:1px solid var(--line2);border-radius:8px;background:var(--card);font:inherit;font-size:12px;color:var(--text)}
+.sel:focus{outline:none;border-color:var(--accent)}
+.test-out{margin-top:8px;font-size:12px;color:var(--sub);line-height:1.8}
+.test-out b{color:var(--text);font-weight:500}
+.test-hit{color:var(--accent)}
+.test-bad{color:var(--danger)}
+.toast{position:fixed;left:50%;bottom:32px;transform:translate(-50%,12px);background:#2B3243;color:#fff;font-size:13px;padding:9px 18px;border-radius:20px;opacity:0;pointer-events:none;transition:opacity .18s,transform .18s}
+.toast-on{opacity:1;transform:translate(-50%,0)}
+@media (max-width:920px){
+  .app{flex-direction:column}
+  .side{width:auto;border-right:0;border-bottom:1px solid var(--line)}
+  .nav{flex-direction:row;overflow-x:auto;gap:4px}
+  .navi{width:auto;white-space:nowrap}
+  .side-q{border-top:0;padding-top:0}
+  .side-q-h{display:none}
+  .side-empty{padding:6px 12px}
+  .side-foot{margin-top:0;border-top:1px solid var(--line);padding-top:8px;flex-direction:row}
+  .main{padding:14px}
+  .g2,.g3,.g4{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <div class="brand">
+      <div class="brand-t">个人计划中枢</div>
+      <div class="brand-s">设计原型 v0.4 · 只看结构</div>
+    </div>
+    <nav class="nav">
+      <button class="navi is-on" data-go="today">今日</button>
+      <button class="navi" data-go="inbox">收集</button>
+      <button class="navi" data-go="notes">随心记</button>
+      <button class="navi" data-go="spaces">空间</button>
+      <button class="navi" data-go="review">复盘</button>
+    </nav>
+    <div class="side-q">
+      <div class="side-q-h">顶部快捷</div>
+      <div class="nav" id="sideQuickList"></div>
+    </div>
+    <div class="side-foot">
+      <button class="navi navi-sub" data-go="settings">设置</button>
+      <button class="navi navi-sub" data-go="stack">技术栈</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <h1 class="ptitle" id="ptitle">今日</h1>
+      <div class="pdate" id="pdate">9月18日 周五</div>
+    </header>
+
+    <div class="pages">
+
+      <section class="page is-on" data-page="today">
+        <div class="capture" id="capture">
+          <div class="capture-row">
+            <input id="quickInput" class="capture-in" placeholder="想记什么就写什么 —— 事情、花了多少、热量、体重、一句话…">
+            <button class="capture-btn" id="quickBtn">记下</button>
+          </div>
+          <div class="capture-foot">
+            <div class="capture-types" id="captureTypes"></div>
+            <button class="mchip mchip-cfg" id="cfgBtn" data-cfg="toggle">⚙ 自定义</button>
+          </div>
+          <div class="capture-res" id="captureRes"></div>
+          <div id="capCfg"></div>
+        </div>
+        <div class="note" style="margin:-6px 0 16px">
+          一个框解决所有记录：写一句话，回车就存，<b>不跳页、不填表</b>。<b>认不出来也不会丢</b>，默认进收件箱等以后归类。
+          <br>下面哪些类目出现、系统怎么判断你写的话 —— 都由你在 <b>⚙ 自定义</b> 里定。
+        </div>
+
+        <div class="block block-danger">
+          <div class="block-h"><span class="tag tag-danger">逾期</span><span class="block-note">永远置顶，不用往下翻</span></div>
+          <ul class="list" id="overdueList"></ul>
+        </div>
+
+        <div class="block">
+          <div class="block-h"><span class="tag">今天</span><span class="block-note" id="todayCount"></span></div>
+          <ul class="list" id="dueList"></ul>
+        </div>
+
+        <div class="block">
+          <div class="block-h"><span class="tag">习惯</span><span class="block-note">今天该打卡的</span></div>
+          <ul class="list">
+            <li class="row"><span class="row-main"><span class="row-name">饮水 2L</span><span class="row-meta">个人 · 每天</span></span><button class="tick" data-tick>打卡</button></li>
+            <li class="row"><span class="row-main"><span class="row-name">阅读 30 分钟</span><span class="row-meta">学习 · 每天</span></span><button class="tick" data-tick>打卡</button></li>
+            <li class="row"><span class="row-main"><span class="row-name">23:30 前睡</span><span class="row-meta">个人 · 工作日</span></span><button class="tick" data-tick>打卡</button></li>
+          </ul>
+        </div>
+
+        <div class="block">
+          <div class="block-h"><span class="tag">计划</span><span class="block-note">长期目标只看进度</span></div>
+          <div class="row">
+            <span class="row-main"><span class="row-name">读完《置身事内》</span><span class="row-meta">学习 · 长期 · 每周 30 页</span></span>
+            <span class="bar"><span class="bar-fill" style="width:60%"></span></span>
+            <span class="row-val">60%</span>
+          </div>
+        </div>
+
+        <div class="block">
+          <div class="block-h"><span class="tag">今天记下的</span><span class="block-note">记完立刻能看见，就在原地</span></div>
+          <div id="todayLog"></div>
+        </div>
+      </section>
+
+      <section class="page" data-page="inbox">
+        <div class="quick">
+          <input id="inboxInput" class="quick-in" placeholder="想到什么就写下来，先扔进收件箱">
+          <button class="quick-btn" id="inboxBtn">存下</button>
+        </div>
+        <div class="block">
+          <div class="block-h"><span class="tag">收件箱</span><span class="block-note" id="inboxCount" data-n="3">3 条待归类</span></div>
+          <ul class="list" id="inboxNew">
+            <li class="row"><span class="cbox"></span><span class="row-main"><span class="row-name">把体检报告拍照存档</span><span class="row-meta">没有日期 · 没有领域</span></span><button class="chip">归类</button></li>
+            <li class="row"><span class="cbox"></span><span class="row-main"><span class="row-name">问问李工那个接口文档在哪</span><span class="row-meta">没有日期 · 没有领域</span></span><button class="chip">归类</button></li>
+            <li class="row"><span class="cbox"></span><span class="row-main"><span class="row-name">想学一下 GraphRAG</span><span class="row-meta">没有日期 · 没有领域</span></span><button class="chip">归类</button></li>
+          </ul>
+          <div class="note">收件箱只解决一件事：<b>先记下来，别丢</b>。要不要变成待办、归到哪个领域，可以以后再说 —— 大部分的事情其实不需要日期。</div>
+        </div>
+      </section>
+
+      <section class="page" data-page="notes">
+        <div class="block">
+          <textarea class="ta" id="noteInput" placeholder="随便写。这里没有标题、没有分类、没有必填项。"></textarea>
+          <div class="hint">今天可以想想：最近哪件事让你反复想起？</div>
+          <div class="chips">
+            <button class="btn btn-main">存下</button>
+            <button class="btn">换一个提示</button>
+          </div>
+          <div class="note">这条提示会以半透明方式显示，不挡路、不催促，写不写都由你。<b>默认不会进入任何统计和复盘</b> —— 想知道自己会被审视，就写不出真的东西。</div>
+        </div>
+        <div class="block">
+          <div class="block-h"><span class="tag">过去写过的</span><span class="block-note">按天倒序</span></div>
+          <div class="noteitem"><div class="noteitem-d">9月17日 周三</div><div class="noteitem-c">今天试着把周报提前到周三写完，发现其实两个小时就够。之前一直拖到周五，大概是怕写完就要面对下一周。</div></div>
+          <div class="noteitem"><div class="noteitem-d">9月15日 周一</div><div class="noteitem-c">早睡这件事，卡住我的不是工作，是手机。</div></div>
+          <div class="noteitem"><div class="noteitem-d">9月12日 周五</div><div class="noteitem-c">体检报告出来了，其他都好，就是血脂偏高。要开始认真对待吃饭这件事了。</div></div>
+        </div>
+      </section>
+
+      <section class="page" data-page="spaces">
+        <div class="block-h"><span class="tag">领域</span><span class="block-note">点 ☆ 把它放到左上角，随时一键进入</span></div>
+        <div class="grid g4" id="spaceGrid"></div>
+        <div class="note">每个领域里都有<b>待办、习惯、长期目标</b>这三样，结构完全一样 —— 变的只是名字和你填进去的东西。所以「考证」「育儿」「副业」这类领域，随时新建一个就行，不用等谁给你加。
+        <br>领域可以改名、可以删。删除只删入口，里面的内容会回到收件箱等你重新归类。</div>
+
+        <div class="block" style="margin-top:16px">
+          <div class="block-h"><span class="tag">记账</span><span class="block-note">唯一有独立页面的记录，因为它不只是记个数字</span></div>
+          <div class="grid g2">
+            <div class="card" data-go="ledger"><div class="card-t">记账</div><div class="card-s">流水 · 分类 · 按项目看</div></div>
+          </div>
+          <div class="note">
+            <b>热量、体重都已经不在这里了</b> —— 它们是<b>健身领域下面的数值记录项</b>，和「深蹲最大重量」「模拟考试分数」是同一种东西，只是名字和单位不同。点「空间 → 健身」就能看到。
+            <br>所以「记热量」不是一个独立功能，而是你自己建的一条记录项。以后想加「喝水量」「睡眠时长」「阅读页数」，同样不用改这个应用，加一条记录项就行。
+            <br>只有<b>记账</b>留了独立页面 —— 它有收支方向和分类统计，不只是记个数字。
+          </div>
+        </div>
+      </section>
+
+      <section class="page" data-page="domain">
+        <div class="block">
+          <div class="block-h"><span class="tag">习惯</span><span class="block-note">这个领域里要重复做的事</span></div>
+          <ul class="list" id="dHabits"></ul>
+        </div>
+        <div class="block">
+          <div class="block-h"><span class="tag">待办</span><span class="block-note">一次就完的事，不跳到别的页面</span></div>
+          <ul class="list" id="dTodos"></ul>
+        </div>
+        <div class="block">
+          <div class="block-h"><span class="tag">长期目标</span><span class="block-note">只看进度</span></div>
+          <div id="dGoals"></div>
+        </div>
+        <div class="block">
+          <div class="block-h"><span class="tag">记录项</span><span class="block-note">名称和方式都你自己定 · 两种方式</span></div>
+          <div id="dRecordTypes"></div>
+          <div style="margin-top:10px"><button class="btn" id="dAddRt" data-newrt="1">+ 新增记录项</button></div>
+          <div class="note">
+            <b>纯文字</b>适合记过程和感受：今天练了什么、错在哪、这本书讲了什么。<br>
+            <b>数值</b>适合看趋势：热量摄入、体重、深蹲最大重量、模拟考试分数 —— 填个单位就行。<br>
+            两种都写进同一张记录表，所以领域之间不打架，以后想加「睡眠时长」「喝水量」也只是再来一条，不用改结构。<br>
+            <b>每条记录项都会自动出现在首页快记的类目里</b>（在「⚙ 自定义」里可以关掉某几条）—— 所以你在首页写「1800 kcal」，一个字都不用跳页就记进了健身的「热量摄入」。<br>
+            删除记录项只是把它从界面收起来，<b>已经记下的内容仍在导出文件里</b> —— 和领域一样，改主意了可以再建回来。
+          </div>
+        </div>
+        <div class="block">
+          <div class="block-h"><span class="tag">领域设置</span><span class="block-note">低频操作放这里，不占空间页</span></div>
+          <div class="chips">
+            <input class="inline-in" id="dRenameIn" style="max-width:180px">
+            <button class="btn" id="dRenameBtn">改名</button>
+            <button class="btn" id="dPinBtn">加到顶部快捷</button>
+            <button class="btn" id="dDelBtn">删除领域</button>
+          </div>
+          <div class="note">删除是二次确认的，且<b>只删掉入口</b> —— 里面的待办、习惯、记录会回到收件箱等你重新归类。<b>分类可以错，数据不该丢。</b></div>
+        </div>
+      </section>
+
+      <section class="page" data-page="ledger">
+        <div class="block">
+          <div class="stat"><div class="stat-v" id="ledgerTotal"></div><div class="stat-k">2026 年 9 月支出合计</div></div>
+          <div id="ledgerBars"></div>
+        </div>
+        <div class="quick">
+          <input class="quick-in" placeholder="32 午餐 —— 一行记一笔，分类可留空">
+          <button class="quick-btn">记下</button>
+        </div>
+        <div class="block">
+          <div class="block-h"><span class="tag">最近流水</span><span class="block-note">点任意一条可改</span></div>
+          <div class="noteitem"><div class="noteitem-d">9月18日 周五 · 餐饮</div><div class="noteitem-c">午餐 ¥32</div></div>
+          <div class="noteitem"><div class="noteitem-d">9月18日 周五 · 出行</div><div class="noteitem-c">地铁 ¥6</div></div>
+          <div class="noteitem"><div class="noteitem-d">9月16日 周三 · 数码</div><div class="noteitem-c">固态硬盘 ¥899</div></div>
+        </div>
+        <div class="block">
+          <div class="block-h"><span class="tag">按项目看</span><span class="block-note">给一次事件打同一个标签</span></div>
+          <div class="kv"><span class="kv-k">国庆出行（9月30日 – 10月6日）</span><span class="kv-v">¥1,240 · 8 笔</span></div>
+          <div class="note">「项目」不另建数据表，只是给流水加同一个标签，用来回答「这次旅行一共花了多少」。</div>
+        </div>
+      </section>
+
+      <section class="page" data-page="review">
+        <div class="seg">
+          <button class="is-on">本周</button>
+          <button>本月</button>
+          <button>自定义</button>
+        </div>
+        <div class="grid g3" style="margin-bottom:12px">
+          <div class="card" style="cursor:default"><div class="stat-v">11 / 14</div><div class="stat-k">待办完成</div></div>
+          <div class="card" style="cursor:default"><div class="stat-v">5 / 7</div><div class="stat-k">习惯有打卡的天数</div></div>
+          <div class="card" style="cursor:default"><div class="stat-v">3</div><div class="stat-k">训练次数</div></div>
+        </div>
+        <div class="block">
+          <div class="block-h"><span class="tag">数值趋势</span><span class="block-note">9月14日 – 9月20日</span></div>
+          <div class="kv"><span class="kv-k">支出</span><span class="kv-v">¥812 · 上周 ¥1,106</span></div>
+          <div class="kv"><span class="kv-k">体重</span><span class="kv-v">71.4 kg · 上周 71.7 kg</span></div>
+          <div class="kv"><span class="kv-k">日均摄入</span><span class="kv-v">约 1,850 kcal</span></div>
+        </div>
+        <div class="block">
+          <div class="block-h"><span class="tag">本周记下的事</span><span class="block-note">来自收件箱与领域页</span></div>
+          <div class="noteitem"><div class="noteitem-c">深蹲的重量这两周没动，但次数上去了。</div></div>
+          <div class="noteitem"><div class="noteitem-c">周报提前到周三写完，周五就不慌了。</div></div>
+        </div>
+        <div class="block">
+          <div class="block-h"><span class="tag">下一步</span><span class="block-note">结论可以变回事项</span></div>
+          <div class="chips">
+            <button class="btn btn-main">写成新事项</button>
+            <button class="btn">导出这一期</button>
+          </div>
+          <div class="note">复盘最关键的一步是把结论<b>回写成新事项</b>，否则看完就忘了。这一条是整个闭环里最容易漏掉的。</div>
+        </div>
+      </section>
+
+      <section class="page" data-page="settings">
+        <div class="block">
+          <div class="block-h"><span class="tag">领域</span><span class="block-note">和「空间」是同一份数据</span></div>
+          <div id="settingsDomains"></div>
+          <div class="note">☆ 标记的是已经放到左上角快捷区的领域。</div>
+        </div>
+        <div class="block">
+          <div class="block-h"><span class="tag">快记类目与自动判断</span><span class="block-note">和首页那个 ⚙ 是同一份设置</span></div>
+          <div id="settingsCapture"></div>
+          <div class="note">这些平时在<b>首页速记框右侧的 ⚙ 自定义</b>里改 —— 放在那里是因为你调整它的时机，通常正好是要记东西的那一刻，跳页会打断你。</div>
+        </div>
+        <div class="block">
+          <div class="block-h"><span class="tag">记账分类</span><span class="block-note">可自定义，可选一个图标</span></div>
+          <div class="kv"><span class="kv-k">餐饮 · 出行 · 数码 · 生活 · 娱乐 · 医疗 · 服饰</span><span class="kv-v">7 个</span></div>
+        </div>
+        <div class="block">
+          <div class="block-h"><span class="tag">数据</span><span class="block-note">这份数据属于你</span></div>
+          <div class="chips">
+            <button class="btn btn-main">导出全部数据</button>
+            <button class="btn">从文件导入</button>
+          </div>
+          <div class="note">导出是一键完成的全量 JSON，包含所有事项、记录和随心记。不用等这个软件停止维护的那天再想办法搬数据 —— 随时能带走，才是真的属于你。</div>
+        </div>
+        <div class="block">
+          <div class="block-h"><span class="tag">外观</span><span class="block-note">先做浅色，够用</span></div>
+          <div class="kv"><span class="kv-k">主题</span><span class="kv-v">浅色</span></div>
+        </div>
+      </section>
+
+      <section class="page" data-page="stack">
+        <div class="block">
+          <div class="block-h"><span class="tag">技术栈</span><span class="block-note">这一页是原型说明，正式版会去掉</span></div>
+          <div class="stackrow now"><span class="stackrow-t">前端</span><span class="stackrow-s">React + TypeScript + Vite + Tailwind，PWA 加到主屏</span><span class="stackrow-w">现在</span></div>
+          <div class="stackrow now"><span class="stackrow-t">本地数据</span><span class="stackrow-s">IndexedDB（Dexie）· 未登录也完整可用</span><span class="stackrow-w">现在</span></div>
+          <div class="stackrow now"><span class="stackrow-t">类型契约</span><span class="stackrow-s">Pydantic model → OpenAPI → 生成的 TS 类型</span><span class="stackrow-w">现在</span></div>
+          <div class="stackrow"><span class="stackrow-t">后端</span><span class="stackrow-s">Python / FastAPI + SQLModel</span><span class="stackrow-w">第5步</span></div>
+          <div class="stackrow"><span class="stackrow-t">数据库</span><span class="stackrow-s">SQLite 单文件（将来可加 sqlite-vec 扩展）</span><span class="stackrow-w">第5步</span></div>
+          <div class="stackrow"><span class="stackrow-t">部署</span><span class="stackrow-s">Docker Compose 单容器 + Caddy 提供 HTTPS</span><span class="stackrow-w">第5步</span></div>
+        </div>
+        <div class="block">
+          <div class="block-h"><span class="tag">这一版不做的</span><span class="block-note">全部已明确记录，不是忘了</span></div>
+          <div class="kv"><span class="kv-k">账号、登录、多端同步</span><span class="kv-v">第 5 步</span></div>
+          <div class="kv"><span class="kv-k">AI 语义识别（真正读懂一句话）</span><span class="kv-v">本轮不做 · 现在用你自己可写的规则表</span></div>
+          <div class="kv"><span class="kv-k">在规则里写代码 / 脚本</span><span class="kv-v">不做 · 只给关键词和正则</span></div>
+          <div class="kv"><span class="kv-k">手机推送提醒</span><span class="kv-v">iOS 对 PWA 限制大，不承诺</span></div>
+          <div class="kv"><span class="kv-k">食物库 · 拍照识别</span><span class="kv-v">等记录习惯稳定后再说</span></div>
+        </div>
+        <div class="block">
+          <div class="block-h"><span class="tag">规则引擎为什么只给关键词和正则</span><span class="block-note">这是主动取舍，不是偷懒</span></div>
+          <div class="note" style="margin-top:0">
+            你要的是「能自己写自动判断的逻辑」。做法有好几种，我选了最保守的一种：<b>关键词 + 正则</b>，再加一个能当场试的测试框。
+            <br>不给完整脚本的三个理由：<br>
+            ① <b>安全</b> —— 允许执行你写的 JS，等于把整个应用交给一段文本。这个项目要开源、以后要让朋友注册，一旦开了这个口子，任何一条被导入的规则都可能变成恶意代码。<br>
+            ② <b>可解释</b> —— 关键词和正则可以告诉你「哪条规则命中了、为什么」，脚本只能给结果。判错了你不知道为什么。<br>
+            ③ <b>可导出</b> —— 规则要能跟着数据一起导出、导入、换设备，脚本会把这件本来安全的事变成危险的事。<br>
+            <br>关键词覆盖绝大多数真实需求（「提到深蹲就归力量训练」）；真需要复杂的，切到正则。<b>不排斥以后支持脚本，但不在 v1 里为它留一个洞。</b>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+</div>
+<div class="toast" id="toast">已存进收件箱</div>
+
+<script>
+/* ==PARSER_START== */
+function pad2(n){return n<10?'0'+n:''+n;}
+function isoOf(d){return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate());}
+function startOfWeek(dateStr){
+  var p=dateStr.split('-');var d=new Date(+p[0],+p[1]-1,+p[2]);
+  d.setDate(d.getDate()-((d.getDay()+6)%7));
+  return isoOf(d);
+}
+function weekdayCN(dateStr){
+  var p=dateStr.split('-');var d=new Date(+p[0],+p[1]-1,+p[2]);
+  return '周'+'日一二三四五六'.charAt(d.getDay());
+}
+function pickToday(items,today){
+  var over=[],due=[];
+  for(var i=0;i<items.length;i++){
+    var it=items[i];
+    if(it.status==='done'||!it.due){continue;}
+    if(it.due<today){over.push(it);}
+    else if(it.due===today){due.push(it);}
+  }
+  over.sort(function(a,b){return a.due<b.due?-1:(a.due>b.due?1:0);});
+  return {overdue:over,due:due};
+}
+function sumByCategory(logs,kind,monthPrefix){
+  var map={},total=0,out=[];
+  for(var i=0;i<logs.length;i++){
+    var l=logs[i];
+    if(l.kind!==kind){continue;}
+    if(l.date.slice(0,7)!==monthPrefix){continue;}
+    map[l.category]=(map[l.category]||0)+l.value;
+    total+=l.value;
+  }
+  for(var k in map){
+    if(Object.prototype.hasOwnProperty.call(map,k)){out.push({name:k,value:map[k]});}
+  }
+  out.sort(function(a,b){return b.value-a.value;});
+  return {rows:out,total:total};
+}
+function money(n){
+  var v=Math.round(n*100)/100;
+  if(v%1===0){return '¥'+v;}
+  return '¥'+v.toFixed(2).replace(/0$/,'');
+}
+function domainById(list,id){
+  for(var i=0;i<list.length;i++){if(list[i].id===id){return list[i];}}
+  return null;
+}
+function summaryOf(d,rtCount){
+  var s=d.todos.length+' 项待办 · '+d.habits.length+' 个习惯 · '+d.goals.length+' 个目标';
+  if(rtCount>0){s+=' · '+rtCount+' 个记录项';}
+  return s;
+}
+function togglePin(list,id){
+  var d=domainById(list,id);
+  if(!d){return null;}
+  d.pinned=!d.pinned;
+  return !!d.pinned;
+}
+function pinnedOf(list){
+  var out=[];
+  for(var i=0;i<list.length;i++){if(list[i].pinned){out.push(list[i].name);}}
+  return out;
+}
+function nextDomainName(list,base){
+  var has=function(n){
+    for(var i=0;i<list.length;i++){if(list[i].name===n){return true;}}
+    return false;
+  };
+  if(!has(base)){return base;}
+  var i=2;
+  while(has(base+' '+i)){i++;}
+  return base+' '+i;
+}
+function newDomain(id,name){
+  return {id:id,name:name,pinned:false,habits:[],todos:[],goals:[]};
+}
+function fmtCN(dateStr){
+  var p=dateStr.split('-');
+  return (+p[1])+'月'+(+p[2])+'日 '+weekdayCN(dateStr);
+}
+/* ---- 记录项（领域专属记录，用户自定义） ---- */
+function recordTypesOf(list,domainId){
+  var out=[];
+  for(var i=0;i<list.length;i++){if(list[i].domain===domainId){out.push(list[i]);}}
+  return out;
+}
+function pushLog(list,id,entry){
+  for(var i=0;i<list.length;i++){
+    if(list[i].id===id){list[i].logs.unshift(entry);return list[i];}
+  }
+  return null;
+}
+function removeRt(list,id){
+  for(var i=0;i<list.length;i++){
+    if(list[i].id===id){list.splice(i,1);return true;}
+  }
+  return false;
+}
+function trendOf(logs){
+  if(!logs||!logs.length){return null;}
+  var last=logs[0].v;
+  var prev=logs.length>1?logs[1].v:null;
+  return {last:last,prev:prev,delta:(prev===null?null:Math.round((last-prev)*100)/100)};
+}
+function rtKindLabel(t){
+  return t.mode==='number'?('数值'+(t.unit?(' · '+t.unit):'')):'纯文字';
+}
+/* ---- 首页记一笔：识别（纯规则，非 AI） ---- */
+var CAT_WORDS={
+  '餐饮':['早餐','早饭','午餐','午饭','晚餐','晚饭','咖啡','奶茶','外卖','吃饭','聚餐','零食','夜宵','水果'],
+  '出行':['地铁','公交','打车','出租','加油','高铁','机票','停车','单车','过路费'],
+  '数码':['硬盘','鼠标','键盘','手机','电脑','耳机','充电','数据线','显示器','内存'],
+  '生活':['房租','水电','物业','超市','日用品','纸巾','洗衣','理发','快递','话费'],
+  '娱乐':['电影','游戏','演出','门票','唱歌','演唱会','展览'],
+  '医疗':['药','挂号','体检','医院','牙','诊所'],
+  '服饰':['衣服','鞋','裤','外套','袜','帽子']
+};
+function guessCategory(text){
+  var t=String(text==null?'':text);
+  for(var k in CAT_WORDS){
+    if(!Object.prototype.hasOwnProperty.call(CAT_WORDS,k)){continue;}
+    var ws=CAT_WORDS[k];
+    for(var i=0;i<ws.length;i++){
+      if(t.indexOf(ws[i])>=0){return k;}
+    }
+  }
+  return '';
+}
+function firstNumber(t){
+  var m=String(t==null?'':t).match(/\d+(\.\d+)?/);
+  return m?parseFloat(m[0]):null;
+}
+function restOf(t,num){
+  var s=String(t==null?'':t);
+  if(num!==null&&num!==undefined){s=s.replace(String(num),' ');}
+  s=s.replace(/kcal|千卡|大卡|卡路里|kg|公斤|千克|斤|元|块|¥|￥/gi,' ');
+  return s.replace(/\s+/g,' ').trim();
+}
+function rtById(id){
+  for(var i=0;i<RECORD_TYPES.length;i++){if(RECORD_TYPES[i].id===id){return RECORD_TYPES[i];}}
+  return null;
+}
+function ruleName(r){
+  if(!r){return '未命名规则';}
+  return r.t||r.kw||r.re||'未命名规则';
+}
+/* 一条规则是否命中这句话。kw 任一命中即可；re 用正则；ex 命中就整条作废。 */
+function ruleMatches(rule,text){
+  var t=String(text==null?'':text);
+  if(!rule||!t){return false;}
+  if(rule.max&&t.length>rule.max){return false;}
+  var hit=false,i;
+  if(rule.kw){
+    var ws=String(rule.kw).split(/[,，\s]+/);
+    var low=t.toLowerCase();
+    for(i=0;i<ws.length;i++){
+      if(ws[i]&&low.indexOf(ws[i].toLowerCase())>=0){hit=true;break;}
+    }
+  }else if(rule.re){
+    try{hit=new RegExp(rule.re).test(t);}catch(err){hit=false;}
+  }else{
+    return false;   /* 没写匹配条件 = 永不命中，不猜 */
+  }
+  if(!hit){return false;}
+  if(rule.ex){
+    try{if(new RegExp(rule.ex).test(t)){return false;}}
+    catch(err){/* 排除式写错了就当没写 —— 别让一条笔误把整条规则废掉 */}
+  }
+  return true;
+}
+/* 明显会把浏览器卡死的正则（嵌套量词 / 超长）—— 拦下来，因为卡死的是你自己的页面 */
+function riskyRegex(src){
+  var s=String(src==null?'':src);
+  return s.length>200||/\([^)]*[+*][^)]*\)[+*{]/.test(s);
+}
+function ruleTarget(to){
+  if(!to){return null;}
+  if(to.indexOf('money')===0){
+    var i=to.indexOf(':');
+    return {kind:'money',category:i>=0?to.slice(i+1):''};
+  }
+  if(to==='todo'||to==='note'||to==='inbox'){return {kind:to};}
+  var rt=rtById(to);
+  if(rt){return {kind:'rt',rt:rt};}
+  return null;
+}
+function ruleTargetLabel(to){
+  if(!to){return '（没设目标）';}
+  if(to.indexOf('money:')===0){return '支出 · '+to.slice(6);}
+  if(to==='money'){return '支出';}
+  if(to==='todo'){return '待办';}
+  if(to==='note'){return '随心记';}
+  if(to==='inbox'){return '收件箱';}
+  var rt=rtById(to);
+  return rt?('记录项 · '+rt.name):'（目标已不存在）';
+}
+function ruleMatchLabel(r){
+  var s='匹配 '+(r.kw?('关键词 '+r.kw):(r.re?('正则 '+r.re):'（没写，永不命中）'));
+  if(r.ex){s+=' · 排除 '+r.ex;}
+  if(r.max){s+=' · 只在 '+r.max+' 字内判断';}
+  return s;
+}
+/* 逐条走规则，取第一条命中的。目标要数值但句子里没数字 → 跳过，不硬塞。 */
+function pickRule(text){
+  var num=firstNumber(text);
+  for(var i=0;i<AUTO_RULES.length;i++){
+    var r=AUTO_RULES[i];
+    if(!r.on){continue;}
+    if(!ruleMatches(r,text)){continue;}
+    var tg=ruleTarget(r.to);
+    if(!tg){continue;}
+    if(tg.kind==='rt'&&tg.rt.mode==='number'&&num===null){continue;}
+    if(tg.kind==='money'&&num===null){continue;}
+    return r;
+  }
+  return null;
+}
+function buildResolved(raw,tg,rule){
+  var out={raw:raw,rule:rule,rt:null,kind:'inbox',value:null,unit:'',text:raw,category:''};
+  if(tg.kind==='rt'){
+    var rt=tg.rt;
+    out.kind='rt';out.rt=rt;
+    if(rt.mode==='number'){
+      var n=firstNumber(raw);
+      out.value=n;
+      out.unit=rt.unit||'';
+      out.text=restOf(raw,n);
+    }
+    return out;
+  }
+  if(tg.kind==='money'){
+    var n2=firstNumber(raw);
+    out.kind='money';out.value=n2;out.unit='元';
+    out.text=restOf(raw,n2);
+    out.category=tg.category||guessCategory(out.text||raw);
+    return out;
+  }
+  out.kind=tg.kind;
+  return out;
+}
+function resolveCapture(text,mode){
+  var t=String(text==null?'':text).trim();
+  if(!t){return {raw:'',rule:null,rt:null,kind:'inbox',value:null,unit:'',text:'',category:''};}
+  if(!mode||mode==='auto'){
+    var r=pickRule(t);
+    if(r){
+      var tg=ruleTarget(r.to);
+      if(tg){return buildResolved(t,tg,r);}
+    }
+    return {raw:t,rule:null,rt:null,kind:'inbox',value:null,unit:'',text:t,category:''};
+  }
+  /* 手动点了类目 → 完全跳过自动判断，不再猜 */
+  var rt=rtById(mode);
+  if(rt){return buildResolved(t,{kind:'rt',rt:rt},null);}
+  if(mode==='money'){return buildResolved(t,{kind:'money',category:''},null);}
+  return {raw:t,rule:null,rt:null,kind:mode,value:null,unit:'',text:t,category:''};
+}
+function describeCapture(r){
+  if(!r){return '收件箱 · 先存着，以后再归类';}
+  if(r.kind==='rt'){
+    var rt=r.rt;
+    if(rt.mode==='number'){
+      var num=(r.value===null||r.value===undefined)?'（没找到数字）':(r.value+(rt.unit?(' '+rt.unit):''));
+      return rt.name+' '+num+(r.text?(' · '+r.text):'');
+    }
+    return rt.name+(r.text?(' · '+r.text):'');
+  }
+  if(r.kind==='money'){
+    return '支出 '+(r.value===null?'':'¥'+r.value)+' · '+(r.category||'分类待定');
+  }
+  if(r.kind==='todo'){return '待办 · 进今天';}
+  if(r.kind==='note'){return '随心记 · 不进统计';}
+  return '收件箱 · 先存着，以后再归类';
+}
+/* 快记的候选类目 = 行为类目（可关） + 你的记录项（quick 打开时出现）
+   每一项都带 on：当前在首页显示不显示。lock=true 的关不掉。 */
+function captureCandidates(){
+  var out=[];
+  for(var i=0;i<CAPTURE_MODES.length;i++){
+    var m=CAPTURE_MODES[i];
+    if(m.k!=='auto'&&!m.on){continue;}
+    out.push({k:m.k,t:m.t,isMode:true,lock:!!m.lock,sub:'系统项',on:m.on!==false});
+  }
+  for(var j=0;j<RECORD_TYPES.length;j++){
+    var rt=RECORD_TYPES[j];
+    if(!rt.quick){continue;}
+    var d=domainById(DOMAINS,rt.domain);
+    out.push({k:rt.id,t:rt.name,isMode:false,rt:rt,on:true,sub:(d?(d.name+' · '):'')+rtKindLabel(rt)});
+  }
+  return out;
+}
+function toggleCaptureMode(k){
+  var rt=rtById(k);
+  if(rt){rt.quick=!rt.quick;return rt.quick;}
+  for(var i=0;i<CAPTURE_MODES.length;i++){
+    var m=CAPTURE_MODES[i];
+    if(m.k!==k||m.lock){continue;}
+    m.on=!m.on;
+    if(!m.on&&CAPTURE_MODE===m.k){CAPTURE_MODE='auto';}
+    return m.on;
+  }
+  return null;
+}
+/* 你自己写的规则永远排在数组最前面（moveRule 不许跨组，保证了这一点）。
+   新规则插到最前，这样它第一句就能生效，不会被旧规则先抢走。 */
+function addRule(rule){
+  AUTO_RULES.unshift(rule);
+}
+function removeRule(id){
+  for(var i=0;i<AUTO_RULES.length;i++){
+    if(AUTO_RULES[i].id===id){
+      if(AUTO_RULES[i].sys){return false;}   /* 内部规则不给删，可以关 */
+      AUTO_RULES.splice(i,1);return true;
+    }
+  }
+  return false;
+}
+function moveRule(id,dir){
+  var i=-1;
+  for(var k=0;k<AUTO_RULES.length;k++){if(AUTO_RULES[k].id===id){i=k;break;}}
+  if(i<0){return false;}
+  var j=i+dir;
+  if(j<0||j>=AUTO_RULES.length){return false;}
+  if(AUTO_RULES[i].sys!==AUTO_RULES[j].sys){return false;}  /* 不许跨组，保证你的规则优先 */
+  var tmp=AUTO_RULES[i];AUTO_RULES[i]=AUTO_RULES[j];AUTO_RULES[j]=tmp;
+  return true;
+}
+function userRuleCount(){
+  var n=0;
+  for(var i=0;i<AUTO_RULES.length;i++){if(!AUTO_RULES[i].sys){n++;}}
+  return n;
+}
+/* ==PARSER_END== */
+
+var TODAY='2026-09-18';
+var ITEMS=[
+  {title:'交上月报销单',domain:'工作',due:'2026-09-16',status:'todo'},
+  {title:'给张工回邮件',domain:'工作',due:'2026-09-17',status:'todo'},
+  {title:'写周报',domain:'工作',due:'2026-09-18',status:'todo'},
+  {title:'买跑鞋',domain:'个人',due:'2026-09-18',status:'todo'},
+  {title:'交物业费',domain:'个人',due:'2026-09-21',status:'todo'}
+];
+var LOGS=[
+  {kind:'money',date:'2026-09-18',category:'餐饮',value:32},
+  {kind:'money',date:'2026-09-18',category:'出行',value:6},
+  {kind:'money',date:'2026-09-17',category:'餐饮',value:48},
+  {kind:'money',date:'2026-09-16',category:'数码',value:899},
+  {kind:'money',date:'2026-09-15',category:'餐饮',value:26},
+  {kind:'money',date:'2026-09-14',category:'生活',value:460},
+  {kind:'money',date:'2026-09-12',category:'娱乐',value:210}
+];
+var DOMAINS=[
+  {
+    id:'fitness',name:'健身',pinned:true,
+    habits:[{t:'训练日打卡',m:'每周 4 次'}],
+    todos:[{t:'换瑜伽垫',m:'9月21日 周一'},{t:'约体测',m:'没有日期'}],
+    goals:[{t:'硬拉 100kg',m:'当前 80kg × 5 次',p:80},{t:'体脂降到 18%',m:'当前约 21%',p:35}]
+  },
+  {
+    id:'study',name:'学习',pinned:false,
+    habits:[{t:'阅读 30 分钟',m:'每天'}],
+    todos:[{t:'整理读书笔记',m:'没有日期'},{t:'把 SmartVoyage 的章节笔记归档',m:'没有日期'}],
+    goals:[{t:'读完《置身事内》',m:'每周 30 页 · 已读 210/350 页',p:60}]
+  },
+  {
+    id:'work',name:'工作',pinned:false,
+    habits:[{t:'下班前清空收件箱',m:'工作日'}],
+    todos:[{t:'交上月报销单',m:'逾期 9月16日 周三'},{t:'给张工回邮件',m:'逾期 9月17日 周四'},{t:'写周报',m:'今天'}],
+    goals:[{t:'知识库项目 v1 上线',m:'方案已定 · 待开工',p:45}]
+  },
+  {
+    id:'life',name:'个人',pinned:false,
+    habits:[{t:'饮水 2L',m:'每天'},{t:'23:30 前睡',m:'工作日'}],
+    todos:[{t:'买跑鞋',m:'今天'},{t:'交物业费',m:'9月21日 周一'}],
+    goals:[{t:'家庭年度旅行成行',m:'还没定目的地',p:50}]
+  }
+];
+/* 记录项：领域专属记录，名称与方式都由用户自定义。两种方式：text 纯文字 / number 数值
+   quick=true 表示这条记录项会出现在首页速记的类目里（可在 ⚙ 自定义 里关掉） */
+var RECORD_TYPES=[
+  {id:'rt_kcal_in',domain:'fitness',name:'热量摄入',mode:'number',unit:'kcal',quick:true,logs:[
+    {d:'9月18日',v:1800},{d:'9月17日',v:1920},{d:'9月16日',v:1750}
+  ]},
+  {id:'rt_kcal_out',domain:'fitness',name:'热量消耗',mode:'number',unit:'kcal',quick:true,logs:[
+    {d:'9月18日',v:520},{d:'9月17日',v:480}
+  ]},
+  {id:'rt_weight',domain:'fitness',name:'体重',mode:'number',unit:'kg',quick:true,logs:[
+    {d:'9月18日',v:71.4},{d:'9月15日',v:71.7},{d:'9月12日',v:72.1}
+  ]},
+  {id:'rt_strength',domain:'fitness',name:'力量训练',mode:'text',unit:'',quick:false,logs:[
+    {d:'9月16日 周三',v:'深蹲 80kg × 5 × 5 · 硬拉 90kg × 3 × 3 · 组间休息 2 分钟'},
+    {d:'9月13日 周日',v:'深蹲 77.5kg × 5 × 5 · 硬拉 87.5kg × 3 × 3'}
+  ]},
+  {id:'rt_cardio',domain:'fitness',name:'有氧',mode:'text',unit:'',quick:false,logs:[
+    {d:'9月17日 周三',v:'跑步 7.1km · 42 分钟 · 配速 5\'55" · 平均心率 148'}
+  ]},
+  {id:'rt_squat',domain:'fitness',name:'深蹲最大重量',mode:'number',unit:'kg',quick:false,logs:[
+    {d:'9月16日',v:80},{d:'9月13日',v:77.5},{d:'9月10日',v:75}
+  ]},
+  {id:'rt_book',domain:'study',name:'读书',mode:'number',unit:'页',quick:false,logs:[
+    {d:'9月17日',v:24},{d:'9月15日',v:18},{d:'9月13日',v:31}
+  ]},
+  {id:'rt_note',domain:'study',name:'学习笔记',mode:'text',unit:'',quick:false,logs:[
+    {d:'9月17日 周三',v:'第 6 章讲土地财政，和之前看的新闻对上了。'}
+  ]}
+];
+/* 快记的「行为类目」：不是数值记录，而是决定这句话怎么被处理。
+   数值/文字记录项（热量摄入、体重、深蹲…）会自动出现在同一个列表里，见 captureCandidates()。
+   on=false 表示不在首页显示；auto 不允许关（它是「我不指定」的默认态）。 */
+var CAPTURE_MODES=[
+  {k:'auto', t:'自动判断',    on:true, lock:true},
+  {k:'todo', t:'待办',        on:true},
+  {k:'note', t:'随心记',      on:true},
+  {k:'money',t:'记一笔支出',  on:true},
+  {k:'inbox',t:'只丢进收件箱',on:true}
+];
+/* 自动判断规则：从上往下匹配，先命中先用。
+   【你自己的规则永远排在内部规则前面】—— 这是故意的，你写的规则应该压过我的默认判断。
+   kw = 关键词（逗号分隔，任一命中即匹配）      re = 正则
+   ex = 排除（正则，命中就不采用这条规则）      max= 句子超过多少字就不参与判断
+   to = 判成什么：money / money:分类名 / todo / note / inbox / 某条记录项的 id */
+var AUTO_RULES=[
+  {id:'u-squat', sys:false, on:true, t:'深蹲／硬拉／卧推 → 力量训练',
+   kw:'深蹲,硬拉,卧推,引体,划船', to:'rt_strength'},
+  {id:'sys-kcal', sys:true, on:true, t:'提到卡路里 → 热量摄入',
+   kw:'kcal,千卡,大卡,卡路里', to:'rt_kcal_in'},
+  {id:'sys-weight', sys:true, on:true, t:'提到公斤 → 体重',
+   kw:'kg,公斤,千克,斤', ex:'×|组|次|深蹲|硬拉|卧推', to:'rt_weight'},
+  {id:'sys-money', sys:true, on:true, t:'数字在开头 → 记一笔支出',
+   re:'^(¥|￥|RMB)?\\s*\\d+(\\.\\d+)?',
+   ex:'公里|千米|km|米|次|页|分钟|小时|组|个|杯|瓶|步', to:'money'}
+];
+var TODAY_LOGS=[
+  {time:'08:15',label:'早餐 ¥12 · 餐饮'},
+  {time:'10:30',label:'体重 71.4 kg'},
+  {time:'12:40',label:'午餐 ¥32 · 餐饮'}
+];
+var TITLES={
+  today:['今日','9月18日 周五'],
+  inbox:['收集','收件箱'],
+  notes:['随心记','只写，不管'],
+  spaces:['空间','你的领域 + 记账'],
+  ledger:['记账','2026 年 9 月'],
+  review:['复盘','9月14日 – 9月20日'],
+  settings:['设置','数据在你手里'],
+  stack:['技术栈','原型说明页']
+};
+var CURRENT='fitness';
+
+function el(tag,cls,txt){
+  var n=document.createElement(tag);
+  if(cls){n.className=cls;}
+  if(txt!==undefined){n.textContent=txt;}
+  return n;
+}
+function itemRow(it,over){
+  var li=el('li','row');
+  li.appendChild(el('span','cbox'));
+  var main=el('span','row-main');
+  main.appendChild(el('span','row-name',it.title));
+  main.appendChild(el('span','row-meta',over?(it.domain+' · 逾期 '+it.due+' '+weekdayCN(it.due)):(it.domain+' · 今天')));
+  li.appendChild(main);
+  return li;
+}
+function renderLists(){
+  var r=pickToday(ITEMS,TODAY);
+  var ol=document.getElementById('overdueList');
+  var dl=document.getElementById('dueList');
+  ol.innerHTML='';dl.innerHTML='';
+  for(var i=0;i<r.overdue.length;i++){ol.appendChild(itemRow(r.overdue[i],true));}
+  for(var j=0;j<r.due.length;j++){dl.appendChild(itemRow(r.due[j],false));}
+  document.getElementById('todayCount').textContent='待办 '+r.due.length+' 项 · 逾期 '+r.overdue.length+' 项';
+}
+function renderLedger(){
+  var s=sumByCategory(LOGS,'money','2026-09');
+  document.getElementById('ledgerTotal').textContent=money(s.total);
+  var box=document.getElementById('ledgerBars');
+  box.innerHTML='';
+  for(var i=0;i<s.rows.length;i++){
+    var r=s.rows[i];
+    var wrap=el('div','barrow');
+    wrap.appendChild(el('span','barrow-n',r.name));
+    var track=el('span','bar');
+    var fill=el('span','bar-fill');
+    fill.style.width=(s.total?Math.round(r.value/s.total*100):0)+'%';
+    track.appendChild(fill);
+    wrap.appendChild(track);
+    wrap.appendChild(el('span','barrow-v',money(r.value)));
+    box.appendChild(wrap);
+  }
+}
+function renderSpaces(){
+  var grid=document.getElementById('spaceGrid');
+  grid.innerHTML='';
+  for(var i=0;i<DOMAINS.length;i++){
+    var d=DOMAINS[i];
+    var card=el('div','card');
+    card.setAttribute('data-go','domain');
+    card.setAttribute('data-domain',d.id);
+    card.appendChild(el('div','card-t',d.name));
+    card.appendChild(el('div','card-s',summaryOf(d,recordTypesOf(RECORD_TYPES,d.id).length)));
+    var ops=el('div','card-ops');
+    var star=el('button','iconbtn',d.pinned?'★':'☆');
+    star.setAttribute('data-pin',d.id);
+    star.setAttribute('title',d.pinned?'取消顶部快捷':'加到顶部快捷');
+    if(d.pinned){star.classList.add('is-on');}
+    ops.appendChild(star);
+    card.appendChild(ops);
+    grid.appendChild(card);
+  }
+  var add=el('div','card card-add');
+  add.setAttribute('data-newdomain','1');
+  add.appendChild(el('div','card-t','+ 新建领域'));
+  add.appendChild(el('div','card-s','考证 / 育儿 / 副业 …'));
+  grid.appendChild(add);
+}
+function renderPins(){
+  var box=document.getElementById('sideQuickList');
+  box.innerHTML='';
+  var n=0;
+  for(var i=0;i<DOMAINS.length;i++){
+    var d=DOMAINS[i];
+    if(!d.pinned){continue;}
+    n++;
+    var b=el('button','navi navi-q');
+    b.setAttribute('data-domain',d.id);
+    b.appendChild(el('span','dot'));
+    b.appendChild(el('span','',d.name));
+    box.appendChild(b);
+  }
+  if(n===0){
+    box.appendChild(el('div','side-empty','还没有快捷入口 —— 在「空间」里点 ☆ 就能加到这里。'));
+  }
+}
+function renderSettingsDomains(){
+  var box=document.getElementById('settingsDomains');
+  box.innerHTML='';
+  for(var i=0;i<DOMAINS.length;i++){
+    var d=DOMAINS[i];
+    var row=el('div','kv');
+    row.appendChild(el('span','kv-k',d.name+' · '+summaryOf(d)));
+    row.appendChild(el('span','kv-v',d.pinned?'☆ 已置顶':'—'));
+    box.appendChild(row);
+  }
+  var t=el('div','kv');
+  t.appendChild(el('span','kv-k','共 '+DOMAINS.length+' 个领域 · 可增可删可改名'));
+  t.appendChild(el('span','kv-v',pinnedOf(DOMAINS).length+' 个在快捷区'));
+  box.appendChild(t);
+}
+function fillList(ulId,rows,emptyText){
+  var ul=document.getElementById(ulId);
+  ul.innerHTML='';
+  if(!rows.length){
+    var li0=el('li','row-empty',emptyText);
+    ul.appendChild(li0);
+    return;
+  }
+  for(var i=0;i<rows.length;i++){
+    var li=el('li','row');
+    li.appendChild(el('span','cbox'));
+    var main=el('span','row-main');
+    main.appendChild(el('span','row-name',rows[i].t));
+    main.appendChild(el('span','row-meta',rows[i].m));
+    li.appendChild(main);
+    if(rows[i].habit){
+      var tk=el('button','tick','打卡');
+      tk.setAttribute('data-tick','1');
+      li.appendChild(tk);
+    }
+    ul.appendChild(li);
+  }
+}
+function renderDomain(id){
+  var d=domainById(DOMAINS,id)||DOMAINS[0];
+  if(!d){return;}
+  CURRENT=d.id;
+  document.getElementById('dHabits').innerHTML='';
+  document.getElementById('dTodos').innerHTML='';
+  var hab=[];
+  for(var i=0;i<d.habits.length;i++){
+    hab.push({t:d.habits[i].t,m:d.habits[i].m,habit:true});
+  }
+  fillList('dHabits',hab,'这个领域还没有习惯。在下面速记框里写一条「每周三次…」就行。');
+  fillList('dTodos',d.todos,'这个领域还没有待办。');
+  var gb=document.getElementById('dGoals');
+  gb.innerHTML='';
+  if(!d.goals.length){
+    gb.appendChild(el('div','row-empty','还没有长期目标。目标可以后加，不必现在就想清楚。'));
+  }
+  for(var j=0;j<d.goals.length;j++){
+    var g=d.goals[j];
+    var r=el('div','row');
+    var m=el('span','row-main');
+    m.appendChild(el('span','row-name',g.t));
+    m.appendChild(el('span','row-meta',g.m));
+    r.appendChild(m);
+    var bar=el('span','bar');
+    var f=el('span','bar-fill');
+    f.style.width=g.p+'%';
+    bar.appendChild(f);
+    r.appendChild(bar);
+    r.appendChild(el('span','row-val',g.p+'%'));
+    gb.appendChild(r);
+  }
+  renderRecordTypes(d.id);
+  var rin=document.getElementById('dRenameIn');
+  if(rin){rin.value=d.name;}
+  var pb=document.getElementById('dPinBtn');
+  if(pb){pb.textContent=d.pinned?'从顶部快捷移除':'加到顶部快捷';}
+  disarmDelete();
+}
+var toastTimer=null;
+function toast(msg){
+  var t=document.getElementById('toast');
+  t.textContent=msg;
+  t.classList.add('toast-on');
+  if(toastTimer){clearTimeout(toastTimer);}
+  toastTimer=setTimeout(function(){t.classList.remove('toast-on');},1800);
+}
+
+/* ================= 领域记录项：名称与方式都由用户自定义 ================= */
+var RT_UI=null;   /* {type:'entry'|'settings'|'new', id} */
+
+function renderRecordTypes(domainId){
+  var box=document.getElementById('dRecordTypes');
+  if(!box){return;}
+  box.innerHTML='';
+  var list=recordTypesOf(RECORD_TYPES,domainId);
+  if(!list.length&&!(RT_UI&&RT_UI.type==='new')){
+    box.appendChild(el('div','row-empty','这个领域还没有记录项。点下面「+ 新增记录项」起个名字就行 —— 比如「模拟考试分数」（数值 · 分），或者「错题复盘」（纯文字）。'));
+  }
+  for(var i=0;i<list.length;i++){
+    var t=list[i];
+    var w=el('div','rt');
+    var h=el('div','rt-h');
+    h.appendChild(el('span','rt-t',t.name));
+    h.appendChild(el('span','rt-kind',rtKindLabel(t)));
+    if(t.quick){h.appendChild(el('span','rule-to','快记'));}
+    var act=el('div','rt-act');
+    var a1=el('button','mini','记一条');
+    a1.setAttribute('data-rt-add',t.id);
+    var a2=el('button','mini','设置');
+    a2.setAttribute('data-rt-edit',t.id);
+    act.appendChild(a1);
+    act.appendChild(a2);
+    h.appendChild(act);
+    w.appendChild(h);
+
+    var editing=RT_UI&&RT_UI.id===t.id;
+    if(editing&&RT_UI.type==='entry'){
+      w.appendChild(rtEntryForm(t));
+    }else{
+      var body=el('div','rt-body');
+      if(!t.logs.length){
+        body.appendChild(el('div','row-empty','还没有记录，点「记一条」。'));
+      }else if(t.mode==='number'){
+        var tr=trendOf(t.logs);
+        for(var k=0;k<t.logs.length;k++){
+          var lr=el('div','logrow');
+          lr.appendChild(el('span','logrow-d',t.logs[k].d));
+          lr.appendChild(el('span','logrow-v',''));
+          lr.appendChild(el('span','logrow-n',t.logs[k].v+t.unit));
+          body.appendChild(lr);
+        }
+        if(tr&&tr.delta!==null){
+          var s=el('div','logrow');
+          s.appendChild(el('span','logrow-d','趋势'));
+          s.appendChild(el('span','logrow-v','最近 '+tr.last+t.unit+' · 上次 '+tr.prev+t.unit));
+          s.appendChild(el('span','logrow-n',(tr.delta>0?'+':'')+tr.delta+t.unit));
+          body.appendChild(s);
+        }
+      }else{
+        for(var m=0;m<t.logs.length;m++){
+          var lr2=el('div','logrow');
+          lr2.appendChild(el('span','logrow-d',t.logs[m].d));
+          lr2.appendChild(el('span','logrow-v',t.logs[m].v));
+          body.appendChild(lr2);
+        }
+      }
+      w.appendChild(body);
+      if(editing&&RT_UI.type==='settings'){w.appendChild(rtSettingsForm(t));}
+    }
+    box.appendChild(w);
+  }
+  if(RT_UI&&RT_UI.type==='new'){box.appendChild(rtSettingsForm(null));}
+}
+function rtEntryForm(t){
+  var f=el('div','rt-form');
+  var inp;
+  if(t.mode==='number'){
+    inp=el('input','inline-in');
+    inp.style.maxWidth='110px';
+    inp.setAttribute('placeholder','数值');
+    f.appendChild(inp);
+    if(t.unit){f.appendChild(el('span','logrow-n',t.unit));}
+  }else{
+    inp=el('textarea','ta');
+    inp.style.minHeight='56px';
+    inp.setAttribute('placeholder','写点什么 —— 今天的情况、感受、细节都行');
+    f.appendChild(inp);
+  }
+  var save=el('button','btn btn-main','存下');
+  var no=el('button','btn','取消');
+  f.appendChild(save);
+  f.appendChild(no);
+  save.addEventListener('click',function(){
+    var v=inp.value.trim();
+    if(!v){toast('先写点什么');inp.focus();return;}
+    var val=v;
+    if(t.mode==='number'){
+      val=parseFloat(v);
+      if(isNaN(val)){toast('数值型只能填数字');inp.focus();return;}
+    }
+    pushLog(RECORD_TYPES,t.id,{d:fmtCN(TODAY),v:val});
+    RT_UI=null;
+    renderRecordTypes(CURRENT);
+    renderSpaces();
+    toast('已记入「'+t.name+'」');
+  });
+  no.addEventListener('click',function(){RT_UI=null;renderRecordTypes(CURRENT);});
+  setTimeout(function(){inp.focus();},0);
+  return f;
+}
+function rtSettingsForm(t){
+  var f=el('div','rt-form');
+  var cur=t?t.mode:'text';
+  var ni=el('input','inline-in');
+  ni.style.maxWidth='150px';
+  ni.setAttribute('placeholder','记录项名称，比如「模拟考试分数」');
+  ni.value=t?t.name:'';
+  f.appendChild(ni);
+  var seg=el('span','segsm');
+  var b1=el('button','',"纯文字");
+  var b2=el('button','',"数值");
+  if(cur==='text'){b1.className='is-on';}
+  seg.appendChild(b1);
+  seg.appendChild(b2);
+  f.appendChild(seg);
+  var ui=el('input','inline-in');
+  ui.style.maxWidth='92px';
+  ui.setAttribute('placeholder','单位 kg');
+  ui.value=t?t.unit:'';
+  if(cur!=='number'){ui.style.display='none';}
+  f.appendChild(ui);
+  var qOn=t?(t.quick!==false):true;
+  var qsw=el('button','sw'+(qOn?' is-on':''));
+  qsw.setAttribute('title','要不要出现在首页快记的类目里');
+  qsw.addEventListener('click',function(){
+    qOn=!qOn;
+    qsw.className='sw'+(qOn?' is-on':'');
+  });
+  f.appendChild(qsw);
+  f.appendChild(el('span','cfgrow-s','出现在首页快记'));
+  b1.addEventListener('click',function(){cur='text';b1.className='is-on';b2.className='';ui.style.display='none';});
+  b2.addEventListener('click',function(){cur='number';b2.className='is-on';b1.className='';ui.style.display='';});
+  var save=el('button','btn btn-main',t?'保存':'创建');
+  var no=el('button','btn','取消');
+  f.appendChild(save);
+  f.appendChild(no);
+  save.addEventListener('click',function(){
+    var name=ni.value.trim();
+    if(!name){toast('先起个名字');ni.focus();return;}
+    var unit=cur==='number'?ui.value.trim():'';
+    if(t){t.name=name;t.mode=cur;t.unit=unit;t.quick=qOn;}
+    else{RECORD_TYPES.push({id:'rt'+Date.now(),domain:CURRENT,name:name,mode:cur,unit:unit,quick:qOn,logs:[]});}
+    RT_UI=null;
+    renderRecordTypes(CURRENT);
+    renderSpaces();
+    renderSettingsDomains();
+    renderCaptureTypes();
+    renderCaptureRes();
+    renderSettingsCapture();
+    toast(t?'已保存':'已新增「'+name+'」'+(qOn?' · 已出现在首页快记':''));
+  });
+  no.addEventListener('click',function(){RT_UI=null;renderRecordTypes(CURRENT);});
+  if(t){
+    var del=el('button','btn','删除');
+    var armed=false,dt=null;
+    del.addEventListener('click',function(){
+      if(!armed){
+        armed=true;
+        del.className='btn btn-armed';
+        del.textContent='再点一次确认';
+        dt=setTimeout(function(){armed=false;del.className='btn';del.textContent='删除';},4000);
+        return;
+      }
+      if(dt){clearTimeout(dt);}
+      var nm=t.name;
+      removeRt(RECORD_TYPES,t.id);
+      RT_UI=null;
+      renderRecordTypes(CURRENT);
+      renderSpaces();
+      renderSettingsDomains();
+      renderCaptureTypes();
+      renderCaptureRes();
+      renderSettingsCapture();
+      toast('已移除「'+nm+'」· 已记的内容保留在导出里');
+    });
+    f.appendChild(del);
+  }
+  setTimeout(function(){ni.focus();},0);
+  return f;
+}
+
+/* ================= 首页记一笔：一个入口，就地完成 ================= */
+var CAPTURE_MODE='auto';
+
+function renderCaptureTypes(){
+  var box=document.getElementById('captureTypes');
+  if(!box){return;}
+  box.innerHTML='';
+  var cands=captureCandidates();
+  var found=false;
+  for(var j=0;j<cands.length;j++){if(cands[j].k===CAPTURE_MODE){found=true;}}
+  if(!found){CAPTURE_MODE='auto';}
+  if(!cands.length){
+    box.appendChild(el('span','cfgrow-s','类目被你全关掉了 —— 点右边「⚙ 自定义」打开几个'));
+    return;
+  }
+  for(var i=0;i<cands.length;i++){
+    var c=cands[i];
+    var b=el('button','mchip',c.t);
+    b.setAttribute('data-mode',c.k);
+    if(c.sub){b.setAttribute('title',c.sub);}
+    if(c.k===CAPTURE_MODE){b.classList.add('is-on');}
+    box.appendChild(b);
+  }
+}
+function renderCaptureRes(){
+  var box=document.getElementById('captureRes');
+  if(!box){return;}
+  box.innerHTML='';
+  var v=document.getElementById('quickInput').value.trim();
+  if(!v){
+    box.appendChild(el('span','','任何页面按 '));
+    box.appendChild(el('span','kbd','/'));
+    box.appendChild(el('span','',' 直接开始记 · 回车即存 · 认不出来也不会丢'));
+    return;
+  }
+  var r=resolveCapture(v,CAPTURE_MODE);
+  box.appendChild(el('span','','会记成：'));
+  box.appendChild(el('b','',describeCapture(r)));
+  if(CAPTURE_MODE==='auto'){
+    if(r.rule){
+      box.appendChild(el('span','test-hit','· 命中「'+ruleName(r.rule)+'」'));
+    }
+    box.appendChild(el('span','res-fix',r.rule?'不对就点上面的类目':'没规则认出来 · 会进收件箱'));
+  }
+}
+function renderTodayLog(){
+  var box=document.getElementById('todayLog');
+  if(!box){return;}
+  box.innerHTML='';
+  if(!TODAY_LOGS.length){
+    box.appendChild(el('div','row-empty','今天还没记什么。上面那个框写一句就行。'));
+    return;
+  }
+  for(var i=0;i<TODAY_LOGS.length;i++){
+    var r=el('div','logrow');
+    r.appendChild(el('span','logrow-d',TODAY_LOGS[i].time));
+    r.appendChild(el('span','logrow-v',TODAY_LOGS[i].label));
+    box.appendChild(r);
+  }
+}
+function nowHM(){
+  var d=new Date();
+  return pad2(d.getHours())+':'+pad2(d.getMinutes());
+}
+function addTodayItem(text){
+  var li=el('li','row');
+  li.appendChild(el('span','cbox'));
+  var m=el('span','row-main');
+  m.appendChild(el('span','row-name',text));
+  m.appendChild(el('span','row-meta','刚记下 · 今天'));
+  li.appendChild(m);
+  var ul=document.getElementById('dueList');
+  ul.insertBefore(li,ul.firstChild);
+}
+function submitQuick(){
+  var inp=document.getElementById('quickInput');
+  var v=inp.value.trim();
+  if(!v){toast('先写点什么');return;}
+  var r=resolveCapture(v,CAPTURE_MODE);
+  if(r.kind==='inbox'){
+    addToInbox(v);
+    toast('已丢进收件箱');
+  }else if(r.kind==='todo'){
+    addTodayItem(v);
+    toast('已加到今天');
+  }else if(r.kind==='note'){
+    toast('已存进随心记');
+  }else if(r.kind==='rt'){
+    var rt=r.rt;
+    if(rt.mode==='number'&&r.value===null){
+      toast('「'+rt.name+'」是数值记录项，先写个数字');
+      inp.focus();
+      return;
+    }
+    pushLog(RECORD_TYPES,rt.id,{d:fmtCN(TODAY),v:rt.mode==='number'?r.value:r.text});
+    var dn=domainById(DOMAINS,rt.domain);
+    var lb=describeCapture(r);
+    TODAY_LOGS.unshift({time:nowHM(),label:lb});
+    renderTodayLog();
+    if(rt.domain===CURRENT){renderRecordTypes(CURRENT);}
+    renderSpaces();
+    renderSettingsCapture();
+    toast('已记入「'+(dn?dn.name+' → ':'')+rt.name+'」');
+  }else{
+    var label=describeCapture(r);
+    TODAY_LOGS.unshift({time:nowHM(),label:label});
+    renderTodayLog();
+    toast('已记下：'+label);
+  }
+  inp.value='';
+  renderCaptureRes();
+}
+/* ================= 快记自定义：出现哪些类目 + 自动判断规则 ================= */
+var CFG_OPEN=false;
+var CFG_TAB='cats';     /* cats | rules */
+var RULE_EDIT=null;     /* null | 'new' | 规则 id */
+
+function ruleTargetOptions(){
+  var out=[
+    {v:'money',t:'记一笔支出'},
+    {v:'todo',t:'待办'},
+    {v:'note',t:'随心记'},
+    {v:'inbox',t:'只丢进收件箱'}
+  ];
+  for(var i=0;i<RECORD_TYPES.length;i++){
+    out.push({v:RECORD_TYPES[i].id,t:'记录项 · '+RECORD_TYPES[i].name});
+  }
+  return out;
+}
+function mkbtn(cls,txt,attr,val,on){
+  var b=el('button',on?(cls?cls+' is-on':'is-on'):cls,txt);
+  if(attr){b.setAttribute(attr,val);}
+  return b;
+}
+function renderCapCfg(){
+  var box=document.getElementById('capCfg');
+  var btn=document.getElementById('cfgBtn');
+  if(btn){btn.textContent=CFG_OPEN?'⚙ 收起':'⚙ 自定义';}
+  if(!box){return;}
+  box.innerHTML='';
+  if(!CFG_OPEN){return;}
+  var wrap=el('div','capcfg');
+
+  var h=el('div','capcfg-h');
+  h.appendChild(el('span','capcfg-t','快记自定义'));
+  var seg=el('span','segsm');
+  seg.appendChild(mkbtn('','出现哪些类目','data-cfgtab','cats',CFG_TAB==='cats'));
+  seg.appendChild(mkbtn('','自动判断规则','data-cfgtab','rules',CFG_TAB==='rules'));
+  h.appendChild(seg);
+  h.appendChild(el('span','capcfg-note','只影响首页这个框'));
+  wrap.appendChild(h);
+
+  if(CFG_TAB==='cats'){
+    var cands=captureCandidates();
+    var shown=0;
+    for(var i=0;i<cands.length;i++){
+      var c=cands[i];
+      var isOn=c.lock?true:!!c.on;
+      if(isOn){shown++;}
+      var row=el('div','cfgrow');
+      var n=el('div','cfgrow-n');
+      n.appendChild(el('div','',c.t));
+      n.appendChild(el('div','cfgrow-s',c.sub));
+      row.appendChild(n);
+      var sw=el('button','sw'+(isOn?' is-on':'')+(c.lock?' is-lock':''));
+      if(c.lock){
+        sw.setAttribute('title','这一项关不掉 —— 它是「我不指定」的默认态，关了你每次都得手动选');
+      }else{
+        sw.setAttribute('data-cfgtoggle',c.k);
+        sw.setAttribute('title',isOn?'点一下：不在首页出现':'点一下：在首页出现');
+      }
+      row.appendChild(sw);
+      wrap.appendChild(row);
+    }
+    wrap.appendChild(el('div','note',
+      '上面有几个开关是开的，首页的速记框下面就显示几个类目，现在是 <b>'+shown+'</b> 个。'
+      +'<br><b>你新建的记录项会自动进到这个列表</b> —— 在「空间 → 任意领域」里加一条记录项（比如「喝水量」），它立刻就出现在这里，不用谁来给你开权限。'
+      +'<br>顺序不在这里调：顺序只影响你找不找得到，不影响记对记错。真正影响判断结果的是<b>规则</b>，所以那边可以调顺序。'));
+  }else{
+    for(var r=0;r<AUTO_RULES.length;r++){
+      var ru=AUTO_RULES[r];
+      var rw=el('div','rule'+(ru.on?'':' is-off'));
+      var rh=el('div','rule-h');
+      var sw2=el('button','sw'+(ru.on?' is-on':''));
+      sw2.setAttribute('data-ruletoggle',ru.id);
+      sw2.setAttribute('title',ru.on?'点一下：停用这条规则':'点一下：启用这条规则');
+      rh.appendChild(sw2);
+      rh.appendChild(el('span','rule-t',ruleName(ru)));
+      rh.appendChild(el('span','rule-to',ruleTargetLabel(ru.to)));
+      if(ru.sys){rh.appendChild(el('span','rule-sys','内置'));}
+      rw.appendChild(rh);
+      rw.appendChild(el('div','rule-m',ruleMatchLabel(ru)));
+      var ops=el('div','rule-h');
+      ops.style.marginTop='8px';
+      ops.appendChild(mkbtn('mini','↑ 上移','data-ruleup',ru.id,false));
+      ops.appendChild(mkbtn('mini','↓ 下移','data-ruledown',ru.id,false));
+      ops.appendChild(mkbtn('mini','改','data-ruleedit',ru.id,false));
+      if(!ru.sys){ops.appendChild(mkbtn('mini','删','data-ruledel',ru.id,false));}
+      rw.appendChild(ops);
+      if(RULE_EDIT===ru.id){rw.appendChild(ruleForm(ru));}
+      wrap.appendChild(rw);
+    }
+    wrap.appendChild(mkbtn('btn','+ 新增规则','data-rulenew','1',false));
+    if(RULE_EDIT==='new'){wrap.appendChild(ruleForm(null));}
+
+    var tb=el('div','testbox');
+    tb.appendChild(el('div','cfgrow-s','试一句，看它会被记成什么、命中了哪条规则'));
+    var ti=el('input','test-in');
+    ti.setAttribute('id','ruleTestIn');
+    ti.setAttribute('placeholder','1800 kcal ／ 深蹲 80kg × 5 × 5 ／ 32 午餐 ／ 交物业费 200');
+    tb.appendChild(ti);
+    var to=el('div','test-out');
+    to.setAttribute('id','ruleTestOut');
+    tb.appendChild(to);
+    wrap.appendChild(tb);
+
+    wrap.appendChild(el('div','note',
+      '规则从上往下匹配，<b>取第一条命中的</b>。你自己的规则永远排在内置规则前面 —— 你写的应该压过我的默认判断，所以「上移／下移」不允许跨到内置组里去。'
+      +'<br>匹配条件两种写法：<b>关键词</b>（逗号分隔，提到任意一个就算）和<b>正则</b>（写明白才开始用）。排除条件写错了会被忽略，不会把整条规则废掉。'
+      +'<br>之所以给你一个<b>测试框</b>：规则写完必须当场看见它命中什么，否则你没法知道自己写对没有 —— 一个调不动的规则，等于没有规则。'));
+    setTimeout(function(){
+      var t=document.getElementById('ruleTestIn');
+      if(!t){return;}
+      t.addEventListener('input',testLive);
+      t.addEventListener('keydown',function(ev){if(ev.key==='Enter'){ev.preventDefault();testLive();}});
+      testLive();
+    },0);
+  }
+  box.appendChild(wrap);
+}
+function ruleForm(ru){
+  var isNew=!ru;
+  var f=el('div','rt-form');
+  var curMode=(ru&&ru.re)?'re':'kw';
+  var ni=el('input','inline-in');
+  ni.style.maxWidth='170px';
+  ni.setAttribute('placeholder','规则名，比如「咖啡 → 餐饮」');
+  ni.value=ru?(ru.t||''):'';
+  f.appendChild(ni);
+
+  var seg=el('span','segsm');
+  var b1=mkbtn('','关键词',null,null,curMode==='kw');
+  var b2=mkbtn('','正则',null,null,curMode==='re');
+  seg.appendChild(b1);seg.appendChild(b2);
+  f.appendChild(seg);
+
+  var mi=el('input','inline-in');
+  mi.style.maxWidth='210px';
+  mi.setAttribute('placeholder',curMode==='kw'?'关键词，逗号分隔：拿铁,美式':'正则，比如 早餐|午饭|晚饭');
+  mi.value=ru?(curMode==='kw'?(ru.kw||''):(ru.re||'')):'';
+  f.appendChild(mi);
+
+  var ei=el('input','inline-in');
+  ei.style.maxWidth='140px';
+  ei.setAttribute('placeholder','排除，可留空');
+  ei.value=ru?(ru.ex||''):'';
+  f.appendChild(ei);
+
+  var sel=el('select','sel');
+  var opts=ruleTargetOptions();
+  for(var i=0;i<opts.length;i++){
+    var o=el('option','',opts[i].t);
+    o.value=opts[i].v;
+    if(ru&&ru.to===opts[i].v){o.selected=true;}
+    sel.appendChild(o);
+  }
+  if(!ru){sel.value='rt_kcal_in';}
+  f.appendChild(sel);
+
+  b1.addEventListener('click',function(){
+    curMode='kw';b1.className='is-on';b2.className='';
+    mi.setAttribute('placeholder','关键词，逗号分隔：拿铁,美式');
+  });
+  b2.addEventListener('click',function(){
+    curMode='re';b2.className='is-on';b1.className='';
+    mi.setAttribute('placeholder','正则，比如 早餐|午饭|晚饭');
+  });
+
+  var save=el('button','btn btn-main',isNew?'创建':'保存');
+  var no=el('button','btn','取消');
+  f.appendChild(save);f.appendChild(no);
+  save.addEventListener('click',function(){
+    var raw=mi.value.trim();
+    if(!raw){toast('先写要匹配什么');mi.focus();return;}
+    if(curMode==='re'&&riskyRegex(raw)){toast('这个正则可能把页面卡死，换个写法');mi.focus();return;}
+    var target=sel.value;
+    if(!ruleTarget(target)){toast('这个目标已经不存在了，重选一个');return;}
+    var rec={
+      id:isNew?('u'+Date.now()):ru.id,
+      sys:false,
+      on:isNew?true:(ru.on!==false),
+      t:ni.value.trim()||raw,
+      kw:curMode==='kw'?raw:'',
+      re:curMode==='re'?raw:'',
+      ex:ei.value.trim(),
+      to:target
+    };
+    if(isNew){addRule(rec);}
+    else{ru.t=rec.t;ru.kw=rec.kw;ru.re=rec.re;ru.ex=rec.ex;ru.to=rec.to;}
+    RULE_EDIT=null;
+    renderCapCfg();
+    renderCaptureTypes();
+    renderCaptureRes();
+    renderSettingsCapture();
+    toast(isNew?'规则已加上 · 会排在内置规则前面':'规则已保存');
+  });
+  no.addEventListener('click',function(){RULE_EDIT=null;renderCapCfg();});
+  setTimeout(function(){ni.focus();},0);
+  return f;
+}
+function testLive(){
+  var inp=document.getElementById('ruleTestIn');
+  var out=document.getElementById('ruleTestOut');
+  if(!inp||!out){return;}
+  out.innerHTML='';
+  var v=inp.value.trim();
+  if(!v){
+    out.appendChild(el('div','','上面随便打一句，比如「1800 kcal」或「深蹲 80kg × 5 × 5」，回车看看。'));
+    return;
+  }
+  var r=resolveCapture(v,'auto');
+  var l1=el('div','');
+  l1.appendChild(el('span','','会记成：'));
+  l1.appendChild(el('b','',describeCapture(r)));
+  out.appendChild(l1);
+  var l2=el('div','');
+  if(r.rule){l2.appendChild(el('span','test-hit','命中：'+ruleName(r.rule)));}
+  else{l2.appendChild(el('span','test-bad','没有规则命中 → 会进收件箱。想让它被认出来，就加一条规则。'));}
+  out.appendChild(l2);
+  out.appendChild(el('div','cfgrow-s','逐条检查（从上往下，先命中先用）：'));
+  var num=firstNumber(v);
+  for(var i=0;i<AUTO_RULES.length;i++){
+    var ru=AUTO_RULES[i];
+    var hit=ruleMatches(ru,v);
+    var why='';
+    if(!ru.on){hit=false;why='（已关闭）';}
+    if(hit){
+      var tg=ruleTarget(ru.to);
+      if(!tg){hit=false;why='（目标已不存在）';}
+      else if(tg.kind==='rt'&&tg.rt.mode==='number'&&num===null){hit=false;why='（数值记录项，但这句里没有数字）';}
+      else if(tg.kind==='money'&&num===null){hit=false;why='（支出，但这句里没有数字）';}
+    }
+    out.appendChild(el('div',hit?'test-hit':'cfgrow-s',(i+1)+'. '+ruleName(ru)+' → '+(hit?'命中':'不命中')+why));
+  }
+}
+function renderSettingsCapture(){
+  var box=document.getElementById('settingsCapture');
+  if(!box){return;}
+  box.innerHTML='';
+  var cands=captureCandidates();
+  var names=[];
+  for(var i=0;i<cands.length;i++){names.push(cands[i].t);}
+  var k1=el('div','kv');
+  k1.appendChild(el('span','kv-k','首页快记里出现的类目'));
+  k1.appendChild(el('span','kv-v',names.length?names.join(' · '):'（全关掉了）'));
+  box.appendChild(k1);
+  var on=0;
+  for(var j=0;j<AUTO_RULES.length;j++){if(AUTO_RULES[j].on){on++;}}
+  var k2=el('div','kv');
+  k2.appendChild(el('span','kv-k','自动判断规则'));
+  k2.appendChild(el('span','kv-v','生效 '+on+' / 共 '+AUTO_RULES.length+' 条'));
+  box.appendChild(k2);
+  var k3=el('div','kv');
+  k3.appendChild(el('span','kv-k','其中你自己写的'));
+  k3.appendChild(el('span','kv-v',userRuleCount()+' 条 · 排在内置规则前面'));
+  box.appendChild(k3);
+}
+function focusCapture(){
+  var c=document.getElementById('capture');
+  if(!c){return;}
+  if(!document.querySelector('[data-page="today"]').classList.contains('is-on')){go('today');}
+  c.classList.add('capture-hot');
+  setTimeout(function(){c.classList.remove('capture-hot');},1200);
+  document.getElementById('quickInput').focus();
+}
+var delTimer=null;
+function disarmDelete(){
+  var b=document.getElementById('dDelBtn');
+  if(!b){return;}
+  b.classList.remove('btn-armed');
+  b.textContent='删除领域';
+  if(delTimer){clearTimeout(delTimer);delTimer=null;}
+}
+function renderAll(){
+  renderSpaces();
+  renderPins();
+  renderSettingsDomains();
+  renderSettingsCapture();
+  renderDomain(CURRENT);
+}
+function addToInbox(text){
+  var li=el('li','row');
+  li.appendChild(el('span','cbox'));
+  var main=el('span','row-main');
+  main.appendChild(el('span','row-name',text));
+  main.appendChild(el('span','row-meta','刚记下 · 待归类'));
+  li.appendChild(main);
+  var btn=el('button','chip','归类');
+  li.appendChild(btn);
+  var ul=document.getElementById('inboxNew');
+  ul.insertBefore(li,ul.firstChild);
+  var c=document.getElementById('inboxCount');
+  var n=Number(c.getAttribute('data-n'))+1;
+  c.setAttribute('data-n',String(n));
+  c.textContent=n+' 条待归类';
+}
+function wireQuick(inputId,btnId){
+  var input=document.getElementById(inputId);
+  var btn=document.getElementById(btnId);
+  function submit(){
+    var v=input.value.trim();
+    if(!v){return;}
+    addToInbox(v);
+    input.value='';
+    toast('已存进收件箱');
+  }
+  input.addEventListener('keydown',function(e){
+    if(e.key==='Enter'){e.preventDefault();submit();}
+  });
+  btn.addEventListener('click',submit);
+}
+function wireCapture(){
+  var input=document.getElementById('quickInput');
+  var btn=document.getElementById('quickBtn');
+  input.addEventListener('keydown',function(e){
+    if(e.key==='Enter'){e.preventDefault();submitQuick();}
+  });
+  input.addEventListener('input',renderCaptureRes);
+  btn.addEventListener('click',submitQuick);
+}
+document.addEventListener('keydown',function(e){
+  var tag=((e.target&&e.target.tagName)||'').toLowerCase();
+  if(tag==='input'||tag==='textarea'){return;}
+  if(e.key==='/'||((e.ctrlKey||e.metaKey)&&String(e.key).toLowerCase()==='k')){
+    e.preventDefault();
+    focusCapture();
+  }
+});
+function go(name){
+  var ps=document.querySelectorAll('.page');
+  for(var i=0;i<ps.length;i++){
+    ps[i].classList.toggle('is-on',ps[i].getAttribute('data-page')===name);
+  }
+  var hl=(name==='domain')?'spaces':name;
+  var ns=document.querySelectorAll('.navi');
+  for(var j=0;j<ns.length;j++){
+    ns[j].classList.toggle('is-on',ns[j].getAttribute('data-go')===hl);
+  }
+  var t=TITLES[name];
+  var ti,su;
+  if(name==='domain'){
+    var d=domainById(DOMAINS,CURRENT);
+    ti=d?d.name:'领域';
+    su='领域页 · 习惯 + 待办 + 目标 + 记录项';
+  }else{
+    ti=(t||['',''])[0];
+    su=(t||['',''])[1];
+  }
+  document.getElementById('ptitle').textContent=ti;
+  document.getElementById('pdate').textContent=su;
+  window.scrollTo(0,0);
+}
+document.addEventListener('click',function(e){
+  var t=e.target;
+  if(!t||!t.closest){return;}
+
+  var pin=t.closest('[data-pin]');
+  if(pin){
+    var on=togglePin(DOMAINS,pin.getAttribute('data-pin'));
+    renderSpaces();
+    renderPins();
+    renderSettingsDomains();
+    renderDomain(CURRENT);
+    toast(on?'已加到顶部快捷':'已从顶部快捷移除');
+    return;
+  }
+
+  var cf=t.closest('[data-cfg]');
+  if(cf){
+    CFG_OPEN=!CFG_OPEN;
+    CFG_TAB='cats';
+    RULE_EDIT=null;
+    renderCapCfg();
+    if(CFG_OPEN){document.getElementById('quickInput').focus();}
+    return;
+  }
+
+  var ctab=t.closest('[data-cfgtab]');
+  if(ctab){
+    CFG_TAB=ctab.getAttribute('data-cfgtab');
+    RULE_EDIT=null;
+    renderCapCfg();
+    return;
+  }
+
+  var ctg=t.closest('[data-cfgtoggle]');
+  if(ctg){
+    var ck=ctg.getAttribute('data-cfgtoggle');
+    var nowOn=toggleCaptureMode(ck);
+    if(nowOn===null){toast('这一项关不掉');}
+    else{
+      renderCapCfg();
+      renderCaptureTypes();
+      renderCaptureRes();
+      renderSettingsCapture();
+      toast(nowOn?'已让它在首页出现':'已让它不在首页出现');
+    }
+    return;
+  }
+
+  var rtg=t.closest('[data-ruletoggle]');
+  if(rtg){
+    var tid2=rtg.getAttribute('data-ruletoggle');
+    for(var q1=0;q1<AUTO_RULES.length;q1++){
+      if(AUTO_RULES[q1].id===tid2){AUTO_RULES[q1].on=!AUTO_RULES[q1].on;break;}
+    }
+    renderCapCfg();
+    renderSettingsCapture();
+    return;
+  }
+
+  var rup=t.closest('[data-ruleup]');
+  if(rup){
+    if(!moveRule(rup.getAttribute('data-ruleup'),-1)){toast('已经在最上面 —— 你的规则不会跑到内置规则后面');}
+    renderCapCfg();
+    return;
+  }
+
+  var rdn=t.closest('[data-ruledown]');
+  if(rdn){
+    if(!moveRule(rdn.getAttribute('data-ruledown'),1)){toast('已经在最下面了');}
+    renderCapCfg();
+    return;
+  }
+
+  var red=t.closest('[data-ruleedit]');
+  if(red){
+    var eid=red.getAttribute('data-ruleedit');
+    RULE_EDIT=(RULE_EDIT===eid)?null:eid;
+    renderCapCfg();
+    return;
+  }
+
+  var rdl=t.closest('[data-ruledel]');
+  if(rdl){
+    removeRule(rdl.getAttribute('data-ruledel'));
+    RULE_EDIT=null;
+    renderCapCfg();
+    renderCaptureTypes();
+    renderCaptureRes();
+    renderSettingsCapture();
+    toast('规则已删掉');
+    return;
+  }
+
+  var rnw=t.closest('[data-rulenew]');
+  if(rnw){
+    RULE_EDIT=(RULE_EDIT==='new')?null:'new';
+    renderCapCfg();
+    return;
+  }
+
+  var md=t.closest('[data-mode]');
+  if(md){
+    CAPTURE_MODE=md.getAttribute('data-mode');
+    renderCaptureTypes();
+    renderCaptureRes();
+    document.getElementById('quickInput').focus();
+    return;
+  }
+
+  var ra=t.closest('[data-rt-add]');
+  if(ra){
+    RT_UI={type:'entry',id:ra.getAttribute('data-rt-add')};
+    renderRecordTypes(CURRENT);
+    return;
+  }
+
+  var re=t.closest('[data-rt-edit]');
+  if(re){
+    var rid=re.getAttribute('data-rt-edit');
+    RT_UI=(RT_UI&&RT_UI.id===rid&&RT_UI.type==='settings')?null:{type:'settings',id:rid};
+    renderRecordTypes(CURRENT);
+    return;
+  }
+
+  var nrt=t.closest('[data-newrt]');
+  if(nrt){
+    RT_UI=(RT_UI&&RT_UI.type==='new')?null:{type:'new'};
+    renderRecordTypes(CURRENT);
+    return;
+  }
+
+  var dm=t.closest('[data-domain]');
+  if(dm){
+    renderDomain(dm.getAttribute('data-domain'));
+    go('domain');
+    return;
+  }
+
+  var nd=t.closest('[data-newdomain]');
+  if(nd){
+    makeNewDomainCard(nd);
+    return;
+  }
+
+  var g=t.closest('[data-go]');
+  if(g){go(g.getAttribute('data-go'));return;}
+
+  var k=t.closest('[data-tick]');
+  if(k){
+    k.classList.toggle('tick-on');
+    k.textContent=k.classList.contains('tick-on')?'已打卡':'打卡';
+  }
+});
+function makeNewDomainCard(host){
+  var card=el('div','card');
+  var inp=el('input','inline-in');
+  inp.setAttribute('placeholder','领域名字，比如「考证」');
+  card.appendChild(inp);
+  var rowEl=el('div','chips');
+  rowEl.style.marginTop='8px';
+  var ok=el('button','btn btn-main','创建');
+  var no=el('button','btn','取消');
+  rowEl.appendChild(ok);
+  rowEl.appendChild(no);
+  card.appendChild(rowEl);
+  host.parentNode.replaceChild(card,host);
+  inp.focus();
+  function cancel(){
+    var back=el('div','card card-add');
+    back.setAttribute('data-newdomain','1');
+    back.appendChild(el('div','card-t','+ 新建领域'));
+    back.appendChild(el('div','card-s','考证 / 育儿 / 副业 …'));
+    card.parentNode.replaceChild(back,card);
+  }
+  function commit(){
+    var name=inp.value.trim();
+    if(!name){toast('先写个名字');inp.focus();return;}
+    var used=nextDomainName(DOMAINS,name);
+    var d=newDomain('d'+Date.now(),used);
+    DOMAINS.push(d);
+    renderAll();
+    renderDomain(d.id);
+    go('domain');
+    toast('已创建「'+used+'」，结构已就绪');
+  }
+  ok.addEventListener('click',commit);
+  no.addEventListener('click',cancel);
+  inp.addEventListener('keydown',function(ev){
+    if(ev.key==='Enter'){ev.preventDefault();commit();}
+    if(ev.key==='Escape'){ev.preventDefault();cancel();}
+  });
+}
+document.getElementById('dRenameBtn').addEventListener('click',function(){
+  var d=domainById(DOMAINS,CURRENT);
+  var v=document.getElementById('dRenameIn').value.trim();
+  if(!d||!v){toast('名字不能空');return;}
+  var clash=false;
+  for(var i=0;i<DOMAINS.length;i++){
+    if(DOMAINS[i].id!==d.id&&DOMAINS[i].name===v){clash=true;}
+  }
+  if(clash){toast('已经有同名领域了');return;}
+  d.name=v;
+  renderAll();
+  go('domain');
+});
+document.getElementById('dPinBtn').addEventListener('click',function(){
+  var on=togglePin(DOMAINS,CURRENT);
+  renderAll();
+  toast(on?'已加到顶部快捷':'已从顶部快捷移除');
+});
+document.getElementById('dDelBtn').addEventListener('click',function(){
+  var b=this;
+  if(!b.classList.contains('btn-armed')){
+    b.classList.add('btn-armed');
+    b.textContent='再点一次确认删除';
+    delTimer=setTimeout(disarmDelete,4000);
+    return;
+  }
+  var d=domainById(DOMAINS,CURRENT);
+  if(!d){return;}
+  if(DOMAINS.length<=1){toast('至少留一个领域');disarmDelete();return;}
+  DOMAINS.splice(DOMAINS.indexOf(d),1);
+  disarmDelete();
+  renderAll();
+  renderDomain(DOMAINS[0].id);
+  go('spaces');
+  toast('已删除「'+d.name+'」· 内容已回到收件箱');
+});
+renderLists();
+renderLedger();
+renderAll();
+renderCaptureTypes();
+renderCaptureRes();
+renderCapCfg();
+renderTodayLog();
+wireCapture();
+wireQuick('inboxInput','inboxBtn');
+</script>
+</body>
+</html>
