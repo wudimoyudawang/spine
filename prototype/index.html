@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>个人计划中枢 · 设计原型 v0.4</title>
+<title>个人计划中枢 · 设计原型 v0.5</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-:root{--bg:#F5F6F8;--card:#FFFFFF;--line:#E6E8EE;--line2:#D8DCE4;--text:#1F2430;--sub:#5A6272;--muted:#8A93A3;--accent:#2F6FEB;--accent-bg:#EAF1FE;--ok:#0F7A5A;--ok-bg:#E8F6F1;--warn:#A85B00;--warn-bg:#FDF3E3;--danger:#C0392B;--danger-bg:#FDECEA;--r:12px}
+:root{--bg:#F5F6F8;--card:#FFFFFF;--line:#E6E8EE;--line2:#D8DCE4;--text:#1F2430;--sub:#5A6272;--muted:#8A93A3;--accent:#2F6FEB;--accent-bg:#EAF1FE;--ok:#0F7A5A;--ok-bg:#E8F6F1;--warn:#A85B00;--warn-bg:#FDF3E3;--danger:#C0392B;--danger-bg:#FDECEA;--mask:rgba(31,36,48,.34);--r:12px}
 body{background:var(--bg);color:var(--text);font:14px/1.6 system-ui,-apple-system,"Segoe UI","Microsoft YaHei",sans-serif}
 .app{display:flex;min-height:100vh}
 .side{width:212px;flex:none;background:var(--card);border-right:1px solid var(--line);padding:18px 12px;display:flex;flex-direction:column;gap:16px}
@@ -17,13 +17,13 @@ body{background:var(--bg);color:var(--text);font:14px/1.6 system-ui,-apple-syste
 .navi{display:block;width:100%;text-align:left;padding:9px 12px;border:0;background:none;border-radius:8px;font:inherit;font-size:13px;color:var(--sub);cursor:pointer}
 .navi:hover{background:var(--bg)}
 .navi.is-on{background:var(--accent-bg);color:var(--accent);font-weight:500}
-.navi-sub{font-size:12px;color:var(--muted)}
+.navi-split{position:relative;margin-top:6px}
+.navi-split::before{content:"";position:absolute;left:0;right:0;top:0;height:1px;background:var(--line)}
 .navi-q{display:flex;align-items:center;gap:8px}
 .dot{width:5px;height:5px;border-radius:50%;background:var(--accent);flex:none}
 .side-q{padding-top:12px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:2px}
+.side-q.is-empty{display:none}   /* 一个置顶空间都没有时，整块（含标题与分隔线）都不出现 */
 .side-q-h{font-size:11px;color:var(--muted);padding:0 12px 6px;letter-spacing:.02em}
-.side-empty{font-size:11px;color:var(--muted);padding:2px 12px 4px;line-height:1.6}
-.side-foot{margin-top:auto;border-top:1px solid var(--line);padding-top:10px;display:flex;flex-direction:column;gap:2px}
 .main{flex:1;min-width:0;padding:18px 22px 40px}
 .topbar{display:flex;align-items:baseline;gap:12px;margin-bottom:16px}
 .ptitle{font-size:18px;font-weight:500}
@@ -51,9 +51,46 @@ body{background:var(--bg);color:var(--text);font:14px/1.6 system-ui,-apple-syste
 .row-empty{padding:4px 0;font-size:12px;color:var(--muted)}
 .tick{flex:none;padding:4px 12px;border:1px solid var(--line2);border-radius:14px;background:var(--card);font:inherit;font-size:12px;color:var(--sub);cursor:pointer}
 .tick-on{background:var(--ok-bg);border-color:#A9DCC9;color:var(--ok)}
+/* --- 今日页条目删除：常驻「×」，两段确认（点一次变红要确认，再点才真删） ---
+   常驻而不做 hover 才出现：窄屏是触屏，没有 hover，两端会不一致。 */
+.delbtn{flex:none;width:26px;height:26px;display:inline-flex;align-items:center;justify-content:center;padding:0;border:1px solid transparent;border-radius:8px;background:transparent;font:inherit;font-size:15px;line-height:1;color:var(--muted);cursor:pointer}
+.delbtn:hover{border-color:#F3C9C4;background:var(--danger-bg);color:var(--danger)}
+.delbtn.is-armed{width:auto;padding:0 9px;border-color:#F3C9C4;background:var(--danger-bg);color:var(--danger);font-size:11px;font-weight:500}
 .bar{flex:1;height:6px;border-radius:3px;background:var(--line);overflow:hidden}
 .bar-fill{display:block;height:100%;background:var(--accent)}
 .row-val{flex:none;font-size:12px;color:var(--sub);min-width:34px;text-align:right}
+/* --- 长期目标：进度调节控件（滑杆 + 快捷按钮） --- */
+.goalrow{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--line);flex-wrap:wrap;cursor:pointer}
+.goalrow:first-child{border-top:0}
+.goalrow:hover .row-name{color:var(--accent)}
+.row-goal{cursor:pointer}
+.row-goal:hover .row-name{color:var(--accent)}
+.goal-main{flex:1 1 168px;min-width:0;display:flex;flex-direction:column;gap:2px}
+.gbar{flex:1 1 110px;min-width:96px;height:16px;margin:0;padding:0;cursor:pointer;background:none;appearance:none;-webkit-appearance:none}
+.gbar::-webkit-slider-runnable-track{height:6px;border-radius:3px;background:var(--line);background:linear-gradient(to right,var(--accent) 0 var(--v,0%),var(--line) var(--v,0%) 100%)}
+.gbar::-webkit-slider-thumb{appearance:none;-webkit-appearance:none;width:13px;height:13px;margin-top:-3.5px;border-radius:50%;background:var(--card);border:1.5px solid var(--accent)}
+.gbar::-moz-range-track{height:6px;border-radius:3px;background:var(--line);background:linear-gradient(to right,var(--accent) 0 var(--v,0%),var(--line) var(--v,0%) 100%)}
+.gbar::-moz-range-thumb{width:12px;height:12px;border:1.5px solid var(--accent);border-radius:50%;background:var(--card)}
+.gbar:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:8px}
+.goal-val{flex:none;min-width:42px;text-align:right;font-size:12px;color:var(--sub);font-variant-numeric:tabular-nums}
+.goal-btns{flex:none;display:flex;gap:4px}
+.gbtn{padding:3px 9px;border:1px solid var(--line2);border-radius:12px;background:var(--card);font:inherit;font-size:11px;color:var(--sub);cursor:pointer;font-variant-numeric:tabular-nums}
+.gbtn:hover{border-color:var(--accent);color:var(--accent)}
+.gbtn:active{background:var(--accent-bg);border-color:var(--accent);color:var(--accent)}
+/* --- 长期计划弹窗（调整 / 新增） --- */
+.modal{display:none;position:fixed;inset:0;z-index:40;align-items:center;justify-content:center;padding:20px}
+.modal.is-on{display:flex}
+.modal-mask{position:absolute;inset:0;background:var(--mask)}
+.modal-box{position:relative;width:100%;max-width:420px;max-height:calc(100vh - 40px);overflow:auto;background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px}
+.modal-h{display:flex;align-items:baseline;gap:10px;margin-bottom:14px}
+.modal-t{font-size:15px;font-weight:500}
+.field{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+.field-k{font-size:12px;color:var(--sub)}
+.gm-prog{display:flex;align-items:center;gap:10px}
+.gm-prog .gbar{flex:1 1 auto}
+.modal-f{display:flex;align-items:center;gap:8px;margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
+.modal-hint{flex:1;min-width:0;font-size:12px;color:var(--muted);line-height:1.5}
+.logtag{display:inline-block;padding:0 6px;border-radius:5px;background:var(--accent-bg);color:var(--accent);font-size:11px}
 .barrow{display:flex;align-items:center;gap:10px;padding:7px 0}
 .barrow-n{width:52px;flex:none;font-size:13px}
 .barrow-v{width:78px;flex:none;text-align:right;font-size:12px;color:var(--sub)}
@@ -117,9 +154,14 @@ body{background:var(--bg);color:var(--text);font:14px/1.6 system-ui,-apple-syste
 .capture-foot{display:flex;align-items:flex-start;gap:8px;margin-top:10px}
 .capture-foot .capture-types{margin-top:0;flex:1;min-width:0}
 .mchip-cfg{flex:none;white-space:nowrap;border-style:dashed}
-.mchip{padding:5px 12px;border:1px solid var(--line2);border-radius:14px;background:var(--card);font:inherit;font-size:12px;color:var(--sub);cursor:pointer}
+.mchip{display:inline-flex;align-items:center;min-height:26px;padding:0 10px;border:1px solid var(--line2);border-radius:13px;background:var(--card);font:inherit;font-size:11px;white-space:nowrap;color:var(--sub);cursor:pointer}
 .mchip:hover{border-color:var(--accent);color:var(--accent)}
 .mchip.is-on{background:var(--accent-bg);border-color:#BBD4F8;color:var(--accent);font-weight:500}
+/* --- 新增弹窗里的「空间」选择 --- */
+.spacepick{display:flex;flex-wrap:wrap;gap:6px}
+.mchip-new{border-style:dashed;color:var(--muted)}
+.addbtn{display:inline-flex;align-items:center;min-height:28px;padding:0 12px;border:1px dashed var(--line2);border-radius:14px;background:var(--card);font:inherit;font-size:12px;white-space:nowrap;color:var(--sub);cursor:pointer}
+.addbtn:hover{border-color:var(--accent);color:var(--accent)}
 .capture-res{display:flex;align-items:center;gap:6px;margin-top:10px;padding:8px 10px;border-radius:8px;background:var(--bg);font-size:12px;color:var(--sub);line-height:1.5}
 .capture-res b{color:var(--text);font-weight:500}
 .res-fix{margin-left:auto;color:var(--accent);cursor:pointer;white-space:nowrap}
@@ -173,7 +215,7 @@ body{background:var(--bg);color:var(--text);font:14px/1.6 system-ui,-apple-syste
 .test-out b{color:var(--text);font-weight:500}
 .test-hit{color:var(--accent)}
 .test-bad{color:var(--danger)}
-.toast{position:fixed;left:50%;bottom:32px;transform:translate(-50%,12px);background:#2B3243;color:#fff;font-size:13px;padding:9px 18px;border-radius:20px;opacity:0;pointer-events:none;transition:opacity .18s,transform .18s}
+.toast{position:fixed;left:50%;bottom:32px;z-index:60;transform:translate(-50%,12px);background:var(--text);color:#fff;font-size:13px;padding:9px 18px;border-radius:20px;opacity:0;pointer-events:none;transition:opacity .18s,transform .18s}
 .toast-on{opacity:1;transform:translate(-50%,0)}
 @media (max-width:920px){
   .app{flex-direction:column}
@@ -182,8 +224,8 @@ body{background:var(--bg);color:var(--text);font:14px/1.6 system-ui,-apple-syste
   .navi{width:auto;white-space:nowrap}
   .side-q{border-top:0;padding-top:0}
   .side-q-h{display:none}
-  .side-empty{padding:6px 12px}
-  .side-foot{margin-top:0;border-top:1px solid var(--line);padding-top:8px;flex-direction:row}
+  .navi-split{margin-top:0;margin-left:6px}
+  .navi-split::before{left:0;right:auto;top:0;bottom:0;width:1px;height:auto}
   .main{padding:14px}
   .g2,.g3,.g4{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
@@ -194,22 +236,20 @@ body{background:var(--bg);color:var(--text);font:14px/1.6 system-ui,-apple-syste
   <aside class="side">
     <div class="brand">
       <div class="brand-t">个人计划中枢</div>
-      <div class="brand-s">设计原型 v0.4 · 只看结构</div>
+      <div class="brand-s">设计原型 v0.5 · 只看结构</div>
     </div>
     <nav class="nav">
       <button class="navi is-on" data-go="today">今日</button>
       <button class="navi" data-go="inbox">收集</button>
       <button class="navi" data-go="notes">随心记</button>
       <button class="navi" data-go="spaces">空间</button>
+      <button class="navi" data-go="ledger">记账</button>
       <button class="navi" data-go="review">复盘</button>
+      <button class="navi navi-split" data-go="settings">设置</button>
     </nav>
     <div class="side-q">
       <div class="side-q-h">顶部快捷</div>
       <div class="nav" id="sideQuickList"></div>
-    </div>
-    <div class="side-foot">
-      <button class="navi navi-sub" data-go="settings">设置</button>
-      <button class="navi navi-sub" data-go="stack">技术栈</button>
     </div>
   </aside>
 
@@ -245,26 +285,18 @@ body{background:var(--bg);color:var(--text);font:14px/1.6 system-ui,-apple-syste
         </div>
 
         <div class="block">
-          <div class="block-h"><span class="tag">今天</span><span class="block-note" id="todayCount"></span></div>
+          <div class="block-h"><span class="tag">今天</span><span class="block-note" id="todayCount"></span><button class="addbtn" data-add-open="todo">+ 新增待办</button></div>
           <ul class="list" id="dueList"></ul>
         </div>
 
         <div class="block">
-          <div class="block-h"><span class="tag">习惯</span><span class="block-note">今天该打卡的</span></div>
-          <ul class="list">
-            <li class="row"><span class="row-main"><span class="row-name">饮水 2L</span><span class="row-meta">个人 · 每天</span></span><button class="tick" data-tick>打卡</button></li>
-            <li class="row"><span class="row-main"><span class="row-name">阅读 30 分钟</span><span class="row-meta">学习 · 每天</span></span><button class="tick" data-tick>打卡</button></li>
-            <li class="row"><span class="row-main"><span class="row-name">23:30 前睡</span><span class="row-meta">个人 · 工作日</span></span><button class="tick" data-tick>打卡</button></li>
-          </ul>
+          <div class="block-h"><span class="tag">习惯</span><span class="block-note">今天该打卡的</span><button class="addbtn" data-add-open="habit">+ 新增习惯</button></div>
+          <ul class="list" id="todayHabits"></ul>
         </div>
 
         <div class="block">
-          <div class="block-h"><span class="tag">计划</span><span class="block-note">长期目标只看进度</span></div>
-          <div class="row">
-            <span class="row-main"><span class="row-name">读完《置身事内》</span><span class="row-meta">学习 · 长期 · 每周 30 页</span></span>
-            <span class="bar"><span class="bar-fill" style="width:60%"></span></span>
-            <span class="row-val">60%</span>
-          </div>
+          <div class="block-h"><span class="tag">计划</span><span class="block-note">点条目可调整进度</span><button class="addbtn" data-add-open="goal">+ 新增长期计划</button></div>
+          <div id="todayGoals"></div>
         </div>
 
         <div class="block">
@@ -311,19 +343,8 @@ body{background:var(--bg);color:var(--text);font:14px/1.6 system-ui,-apple-syste
         <div class="block-h"><span class="tag">领域</span><span class="block-note">点 ☆ 把它放到左上角，随时一键进入</span></div>
         <div class="grid g4" id="spaceGrid"></div>
         <div class="note">每个领域里都有<b>待办、习惯、长期目标</b>这三样，结构完全一样 —— 变的只是名字和你填进去的东西。所以「考证」「育儿」「副业」这类领域，随时新建一个就行，不用等谁给你加。
-        <br>领域可以改名、可以删。删除只删入口，里面的内容会回到收件箱等你重新归类。</div>
-
-        <div class="block" style="margin-top:16px">
-          <div class="block-h"><span class="tag">记账</span><span class="block-note">唯一有独立页面的记录，因为它不只是记个数字</span></div>
-          <div class="grid g2">
-            <div class="card" data-go="ledger"><div class="card-t">记账</div><div class="card-s">流水 · 分类 · 按项目看</div></div>
-          </div>
-          <div class="note">
-            <b>热量、体重都已经不在这里了</b> —— 它们是<b>健身领域下面的数值记录项</b>，和「深蹲最大重量」「模拟考试分数」是同一种东西，只是名字和单位不同。点「空间 → 健身」就能看到。
-            <br>所以「记热量」不是一个独立功能，而是你自己建的一条记录项。以后想加「喝水量」「睡眠时长」「阅读页数」，同样不用改这个应用，加一条记录项就行。
-            <br>只有<b>记账</b>留了独立页面 —— 它有收支方向和分类统计，不只是记个数字。
-          </div>
-        </div>
+        <br>领域可以改名、可以删。删除只删入口，里面的内容会回到收件箱等你重新归类。
+        <br><b>热量、体重不在这里</b> —— 它们是<b>健身领域下面的数值记录项</b>，和「深蹲最大重量」「模拟考试分数」是同一种东西，只是名字和单位不同。点「健身」就能看到；以后想加「喝水量」「睡眠时长」「阅读页数」，加一条记录项就行，不用改这个应用。</div>
       </section>
 
       <section class="page" data-page="domain">
@@ -336,8 +357,9 @@ body{background:var(--bg);color:var(--text);font:14px/1.6 system-ui,-apple-syste
           <ul class="list" id="dTodos"></ul>
         </div>
         <div class="block">
-          <div class="block-h"><span class="tag">长期目标</span><span class="block-note">只看进度</span></div>
+          <div class="block-h"><span class="tag">长期目标</span><span class="block-note">点条目可调整 · 拖滑杆或点 +1/+2/+5</span></div>
           <div id="dGoals"></div>
+          <div style="margin-top:10px"><button class="btn" id="dAddGoalBtn" data-goal-new="1">+ 新增长期计划</button></div>
         </div>
         <div class="block">
           <div class="block-h"><span class="tag">记录项</span><span class="block-note">名称和方式都你自己定 · 两种方式</span></div>
@@ -365,6 +387,7 @@ body{background:var(--bg);color:var(--text);font:14px/1.6 system-ui,-apple-syste
 
       <section class="page" data-page="ledger">
         <div class="block">
+          <div class="block-h"><span class="tag">本月</span><span class="block-note">按分类从多到少</span></div>
           <div class="stat"><div class="stat-v" id="ledgerTotal"></div><div class="stat-k">2026 年 9 月支出合计</div></div>
           <div id="ledgerBars"></div>
         </div>
@@ -441,22 +464,6 @@ body{background:var(--bg);color:var(--text);font:14px/1.6 system-ui,-apple-syste
           <div class="note">导出是一键完成的全量 JSON，包含所有事项、记录和随心记。不用等这个软件停止维护的那天再想办法搬数据 —— 随时能带走，才是真的属于你。</div>
         </div>
         <div class="block">
-          <div class="block-h"><span class="tag">外观</span><span class="block-note">先做浅色，够用</span></div>
-          <div class="kv"><span class="kv-k">主题</span><span class="kv-v">浅色</span></div>
-        </div>
-      </section>
-
-      <section class="page" data-page="stack">
-        <div class="block">
-          <div class="block-h"><span class="tag">技术栈</span><span class="block-note">这一页是原型说明，正式版会去掉</span></div>
-          <div class="stackrow now"><span class="stackrow-t">前端</span><span class="stackrow-s">React + TypeScript + Vite + Tailwind，PWA 加到主屏</span><span class="stackrow-w">现在</span></div>
-          <div class="stackrow now"><span class="stackrow-t">本地数据</span><span class="stackrow-s">IndexedDB（Dexie）· 未登录也完整可用</span><span class="stackrow-w">现在</span></div>
-          <div class="stackrow now"><span class="stackrow-t">类型契约</span><span class="stackrow-s">Pydantic model → OpenAPI → 生成的 TS 类型</span><span class="stackrow-w">现在</span></div>
-          <div class="stackrow"><span class="stackrow-t">后端</span><span class="stackrow-s">Python / FastAPI + SQLModel</span><span class="stackrow-w">第5步</span></div>
-          <div class="stackrow"><span class="stackrow-t">数据库</span><span class="stackrow-s">SQLite 单文件（将来可加 sqlite-vec 扩展）</span><span class="stackrow-w">第5步</span></div>
-          <div class="stackrow"><span class="stackrow-t">部署</span><span class="stackrow-s">Docker Compose 单容器 + Caddy 提供 HTTPS</span><span class="stackrow-w">第5步</span></div>
-        </div>
-        <div class="block">
           <div class="block-h"><span class="tag">这一版不做的</span><span class="block-note">全部已明确记录，不是忘了</span></div>
           <div class="kv"><span class="kv-k">账号、登录、多端同步</span><span class="kv-v">第 5 步</span></div>
           <div class="kv"><span class="kv-k">AI 语义识别（真正读懂一句话）</span><span class="kv-v">本轮不做 · 现在用你自己可写的规则表</span></div>
@@ -475,12 +482,85 @@ body{background:var(--bg);color:var(--text);font:14px/1.6 system-ui,-apple-syste
             <br>关键词覆盖绝大多数真实需求（「提到深蹲就归力量训练」）；真需要复杂的，切到正则。<b>不排斥以后支持脚本，但不在 v1 里为它留一个洞。</b>
           </div>
         </div>
+        <div class="block">
+          <div class="block-h"><span class="tag">外观</span><span class="block-note">先做浅色，够用</span></div>
+          <div class="kv"><span class="kv-k">主题</span><span class="kv-v">浅色</span></div>
+        </div>
+        <div class="block">
+          <div class="block-h"><span class="tag">技术栈</span><span class="block-note">原型说明，正式版会去掉</span></div>
+          <div class="stackrow now"><span class="stackrow-t">前端</span><span class="stackrow-s">React + TypeScript + Vite + Tailwind，PWA 加到主屏</span><span class="stackrow-w">现在</span></div>
+          <div class="stackrow now"><span class="stackrow-t">本地数据</span><span class="stackrow-s">IndexedDB（Dexie）· 未登录也完整可用</span><span class="stackrow-w">现在</span></div>
+          <div class="stackrow now"><span class="stackrow-t">类型契约</span><span class="stackrow-s">Pydantic model → OpenAPI → 生成的 TS 类型</span><span class="stackrow-w">现在</span></div>
+          <div class="stackrow"><span class="stackrow-t">后端</span><span class="stackrow-s">Python / FastAPI + SQLModel</span><span class="stackrow-w">第5步</span></div>
+          <div class="stackrow"><span class="stackrow-t">数据库</span><span class="stackrow-s">SQLite 单文件（将来可加 sqlite-vec 扩展）</span><span class="stackrow-w">第5步</span></div>
+          <div class="stackrow"><span class="stackrow-t">部署</span><span class="stackrow-s">Docker Compose 单容器 + Caddy 提供 HTTPS</span><span class="stackrow-w">第5步</span></div>
+        </div>
       </section>
 
     </div>
   </main>
 </div>
 <div class="toast" id="toast">已存进收件箱</div>
+
+<div class="modal" id="goalModal">
+  <div class="modal-mask" data-goal-cancel="1"></div>
+  <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="gmTitle">
+    <div class="modal-h">
+      <span class="modal-t" id="gmTitle">调整长期计划</span>
+      <span class="block-note" id="gmDomain"></span>
+    </div>
+    <label class="field">
+      <span class="field-k">目标名称（必填）</span>
+      <input class="inline-in" id="gmName" placeholder="比如「读完《置身事内》」">
+    </label>
+    <label class="field">
+      <span class="field-k">说明，选填</span>
+      <input class="inline-in" id="gmMeta" placeholder="比如「每周 30 页 · 已读 210/350 页」">
+    </label>
+    <div class="field">
+      <span class="field-k">当前进度</span>
+      <div class="gm-prog">
+        <input type="range" class="gbar" id="gmRange" min="0" max="100" step="1" value="0" data-goal-range="__draft__" aria-label="进度">
+        <span class="goal-val" data-goal-val="__draft__">0%</span>
+        <div class="goal-btns" id="gmBtns"></div>
+      </div>
+    </div>
+    <div class="modal-f">
+      <span class="modal-hint" id="gmHint"></span>
+      <button class="btn" data-goal-cancel="1">取消</button>
+      <button class="btn btn-main" data-goal-ok="1">确认</button>
+    </div>
+  </div>
+</div>
+
+<!-- 右上角「新增」弹窗：习惯 / 待办 / 长期计划 共用同一套交互。
+     本轮只做演示 —— 能选空间、能校验、能关窗，但不写任何数据。 -->
+<div class="modal" id="addModal" data-addmodal="1">
+  <div class="modal-mask" data-addmodal-cancel="1"></div>
+  <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="amTitle">
+    <div class="modal-h">
+      <span class="modal-t" id="amTitle">新增待办</span>
+      <span class="block-note" id="amKindNote"></span>
+    </div>
+    <label class="field">
+      <span class="field-k" id="amNameK">内容（必填）</span>
+      <input class="inline-in" id="amName" placeholder="比如：周五前交周报">
+    </label>
+    <label class="field">
+      <span class="field-k">说明，选填</span>
+      <input class="inline-in" id="amMeta" placeholder="比如：今天 / 没有日期">
+    </label>
+    <div class="field">
+      <span class="field-k">放到哪个空间 <b id="amSpaceName"></b></span>
+      <div class="spacepick" id="amSpaces"></div>
+    </div>
+    <div class="modal-f">
+      <span class="modal-hint" id="amHint"></span>
+      <button class="btn" data-addmodal-cancel="1">取消</button>
+      <button class="btn btn-main" data-addmodal-ok="1">新增</button>
+    </div>
+  </div>
+</div>
 
 <script>
 /* ==PARSER_START== */
@@ -815,6 +895,23 @@ function userRuleCount(){
   for(var i=0;i<AUTO_RULES.length;i++){if(!AUTO_RULES[i].sys){n++;}}
   return n;
 }
+/* ---- 长期目标进度：0-100 整数化 ---- */
+function clampP(v){
+  var n=Math.round(Number(v));
+  if(!isFinite(n)){return 0;}
+  if(n<0){return 0;}
+  if(n>100){return 100;}
+  return n;
+}
+function goalById(list,id){
+  for(var i=0;i<list.length;i++){
+    var gs=list[i].goals||[];
+    for(var j=0;j<gs.length;j++){
+      if(gs[j].id===id){return {domain:list[i],goal:gs[j]};}
+    }
+  }
+  return null;
+}
 /* ==PARSER_END== */
 
 var TODAY='2026-09-18';
@@ -839,25 +936,25 @@ var DOMAINS=[
     id:'fitness',name:'健身',pinned:true,
     habits:[{t:'训练日打卡',m:'每周 4 次'}],
     todos:[{t:'换瑜伽垫',m:'9月21日 周一'},{t:'约体测',m:'没有日期'}],
-    goals:[{t:'硬拉 100kg',m:'当前 80kg × 5 次',p:80},{t:'体脂降到 18%',m:'当前约 21%',p:35}]
+    goals:[{id:'g-fitness-1',t:'硬拉 100kg',m:'当前 80kg × 5 次',p:80},{id:'g-fitness-2',t:'体脂降到 18%',m:'当前约 21%',p:35}]
   },
   {
     id:'study',name:'学习',pinned:false,
     habits:[{t:'阅读 30 分钟',m:'每天'}],
     todos:[{t:'整理读书笔记',m:'没有日期'},{t:'把 SmartVoyage 的章节笔记归档',m:'没有日期'}],
-    goals:[{t:'读完《置身事内》',m:'每周 30 页 · 已读 210/350 页',p:60}]
+    goals:[{id:'g-study-1',t:'读完《置身事内》',m:'每周 30 页 · 已读 210/350 页',p:60}]
   },
   {
     id:'work',name:'工作',pinned:false,
     habits:[{t:'下班前清空收件箱',m:'工作日'}],
     todos:[{t:'交上月报销单',m:'逾期 9月16日 周三'},{t:'给张工回邮件',m:'逾期 9月17日 周四'},{t:'写周报',m:'今天'}],
-    goals:[{t:'知识库项目 v1 上线',m:'方案已定 · 待开工',p:45}]
+    goals:[{id:'g-work-1',t:'知识库项目 v1 上线',m:'方案已定 · 待开工',p:45}]
   },
   {
     id:'life',name:'个人',pinned:false,
     habits:[{t:'饮水 2L',m:'每天'},{t:'23:30 前睡',m:'工作日'}],
     todos:[{t:'买跑鞋',m:'今天'},{t:'交物业费',m:'9月21日 周一'}],
-    goals:[{t:'家庭年度旅行成行',m:'还没定目的地',p:50}]
+    goals:[{id:'g-life-1',t:'家庭年度旅行成行',m:'还没定目的地',p:50}]
   }
 ];
 /* 记录项：领域专属记录，名称与方式都由用户自定义。两种方式：text 纯文字 / number 数值
@@ -924,12 +1021,13 @@ var TITLES={
   today:['今日','9月18日 周五'],
   inbox:['收集','收件箱'],
   notes:['随心记','只写，不管'],
-  spaces:['空间','你的领域 + 记账'],
+  spaces:['空间','你的领域'],
   ledger:['记账','2026 年 9 月'],
   review:['复盘','9月14日 – 9月20日'],
-  settings:['设置','数据在你手里'],
-  stack:['技术栈','原型说明页']
+  settings:['设置','数据在你手里']
 };
+/* 长期目标进度条的快捷步长（按钮文案就是 +这个数） */
+var GOAL_STEPS=[1,2,5];
 var CURRENT='fitness';
 
 function el(tag,cls,txt){
@@ -943,8 +1041,10 @@ function itemRow(it,over){
   li.appendChild(el('span','cbox'));
   var main=el('span','row-main');
   main.appendChild(el('span','row-name',it.title));
-  main.appendChild(el('span','row-meta',over?(it.domain+' · 逾期 '+it.due+' '+weekdayCN(it.due)):(it.domain+' · 今天')));
+  var tail=over?('逾期 '+it.due+' '+weekdayCN(it.due)):'今天';
+  main.appendChild(el('span','row-meta',(it.domain?it.domain+' · ':'')+tail));
   li.appendChild(main);
+  li.appendChild(delBtnEl('item:'+ITEMS.indexOf(it),it.title));
   return li;
 }
 function renderLists(){
@@ -955,6 +1055,33 @@ function renderLists(){
   for(var i=0;i<r.overdue.length;i++){ol.appendChild(itemRow(r.overdue[i],true));}
   for(var j=0;j<r.due.length;j++){dl.appendChild(itemRow(r.due[j],false));}
   document.getElementById('todayCount').textContent='待办 '+r.due.length+' 项 · 逾期 '+r.overdue.length+' 项';
+}
+/* 今日页「习惯」块 —— 从 DOMAINS 里各域的习惯渲染（不再是一段写死的 HTML），
+   这样删除才有可能真的落到数据上。每行 = 领域名 · 频率 */
+function renderTodayHabits(){
+  var ul=document.getElementById('todayHabits');
+  if(!ul){return;}
+  ul.innerHTML='';
+  var n=0;
+  for(var i=0;i<DOMAINS.length;i++){
+    var d=DOMAINS[i];
+    for(var j=0;j<d.habits.length;j++){
+      var h=d.habits[j];
+      var li=el('li','row');
+      li.appendChild(el('span','cbox'));
+      var m=el('span','row-main');
+      m.appendChild(el('span','row-name',h.t));
+      m.appendChild(el('span','row-meta',d.name+' · '+(h.m||'每天')));
+      li.appendChild(m);
+      var tk=el('button','tick','打卡');
+      tk.setAttribute('data-tick','1');
+      li.appendChild(tk);
+      li.appendChild(delBtnEl('habit:'+d.id+'|'+j,h.t));
+      ul.appendChild(li);
+      n++;
+    }
+  }
+  if(!n){ul.appendChild(el('li','row-empty','还没有习惯。点右上角「+ 新增习惯」加一个。'));}
 }
 function renderLedger(){
   var s=sumByCategory(LOGS,'money','2026-09');
@@ -1013,9 +1140,9 @@ function renderPins(){
     b.appendChild(el('span','',d.name));
     box.appendChild(b);
   }
-  if(n===0){
-    box.appendChild(el('div','side-empty','还没有快捷入口 —— 在「空间」里点 ☆ 就能加到这里。'));
-  }
+  /* 一个置顶空间都没有时，整块「顶部快捷」（含标题和那条分隔线）都不显示 —— 不放占位文案。 */
+  var host=box.closest?box.closest('.side-q'):null;
+  if(host){host.classList.toggle('is-empty',n===0);}
 }
 function renderSettingsDomains(){
   var box=document.getElementById('settingsDomains');
@@ -1074,17 +1201,37 @@ function renderDomain(id){
   }
   for(var j=0;j<d.goals.length;j++){
     var g=d.goals[j];
-    var r=el('div','row');
-    var m=el('span','row-main');
+    if(!g.id){g.id=d.id+'-g'+(j+1);}   /* 老数据兜底：每行都要有稳定的 key */
+    g.p=clampP(g.p);                   /* 越界/脏数据在渲染时归一化，保证显示与数据一致 */
+    var p=clampP(g.p);
+    var r=el('div','goalrow');
+    r.setAttribute('data-goal-open',g.id);
+    var m=el('span','goal-main');
     m.appendChild(el('span','row-name',g.t));
     m.appendChild(el('span','row-meta',g.m));
     r.appendChild(m);
-    var bar=el('span','bar');
-    var f=el('span','bar-fill');
-    f.style.width=g.p+'%';
-    bar.appendChild(f);
-    r.appendChild(bar);
-    r.appendChild(el('span','row-val',g.p+'%'));
+    var sl=el('input','gbar');
+    sl.setAttribute('type','range');
+    sl.setAttribute('min','0');sl.setAttribute('max','100');sl.setAttribute('step','1');
+    sl.setAttribute('data-goal-range',g.id);
+    sl.setAttribute('aria-label',g.t+' 进度');
+    sl.setAttribute('aria-valuetext',p+'%');
+    sl.value=p;
+    sl.style.setProperty('--v',p+'%');
+    r.appendChild(sl);
+    var val=el('span','goal-val',p+'%');
+    val.setAttribute('data-goal-val',g.id);
+    r.appendChild(val);
+    var btns=el('div','goal-btns');
+    for(var k=0;k<GOAL_STEPS.length;k++){
+      var step=GOAL_STEPS[k];
+      var b=el('button','gbtn','+'+step);
+      b.setAttribute('data-goal-add',String(step));
+      b.setAttribute('data-goal-id',g.id);
+      b.setAttribute('title','增加 '+step+' 个百分点');
+      btns.appendChild(b);
+    }
+    r.appendChild(btns);
     gb.appendChild(r);
   }
   renderRecordTypes(d.id);
@@ -1093,6 +1240,177 @@ function renderDomain(id){
   var pb=document.getElementById('dPinBtn');
   if(pb){pb.textContent=d.pinned?'从顶部快捷移除':'加到顶部快捷';}
   disarmDelete();
+}
+
+/* ================= 长期目标进度：滑杆 + 快捷按钮 =================
+   两条写入路径（滑杆 input / 按钮 click）都只走 applyGoalP()，它是唯一改 g.p 的地方。
+   优先级仲裁：快捷按钮的结果优先 —— 按钮点击后 250ms 内忽略滑杆的 input
+   （那一定是拖动过程中的陈旧事件），直到滑杆上出现一次新的按下 / 键盘操作才解锁。
+   同步保证：任何一次写入后，滑杆的 value、填充宽度、右侧百分比文字三处一起对齐。 */
+var GOAL_LOCK={};   /* goalId -> 解锁时间戳；锁期内丢弃滑杆事件 */
+var GOAL_SRC={};    /* goalId -> 'slider' | 'button'，最后一次真正生效的来源 */
+
+function goalSlider(id){
+  return document.querySelector('[data-goal-range="'+id+'"]');
+}
+function goalValText(id,p){
+  var vals=document.querySelectorAll('[data-goal-val="'+id+'"]');
+  for(var i=0;i<vals.length;i++){vals[i].textContent=p+'%';}
+}
+function syncGoalRow(id,p){
+  var sl=goalSlider(id);
+  if(sl){
+    if(Number(sl.value)!==p){sl.value=p;}   /* 滑杆永远被拉回权威值 */
+    sl.style.setProperty('--v',p+'%');
+    sl.setAttribute('aria-valuetext',p+'%');
+  }
+  goalValText(id,p);
+  if(id!==DRAFT_ID){renderTodayGoals();}     /* 草稿不参与今日页渲染 */
+}
+function applyGoalP(id,next,via){
+  var hit=resolveGoal(id);                   /* 真实目标 or 弹窗草稿，走同一套逻辑 */
+  if(!hit){return null;}
+  if(via==='slider'&&GOAL_LOCK[id]&&Date.now()<GOAL_LOCK[id]){return null;}  /* 按钮优先：丢弃陈旧滑杆事件 */
+  var p=clampP(next);
+  hit.goal.p=p;
+  GOAL_SRC[id]=via;
+  if(via==='button'){GOAL_LOCK[id]=Date.now()+250;}
+  syncGoalRow(id,p);
+  return p;
+}
+function unlockGoal(id){
+  delete GOAL_LOCK[id];   /* 出现了新的滑杆操作 → 仲裁窗口结束 */
+}
+/* 今日页的「计划」区块读同一份 DOMAINS 数据，避免出现两份对不上的百分比 */
+function renderTodayGoals(){
+  var box=document.getElementById('todayGoals');
+  if(!box){return;}
+  box.innerHTML='';
+  var n=0;
+  for(var i=0;i<DOMAINS.length;i++){
+    var d=DOMAINS[i];
+    for(var j=0;j<d.goals.length;j++){
+      var g=d.goals[j];
+      var p=clampP(g.p);
+      var wrap=el('div','row row-goal');
+      if(g.id){wrap.setAttribute('data-goal-open',g.id);}
+      var m=el('span','row-main');
+      m.appendChild(el('span','row-name',g.t));
+      m.appendChild(el('span','row-meta',d.name+' · 长期 · '+p+'%'));
+      wrap.appendChild(m);
+      var bar=el('span','bar');
+      var f=el('span','bar-fill');
+      f.style.width=p+'%';
+      bar.appendChild(f);
+      wrap.appendChild(bar);
+      wrap.appendChild(el('span','row-val',p+'%'));
+      wrap.appendChild(delBtnEl('goal:'+g.id,g.t));
+      box.appendChild(wrap);
+      n++;
+    }
+  }
+  if(!n){box.appendChild(el('div','row-empty','还没有长期目标。点右上角「+ 新增长期计划」加一个。'));}
+}
+
+/* ================= 长期计划弹窗：调整 / 新增 =================
+   弹窗里的一切操作只改 draft（草稿），只有点「确认」才写回 DOMAINS 并记一笔；
+   点「取消」/ 点遮罩 / 按 Esc = 直接丢弃草稿，DOMAINS 一行不动。
+   草稿用固定的 __draft__ 当作 id，所以滑杆、快捷按钮、按钮优先仲裁、边界收敛
+   全部复用 applyGoalP 那一套，弹窗里不需要第二份实现。 */
+var DRAFT_ID='__draft__';
+var GOAL_EDIT=null;   /* {mode:'edit'|'new', domainId, goalId, orig:{t,m,p}, draft:{id,t,m,p}} */
+
+function resolveGoal(id){
+  if(id===DRAFT_ID&&GOAL_EDIT){return {domain:domainById(DOMAINS,GOAL_EDIT.domainId),goal:GOAL_EDIT.draft};}
+  return goalById(DOMAINS,id);
+}
+function goalModalEl(){return document.getElementById('goalModal');}
+function openGoalModal(mode,goalId){
+  var d=domainById(DOMAINS,CURRENT);
+  if(!d){return;}
+  if(mode==='edit'){
+    var hit=goalById(DOMAINS,goalId);
+    if(!hit){return;}
+    d=hit.domain;
+    GOAL_EDIT={mode:'edit',domainId:d.id,goalId:goalId,
+      orig:{t:hit.goal.t,m:hit.goal.m,p:clampP(hit.goal.p)},
+      draft:{id:DRAFT_ID,t:hit.goal.t,m:hit.goal.m,p:clampP(hit.goal.p)}};
+  }else{
+    GOAL_EDIT={mode:'new',domainId:d.id,goalId:'',orig:null,draft:{id:DRAFT_ID,t:'',m:'',p:0}};
+  }
+  var isEdit=GOAL_EDIT.mode==='edit';
+  document.getElementById('gmTitle').textContent=isEdit?'调整长期计划':'新增长期计划';
+  document.getElementById('gmDomain').textContent=d.name;
+  document.getElementById('gmName').value=GOAL_EDIT.draft.t;
+  document.getElementById('gmMeta').value=GOAL_EDIT.draft.m;
+  document.getElementById('gmHint').textContent=isEdit
+    ?'改动会作为一条「记一笔」记到今天的记录里'
+    :'确认后会作为一条「记一笔」记到今天的记录里';
+  delete GOAL_LOCK[DRAFT_ID];
+  syncGoalRow(DRAFT_ID,GOAL_EDIT.draft.p);   /* 滑杆与文字对齐到草稿值 */
+  goalModalEl().classList.add('is-on');
+  setTimeout(function(){document.getElementById('gmName').focus();},0);
+}
+function closeGoalModal(){
+  var box=goalModalEl();
+  if(box){box.classList.remove('is-on');}
+  GOAL_EDIT=null;
+  delete GOAL_LOCK[DRAFT_ID];
+}
+/* 逐字段比出「具体变更内容」。返回空数组 = 没有改动 */
+function goalDiff(orig,now){
+  var out=[];
+  if(orig.t!==now.t){out.push('名称「'+orig.t+'」→「'+now.t+'」');}
+  if((orig.m||'')!==(now.m||'')){out.push('说明「'+(orig.m||'（空）')+'」→「'+(now.m||'（空）')+'」');}
+  if(orig.p!==now.p){out.push('进度 '+orig.p+'% → '+now.p+'%');}
+  return out;
+}
+/* 写一条「记一笔」到今日记录列表：操作类型 + 操作时间 + 具体变更内容 */
+function pushGoalLog(op,target,detail){
+  TODAY_LOGS.unshift({time:nowHM(),at:new Date().toISOString(),op:op,target:target,detail:detail,
+    label:'长期计划 · '+target+' · '+detail});
+  renderTodayLog();
+}
+function commitGoalModal(){
+  if(!GOAL_EDIT){return;}
+  var nameEl=document.getElementById('gmName');
+  var name=nameEl.value.trim();
+  if(!name){toast('先写个目标名称');nameEl.focus();return;}
+  var meta=document.getElementById('gmMeta').value.trim();
+  var p=clampP(GOAL_EDIT.draft.p);
+  var d=domainById(DOMAINS,GOAL_EDIT.domainId);
+  if(!d){closeGoalModal();return;}
+
+  if(GOAL_EDIT.mode==='new'){
+    d.goals.push({id:'g'+Date.now(),t:name,m:meta,p:p});
+    pushGoalLog('新增',name,'新建于「'+d.name+'」· 进度 '+p+'%');
+    closeGoalModal();
+    renderAll();
+    toast('已新增「'+name+'」');
+    return;
+  }
+  var hit=goalById(DOMAINS,GOAL_EDIT.goalId);
+  if(!hit){closeGoalModal();return;}
+  var changes=goalDiff(GOAL_EDIT.orig,{t:name,m:meta,p:p});
+  if(!changes.length){closeGoalModal();toast('没有改动，不记这一笔');return;}
+  hit.goal.t=name;hit.goal.m=meta;hit.goal.p=p;
+  pushGoalLog('修改',name,changes.join('；'));
+  closeGoalModal();
+  renderAll();
+  toast('已更新「'+name+'」');
+}
+function initGoalModalBtns(){
+  var box=document.getElementById('gmBtns');
+  if(!box){return;}
+  box.innerHTML='';
+  for(var i=0;i<GOAL_STEPS.length;i++){
+    var s=GOAL_STEPS[i];
+    var b=el('button','gbtn','+'+s);
+    b.setAttribute('data-goal-add',String(s));
+    b.setAttribute('data-goal-id',DRAFT_ID);
+    b.setAttribute('title','增加 '+s+' 个百分点');
+    box.appendChild(b);
+  }
 }
 var toastTimer=null;
 function toast(msg){
@@ -1341,9 +1659,18 @@ function renderTodayLog(){
     return;
   }
   for(var i=0;i<TODAY_LOGS.length;i++){
+    var e=TODAY_LOGS[i];
     var r=el('div','logrow');
-    r.appendChild(el('span','logrow-d',TODAY_LOGS[i].time));
-    r.appendChild(el('span','logrow-v',TODAY_LOGS[i].label));
+    r.appendChild(el('span','logrow-d',e.time));
+    var v=el('span','logrow-v');
+    if(e.op){
+      /* 长期计划的操作记录：操作时间 + 操作类型 + 具体变更内容 */
+      v.appendChild(el('span','logtag',e.op));
+      v.appendChild(el('span','',' '+e.target+(e.detail?(' · '+e.detail):'')));
+    }else{
+      v.textContent=e.label;
+    }
+    r.appendChild(v);
     box.appendChild(r);
   }
 }
@@ -1351,16 +1678,96 @@ function nowHM(){
   var d=new Date();
   return pad2(d.getHours())+':'+pad2(d.getMinutes());
 }
+/* 速记里被识别成「待办」的那条 —— 写进 ITEMS 再重渲染，
+   而不是直接往 DOM 里塞一个 li。否则它既不会被顶部计数算到，
+   也拿不到删除按钮（那条「只改 DOM 不落库」的老毛病）。 */
 function addTodayItem(text){
-  var li=el('li','row');
-  li.appendChild(el('span','cbox'));
-  var m=el('span','row-main');
-  m.appendChild(el('span','row-name',text));
-  m.appendChild(el('span','row-meta','刚记下 · 今天'));
-  li.appendChild(m);
-  var ul=document.getElementById('dueList');
-  ul.insertBefore(li,ul.firstChild);
+  ITEMS.unshift({title:text,domain:'',due:TODAY,status:'todo'});
+  renderLists();
 }
+/* ================= 右上角「新增」弹窗：习惯 / 待办 / 长期计划 =================
+   三个模块共用同一套交互 —— 按钮在页面右上角，点开一个弹窗，
+   弹窗里填内容 + 选「放到哪个空间」，确认后关窗。
+   本轮只做演示效果：校验、选空间、开合都是真的，但不往 DOMAINS / TODAY_LOGS 写任何数据。 */
+var ADD_KIND=null;      /* null | 'todo' | 'habit' | 'goal' */
+var ADD_SPACE=null;     /* 选中的空间（领域）id */
+var ADD_KINDS={
+  todo:{ title:'新增待办',    nameK:'待办内容（必填）',   namePh:'比如：周五前交周报',
+         metaPh:'比如：今天 / 没有日期',   note:'一次就完的事' },
+  habit:{ title:'新增习惯',   nameK:'习惯内容（必填）',   namePh:'比如：每天散步 30 分钟',
+         metaPh:'比如：每天 / 工作日',     note:'要重复做的事' },
+  goal:{ title:'新增长期计划', nameK:'目标名称（必填）',   namePh:'比如：读完《置身事内》',
+         metaPh:'比如：每周 30 页 · 已读 210/350 页', note:'要长期推进的事' }
+};
+function addModalEl(){return document.getElementById('addModal');}
+
+function renderAddSpaces(){
+  var box=document.getElementById('amSpaces');
+  if(!box){return;}
+  box.innerHTML='';
+  for(var i=0;i<DOMAINS.length;i++){
+    var d=DOMAINS[i];
+    var c=el('button','mchip',d.name);
+    c.setAttribute('data-addspace',d.id);
+    if(ADD_SPACE===d.id){c.classList.add('is-on');}
+    box.appendChild(c);
+  }
+  var nx=el('button','mchip mchip-new','+ 新建空间');
+  nx.setAttribute('data-addspace-new','1');
+  box.appendChild(nx);
+  var lab=document.getElementById('amSpaceName');
+  if(lab){
+    var cur=domainById(DOMAINS,ADD_SPACE);
+    lab.textContent=cur?('· 已选「'+cur.name+'」'):'· 还没选';
+  }
+}
+function openAddModal(kind){
+  var cfg=ADD_KINDS[kind];
+  if(!cfg){return;}
+  ADD_KIND=kind;
+  ADD_SPACE=domainById(DOMAINS,CURRENT)?CURRENT:(DOMAINS[0]?DOMAINS[0].id:null);
+  document.getElementById('amTitle').textContent=cfg.title;
+  document.getElementById('amKindNote').textContent=cfg.note;
+  document.getElementById('amNameK').textContent=cfg.nameK;
+  var nm=document.getElementById('amName');
+  nm.value='';
+  nm.setAttribute('placeholder',cfg.namePh);
+  var mt=document.getElementById('amMeta');
+  mt.value='';
+  mt.setAttribute('placeholder',cfg.metaPh);
+  document.getElementById('amHint').textContent='演示版：只走交互，不会真的写数据';
+  renderAddSpaces();
+  addModalEl().classList.add('is-on');
+  setTimeout(function(){nm.focus();},0);
+}
+function closeAddModal(){
+  var m=addModalEl();
+  if(m){m.classList.remove('is-on');}
+  ADD_KIND=null;
+  ADD_SPACE=null;
+}
+function pickAddSpace(id){
+  ADD_SPACE=id;
+  renderAddSpaces();
+}
+function commitAddModal(){
+  if(!ADD_KIND){return false;}
+  var cfg=ADD_KINDS[ADD_KIND];
+  var nm=document.getElementById('amName');
+  var v=(nm.value||'').trim();
+  if(!v){toast('先写点什么');if(nm.focus){nm.focus();}return false;}
+  if(!ADD_SPACE){toast('先选一个空间');return false;}
+  var d=domainById(DOMAINS,ADD_SPACE);
+  toast('已新增'+cfg.title.replace('新增','')+'「'+v+'」→ '+(d?d.name:'')+'（演示，不落数据）');
+  closeAddModal();
+  return true;
+}
+addModalEl().addEventListener('keydown',function(e){
+  if(!ADD_KIND){return;}
+  if(e.key==='Enter'){e.preventDefault();commitAddModal();}
+  else if(e.key==='Escape'){e.preventDefault();closeAddModal();}
+});
+
 function submitQuick(){
   var inp=document.getElementById('quickInput');
   var v=inp.value.trim();
@@ -1657,18 +2064,73 @@ function renderSettingsCapture(){
 function focusCapture(){
   var c=document.getElementById('capture');
   if(!c){return;}
+  if(GOAL_EDIT||ADD_KIND){return;}   /* 弹窗开着时不抢焦点 */
   if(!document.querySelector('[data-page="today"]').classList.contains('is-on')){go('today');}
   c.classList.add('capture-hot');
   setTimeout(function(){c.classList.remove('capture-hot');},1200);
   document.getElementById('quickInput').focus();
 }
+/* ================= 删除：领域页那颗「删除领域」+ 今日页每行的「×」 =================
+   两者共用同一套「两段确认」：第一下只武装（变红、文案变化），第二下才真删；
+   4 秒无操作自动解除，Esc 立即解除。disarmDelete 一次性解除全部，
+   所以同一时刻只可能有一个待确认 —— 不会出现「两个红按钮不知道点哪个」。 */
 var delTimer=null;
+var ROW_ARMED=null;
 function disarmDelete(){
   var b=document.getElementById('dDelBtn');
-  if(!b){return;}
-  b.classList.remove('btn-armed');
-  b.textContent='删除领域';
+  if(b){b.classList.remove('btn-armed');b.textContent='删除领域';}
+  if(ROW_ARMED){ROW_ARMED.classList.remove('is-armed');ROW_ARMED.textContent='×';ROW_ARMED=null;}
   if(delTimer){clearTimeout(delTimer);delTimer=null;}
+}
+/* 每行末尾那颗「×」。spec 形如 item:3 / habit:fitness|0 / goal:g-work-1 */
+function delBtnEl(spec,name){
+  var b=el('button','delbtn','×');
+  b.setAttribute('data-del',spec);
+  b.setAttribute('data-del-name',name);
+  b.setAttribute('title','删除「'+name+'」');
+  b.setAttribute('aria-label','删除「'+name+'」');
+  return b;
+}
+function armRowDelete(btn){
+  if(ROW_ARMED===btn){commitRowDelete(btn);return;}   /* 第二下：真删 */
+  disarmDelete();
+  ROW_ARMED=btn;
+  btn.classList.add('is-armed');
+  btn.textContent='确认删';
+  delTimer=setTimeout(disarmDelete,4000);
+}
+function commitRowDelete(btn){
+  var spec=btn.getAttribute('data-del')||'';
+  var name=btn.getAttribute('data-del-name')||'';
+  var cut=spec.indexOf(':');
+  var kind=cut<0?spec:spec.slice(0,cut);
+  var key=cut<0?'':spec.slice(cut+1);
+  var ok=false,where='';
+  if(kind==='item'){
+    var idx=Number(key);
+    if(idx>=0&&idx<ITEMS.length){ITEMS.splice(idx,1);ok=true;}
+  }else if(kind==='habit'){
+    var hp=key.split('|');
+    var dh=domainById(DOMAINS,hp[0]);
+    var hi=Number(hp[1]);
+    if(dh&&hi>=0&&hi<dh.habits.length){dh.habits.splice(hi,1);where=dh.name;ok=true;}
+  }else if(kind==='goal'){
+    var hit=goalById(DOMAINS,key);
+    if(hit){
+      var gi=hit.domain.goals.indexOf(hit.goal);
+      if(gi>=0){hit.domain.goals.splice(gi,1);}
+      where=hit.domain.name;ok=true;
+    }
+  }
+  disarmDelete();
+  if(!ok){toast('这条已经不在了');return;}
+  var kindName=kind==='item'?'待办':(kind==='habit'?'习惯':'长期计划');
+  if(kind==='item'){renderLists();}
+  else{renderAll();}
+  TODAY_LOGS.unshift({time:nowHM(),at:new Date().toISOString(),op:'删掉',target:name,
+    detail:kindName+(where?(' · '+where):''),label:'删掉'+kindName+' · '+name});
+  renderTodayLog();
+  toast('已删掉'+kindName+'「'+name+'」');
 }
 function renderAll(){
   renderSpaces();
@@ -1676,6 +2138,8 @@ function renderAll(){
   renderSettingsDomains();
   renderSettingsCapture();
   renderDomain(CURRENT);
+  renderTodayGoals();
+  renderTodayHabits();
 }
 function addToInbox(text){
   var li=el('li','row');
@@ -1725,6 +2189,35 @@ document.addEventListener('keydown',function(e){
     focusCapture();
   }
 });
+/* 长期目标滑杆：input 会冒泡，沿用「全局一个监听」的写法。
+   pointerdown / keydown = 一次全新的滑杆操作 → 解除按钮的仲裁窗口。 */
+function goalRangeOf(e){
+  return (e.target&&e.target.closest)?e.target.closest('[data-goal-range]'):null;
+}
+document.addEventListener('pointerdown',function(e){
+  var s=goalRangeOf(e);
+  if(s){unlockGoal(s.getAttribute('data-goal-range'));}
+});
+document.addEventListener('keydown',function(e){
+  var s=goalRangeOf(e);
+  if(s){unlockGoal(s.getAttribute('data-goal-range'));}
+});
+document.addEventListener('input',function(e){
+  var s=goalRangeOf(e);
+  if(!s){return;}
+  var id=s.getAttribute('data-goal-range');
+  var p=applyGoalP(id,s.value,'slider');
+  if(p===null){   /* 被按钮仲裁挡下：把滑杆拉回权威值，不让它停在错误位置 */
+    var hit=resolveGoal(id);
+    if(hit){syncGoalRow(id,clampP(hit.goal.p));}
+  }
+});
+document.addEventListener('keydown',function(e){
+  if(e.key!=='Escape'){return;}
+  if(GOAL_EDIT){e.preventDefault();closeGoalModal();return;}
+  if(ADD_KIND){e.preventDefault();closeAddModal();return;}
+  disarmDelete();   /* 解除任何处于「待确认」的删除 */
+});
 function go(name){
   var ps=document.querySelectorAll('.page');
   for(var i=0;i<ps.length;i++){
@@ -1752,6 +2245,11 @@ function go(name){
 document.addEventListener('click',function(e){
   var t=e.target;
   if(!t||!t.closest){return;}
+
+  /* 「×」必须排在 [data-goal-open] 之前 —— 计划行的「×」就在那条 goalrow 里面，
+     顺序反了就会变成「点删除反而打开了编辑弹窗」。 */
+  var del=t.closest('[data-del]');
+  if(del){armRowDelete(del);return;}
 
   var pin=t.closest('[data-pin]');
   if(pin){
@@ -1880,6 +2378,42 @@ document.addEventListener('click',function(e){
     return;
   }
 
+  var ga=t.closest('[data-goal-add]');
+  if(ga){
+    var gid=ga.getAttribute('data-goal-id');
+    var step=Number(ga.getAttribute('data-goal-add'))||0;
+    var gh=resolveGoal(gid);
+    if(gh){
+      /* ★ 从权威值 g.p 累加，不读滑杆的 DOM 值 —— 这就是「按钮结果优先」的落点 */
+      var np=applyGoalP(gid,gh.goal.p+step,'button');
+      toast((gh.goal.t||'新目标')+' · '+np+'%');
+    }
+    return;
+  }
+
+  var gopen=t.closest('[data-goal-open]');
+  if(gopen){
+    if(t.closest('.gbar')){return;}   /* 点滑杆是在调进度，不是在点条目 */
+    openGoalModal('edit',gopen.getAttribute('data-goal-open'));
+    return;
+  }
+
+  if(t.closest('[data-goal-new]')){openGoalModal('new');return;}
+  if(t.closest('[data-goal-cancel]')){closeGoalModal();return;}
+  if(t.closest('[data-goal-ok]')){commitGoalModal();return;}
+
+  /* —— 右上角「新增」弹窗 —— */
+  var asp=t.closest('[data-addspace]');
+  if(asp){pickAddSpace(asp.getAttribute('data-addspace'));return;}
+
+  if(t.closest('[data-addspace-new]')){toast('演示：这里会就地新建一个空间');return;}
+
+  var aopen=t.closest('[data-add-open]');
+  if(aopen){openAddModal(aopen.getAttribute('data-add-open'));return;}
+
+  if(t.closest('[data-addmodal-cancel]')){closeAddModal();return;}
+  if(t.closest('[data-addmodal-ok]')){commitAddModal();return;}
+
   var dm=t.closest('[data-domain]');
   if(dm){
     renderDomain(dm.getAttribute('data-domain'));
@@ -1962,6 +2496,7 @@ document.getElementById('dPinBtn').addEventListener('click',function(){
 document.getElementById('dDelBtn').addEventListener('click',function(){
   var b=this;
   if(!b.classList.contains('btn-armed')){
+    disarmDelete();   /* 先解除行内可能已武装的那颗，保证全局只有一个待确认 */
     b.classList.add('btn-armed');
     b.textContent='再点一次确认删除';
     delTimer=setTimeout(disarmDelete,4000);
@@ -1978,6 +2513,7 @@ document.getElementById('dDelBtn').addEventListener('click',function(){
   toast('已删除「'+d.name+'」· 内容已回到收件箱');
 });
 renderLists();
+renderTodayHabits();
 renderLedger();
 renderAll();
 renderCaptureTypes();
@@ -1986,6 +2522,7 @@ renderCapCfg();
 renderTodayLog();
 wireCapture();
 wireQuick('inboxInput','inboxBtn');
+initGoalModalBtns();
 </script>
 </body>
 </html>
