@@ -66,15 +66,17 @@ body{background:var(--bg);color:var(--text);font:14px/1.6 system-ui,-apple-syste
 .goalrow:hover .row-name{color:var(--accent)}
 .row-goal{cursor:pointer}
 .row-goal:hover .row-name{color:var(--accent)}
-.goal-main{flex:1 1 168px;min-width:0;display:flex;flex-direction:column;gap:2px}
-.gbar{flex:1 1 110px;min-width:96px;height:16px;margin:0;padding:0;cursor:pointer;background:none;appearance:none;-webkit-appearance:none}
+.goal-main{flex:1 1 22%;min-width:0;display:flex;flex-direction:column;gap:2px}
+.gbar{flex:2 1 34%;min-width:84px;height:16px;margin:0;padding:0;cursor:pointer;background:none;appearance:none;-webkit-appearance:none}
 .gbar::-webkit-slider-runnable-track{height:6px;border-radius:3px;background:var(--line);background:linear-gradient(to right,var(--accent) 0 var(--v,0%),var(--line) var(--v,0%) 100%)}
 .gbar::-webkit-slider-thumb{appearance:none;-webkit-appearance:none;width:13px;height:13px;margin-top:-3.5px;border-radius:50%;background:var(--card);border:1.5px solid var(--accent)}
 .gbar::-moz-range-track{height:6px;border-radius:3px;background:var(--line);background:linear-gradient(to right,var(--accent) 0 var(--v,0%),var(--line) var(--v,0%) 100%)}
 .gbar::-moz-range-thumb{width:12px;height:12px;border:1.5px solid var(--accent);border-radius:50%;background:var(--card)}
 .gbar:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:8px}
-.goal-val{flex:none;min-width:42px;text-align:right;font-size:12px;color:var(--sub);font-variant-numeric:tabular-nums}
+.goal-val{flex:0 0 9%;min-width:40px;text-align:right;font-size:12px;color:var(--sub);font-variant-numeric:tabular-nums}
 .goal-btns{flex:none;display:flex;gap:4px}
+/* 操作簇：子项「+」、+1/+2/+5、删除「×」绑在同一行，永不彼此断开（窄屏整体换行，不会 + 和 × 分离） */
+.goal-actions{flex:1 1 30%;min-width:160px;display:flex;align-items:center;justify-content:flex-end;gap:7px;flex-wrap:nowrap}
 .gbtn{padding:3px 9px;border:1px solid var(--line2);border-radius:12px;background:var(--card);font:inherit;font-size:11px;color:var(--sub);cursor:pointer;font-variant-numeric:tabular-nums}
 .gbtn:hover{border-color:var(--accent);color:var(--accent)}
 .gbtn:active{background:var(--accent-bg);border-color:var(--accent);color:var(--accent)}
@@ -1832,6 +1834,9 @@ function goalRowEl(d,k,g,depth){
   var val=el('span','goal-val',p+'%');
   val.setAttribute('data-goal-val',g.id);
   r.appendChild(val);
+  if(kids.length){r.appendChild(kidBadge(kids.length));}
+  var act=el('div','goal-actions');
+  act.appendChild(subBtnEl(k,d.id,g));
   var btns=el('div','goal-btns');
   for(var kk=0;kk<GOAL_STEPS.length;kk++){
     var step=GOAL_STEPS[kk];
@@ -1841,10 +1846,9 @@ function goalRowEl(d,k,g,depth){
     b.setAttribute('title','增加 '+step+' 个百分点');
     btns.appendChild(b);
   }
-  r.appendChild(btns);
-  if(kids.length){r.appendChild(kidBadge(kids.length));}
-  r.appendChild(subBtnEl(k,d.id,g));
-  r.appendChild(delBtnEl('goal:'+g.id,g.t));
+  act.appendChild(btns);
+  act.appendChild(delBtnEl('goal:'+g.id,g.t));
+  r.appendChild(act);
   return r;
 }
 /* 在某一条下面就地插入一个单行输入框 —— 加子项不需要弹窗，一条子项就是「一句话」。
