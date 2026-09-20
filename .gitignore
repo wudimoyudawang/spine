@@ -48,6 +48,10 @@ yarn-error.log*
 *.tmp
 .cache/
 
-# ── 桌面版例外：desktop/app/dist 是页面源码，不是构建产物，必须入库 ──
-!desktop/app/dist/
-!desktop/app/dist/**
+# ── 移动端打包产物与签名 ───────────────────────
+# 签名文件等同密钥（上面那条一票否决），先拦在这里。
+# android/ ios/ 这类生成目录等真开始打包了再按实际情况加。
+*.apk
+*.aab
+*.jks
+*.keystore

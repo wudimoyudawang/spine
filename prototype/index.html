@@ -1,34 +1,16 @@
 <!DOCTYPE html>
 <html lang="zh-CN" data-page-node-id="MSaP57o9voDlopTCE3ZyJv" data-dm-ref="1" style=""><head data-page-node-id="KjtCuTmawkAcWV2z6am8f0">
 <meta charset="utf-8" data-page-node-id="KwnGKCnT4OE0y6AKA0FkHi">
-<meta name="viewport" content="width=device-width, initial-scale=1" data-page-node-id="J6IYzwlwpgZo1LKzBEf2Lp">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" data-page-node-id="J6IYzwlwpgZo1LKzBEf2Lp">
 <title>个人计划中枢 · 设计原型 v0.8</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{--bg:#F5F6F8;--card:#FFFFFF;--line:#E6E8EE;--line2:#D8DCE4;--text:#1F2430;--sub:#5A6272;--muted:#8A93A3;--accent:#2F6FEB;--accent-bg:#EAF1FE;--ok:#0F7A5A;--ok-bg:#E8F6F1;--warn:#A85B00;--warn-bg:#FDF3E3;--danger:#C0392B;--danger-bg:#FDECEA;--mask:rgba(31,36,48,.34);--r:12px}
 body{background:var(--bg);color:var(--text);font:14px/1.6 system-ui,-apple-system,"Segoe UI","Microsoft YaHei",sans-serif}
 .app{display:flex;min-height:100vh}
-/* --- 桌面版自绘标题栏（浏览器打开时完全不出现） --- */
-.titlebar{display:none}
-html.desktop .titlebar{display:flex;position:fixed;top:0;left:0;right:0;height:34px;z-index:60;align-items:center;gap:8px;padding:0 0 0 12px;background:var(--card);border-bottom:1px solid var(--line);user-select:none;-webkit-user-select:none}
-html.desktop body{padding-top:34px}
-html.desktop .app{min-height:calc(100vh - 34px)}
-.tb-dot{width:8px;height:8px;border-radius:50%;background:var(--accent)}
-.tb-name{font-size:12px;color:var(--sub)}
-.tb-btns{margin-left:auto;display:flex;height:100%}
-.tb-btn{width:46px;height:100%;border:0;background:none;font-size:13px;color:var(--sub);cursor:pointer;display:flex;align-items:center;justify-content:center}
-.tb-btn:hover{background:var(--bg)}
-.tb-close:hover{background:var(--danger);color:#fff}
-/* --- 窄屏（手机尺寸窗口）布局：侧栏变顶部横排导航 --- */
-@media (max-width:560px){
-.app{flex-direction:column}
-.side{width:100%;flex-direction:row;flex-wrap:wrap;align-items:center;gap:6px 10px;padding:10px 12px;border-right:0;border-bottom:1px solid var(--line)}
-.nav{flex-direction:row;flex-wrap:wrap;gap:2px}
-.navi{width:auto;padding:6px 10px}
-.brand{padding:0 4px 0 2px}
-.side-q{padding-top:0;border-top:0}
-.main{padding:14px 14px 40px}
-}
+/* --- 手机 / 桌面窄窗（≤560px）的整套布局在文件末尾那条 @media 里。
+   放最后是必须的：它和下面 920px 那条会同时命中，CSS 里后出现的赢，
+   之前写在前面，所以那半条基本是死的。 --- */
 .side{width:212px;flex:none;background:var(--card);border-right:1px solid var(--line);padding:18px 12px;display:flex;flex-direction:column;gap:16px}
 .brand{padding:2px 8px 8px}
 .brand-t{font-size:15px;font-weight:500}
@@ -189,6 +171,10 @@ html.desktop .app{min-height:calc(100vh - 34px)}
 .capture-res{display:flex;align-items:center;gap:6px;margin-top:10px;padding:8px 10px;border-radius:8px;background:var(--bg);font-size:12px;color:var(--sub);line-height:1.5}
 .capture-res b{color:var(--text);font-weight:500}
 .res-fix{margin-left:auto;color:var(--accent);cursor:pointer;white-space:nowrap}
+/* --- 速记框里的品类行：只在「记一笔支出」时出现，其它模式整行不渲染 ---
+   胶囊复用 .mchip，和上面那排类目视觉一致；容器空了就整块收起（不留空白）。 */
+.capture-cats{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;padding-top:10px;border-top:1px dashed var(--line2)}
+.capture-cats:empty{display:none}
 .kbd{border:1px solid var(--line2);border-bottom-width:2px;border-radius:5px;padding:0 5px;font-size:11px;color:var(--muted);background:var(--card)}
 /* --- 记录行与记录项 --- */
 .logrow{display:flex;gap:10px;align-items:baseline;padding:7px 0;border-top:1px solid var(--line);font-size:13px}
@@ -317,10 +303,107 @@ html.desktop .app{min-height:calc(100vh - 34px)}
   .main{padding:14px}
   .g2,.g3,.g4{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
+/* --- 「更多」抽屉：底部 Tab 栏放不下的入口（记账 / 设置 / 顶部快捷）收在这里。
+   桌面上这个按钮根本不出现，所以抽屉只在手机形态可见。 --- */
+.navi-more{display:none}
+/* --- 手机端那颗「记一笔」和它的遮罩：桌面上根本不出现 --- */
+.fab{display:none}
+.capmask{display:none}
+.sheet{display:none;position:fixed;inset:0;z-index:55}
+.sheet.is-on{display:block}
+.sheet-mask{position:absolute;inset:0;background:var(--mask)}
+.sheet-box{position:absolute;left:0;right:0;bottom:0;max-width:520px;margin:0 auto;max-height:70vh;overflow:auto;background:var(--card);border:1px solid var(--line);border-bottom:0;border-radius:14px 14px 0 0;padding:12px 16px calc(16px + env(safe-area-inset-bottom))}
+.sheet-h{font-size:11px;color:var(--muted);letter-spacing:.02em;padding:2px 2px 10px}
+.sheettabs{display:flex;gap:8px}
+.sheettabs .navi{flex:1 1 0;min-width:0;min-height:44px;padding:8px 12px;border:1px solid var(--line2);border-radius:10px;text-align:center;font-size:13px}
+.sheettabs .navi.is-on{background:var(--accent-bg);border-color:#BBD4F8;color:var(--accent);font-weight:500}
+.sheet-quick{display:flex;flex-direction:column;gap:8px;margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
+.sheet-quick.is-empty{display:none}
+.sheet-q-l{display:flex;flex-wrap:wrap;gap:6px}
+.sheet-q-l .navi{flex:0 0 auto;min-height:34px;padding:6px 12px;border:1px solid var(--line2);border-radius:15px;gap:7px;justify-content:flex-start;font-size:12px;text-align:left}
+/* --- ≤560px：手机 + 桌面版那个 420×880 的窄窗，共用同一套。
+   侧栏整个消失，改成底部 Tab 栏；7 个一级入口只留 5 个。
+   断点按宽度而不是「有没有触屏」，就是为了让桌面窄窗也走这一套，
+   两端只维护一份。必须放在文件最后 —— 920px 那条会同时命中。 --- */
+@media (max-width:560px){
+  .app{flex-direction:column;min-height:100dvh}
+  .side{
+    position:fixed;left:0;right:0;bottom:0;z-index:30;width:auto;
+    flex-direction:row;align-items:stretch;gap:0;padding:0;
+    padding-bottom:env(safe-area-inset-bottom);
+    background:var(--card);border-right:0;border-bottom:0;border-top:1px solid var(--line);
+  }
+  .brand,.side-q{display:none}
+  .nav{flex-direction:row;flex:1;min-width:0;gap:0;overflow:visible}
+  .navi{
+    display:flex;flex:1 1 0;min-width:0;align-items:center;justify-content:center;
+    width:auto;min-height:54px;padding:4px 2px;
+    text-align:center;font-size:11px;line-height:1.25;border-radius:0;
+  }
+  .navi.is-on{background:none;color:var(--accent)}
+  .navi-split{margin-top:0;margin-left:0}
+  .navi-split::before{display:none}
+  .navi-more{display:flex;border-left:1px solid var(--line)}
+  /* 记账 / 设置 收进抽屉。选择器要用 .side>.nav> 限定住，
+     别顺手把抽屉里那两个同名按钮也一起藏了。 */
+  .side>.nav>.navi[data-go="ledger"],.side>.nav>.navi[data-go="settings"]{display:none}
+  /* 底部留白要同时让开底部栏（约 55px）和浮在它上面的那颗「记一笔」（约 46px + 间距），
+     不然列表最后几条会被按钮盖住。 */
+  .main{padding:14px 14px calc(130px + env(safe-area-inset-bottom))}
+  .pages{max-width:none}
+  /* 输入框小于 16px 时，iOS Safari 一聚焦就放大整个页面 */
+  .capture-in,.quick-in,.ta,.inline-in,.test-in,.sel,.rev-out{font-size:16px}
+  /* 触屏没有 hover，原来那些「小尺寸」在手指下点不中 */
+  .delbtn{width:32px;height:32px;font-size:17px}
+  .nodebtn{width:30px;height:30px}
+  .iconbtn{width:30px;height:30px}
+  .tick{min-height:32px;padding:6px 14px;font-size:13px}
+  .gbtn{min-height:28px;padding:5px 11px;font-size:12px}
+  .mini{min-height:28px;padding:5px 12px}
+  .chip{padding:8px 15px}
+  .addbtn{min-height:32px}
+  .mchip{min-height:30px}
+  .btn{min-height:40px;padding:10px 16px}
+  .sw{width:40px;height:24px}
+  .sw::after{width:18px;height:18px}
+  .sw.is-on::after{left:18px}
+  .modal-box{max-height:calc(100dvh - 32px)}
+  .toast{bottom:calc(70px + env(safe-area-inset-bottom))}
+  /* 手指点上去得有反馈，否则会以为没点上 */
+  .navi:active,.btn:active,.chip:active,.mchip:active,.tick:active,.gbtn:active,.mini:active,.addbtn:active,.delbtn:active,.nodebtn:active{background:var(--bg)}
+
+  /* --- 底部中间那颗「记一笔」，点开才是输入 ---
+     手机上速记框不再是页面顶部的一整块，收成这颗按钮；
+     点开时 #capture 整块变成底部弹层（同一份 DOM，规则和品类胶囊都自动共用）。 */
+  .fab{
+    display:flex;align-items:center;justify-content:center;
+    position:fixed;left:50%;transform:translateX(-50%);
+    bottom:calc(72px + env(safe-area-inset-bottom));
+    z-index:35;height:46px;padding:0 24px;
+    border:0;border-radius:23px;background:var(--accent);color:#fff;
+    font:inherit;font-size:14px;font-weight:500;cursor:pointer;
+    box-shadow:0 4px 14px rgba(47,111,235,.3);
+  }
+  .fab:active{background:#2A63D2}
+  .capture{
+    display:none;position:fixed;left:0;right:0;bottom:0;z-index:50;
+    margin:0;border-radius:14px 14px 0 0;border-bottom:0;
+    max-height:78dvh;overflow:auto;
+    padding-bottom:calc(14px + env(safe-area-inset-bottom));
+    box-shadow:0 -6px 24px rgba(31,36,48,.18);
+  }
+  .capture.is-open{display:block}
+  .capmask{position:fixed;inset:0;z-index:45;background:var(--mask)}
+  .capmask.is-open{display:block}
+  /* 弹层开着的时候，底部栏和那颗按钮都收起来，别叠在弹层上 */
+  body.cap-open .side,body.cap-open .fab{display:none}
+  /* 速记框搬走之后，金额摘要就是今日页第一个元素了。
+     它原来靠 -8px 的负 margin 贴住上面的速记框，现在要还回去。 */
+  .moneyline{margin-top:0}
+}
 </style>
 <style id="__dm_no_drag_style__">* { -webkit-user-drag: none !important; }</style><style id="__dm_bindable_badge_style__">[data-sp-bindable="database"]{outline:1px dashed #0088ff;outline-offset:2px;border-radius:4px;}[data-sp-bindable="database"] *{pointer-events:none !important;transition:none !important;animation:none !important;}[data-sp-bindable="database"]{transition:none !important;animation:none !important;}</style></head>
 <body data-page-node-id="GSawu8YWGlcVIEl280nw2U" style="position: relative;">
-<div class="titlebar" data-tauri-drag-region><span class="tb-dot"></span><span class="tb-name">个人计划中枢</span><div class="tb-btns"><button class="tb-btn" id="tbMin" title="最小化">─</button><button class="tb-btn" id="tbMax" title="最大化">☐</button><button class="tb-btn tb-close" id="tbClose" title="关闭">✕</button></div></div>
 <div class="app" data-page-node-id="XLWuzRRA9VNlQ0VjnFqzxn">
   <aside class="side" data-page-node-id="0A4CUzEbBOaHhzoKKCy68Y">
     <div class="brand" data-page-node-id="zeZhDdBnXAGgCPOYJwRdl1">
@@ -335,6 +418,7 @@ html.desktop .app{min-height:calc(100vh - 34px)}
       <button class="navi" data-go="ledger" data-page-node-id="SEWn4mnyTipfjhjJvuSrfm">记账</button>
       <button class="navi" data-go="review" data-page-node-id="kFCmckWwteXboTzTJnlxjj">复盘</button>
       <button class="navi navi-split" data-go="settings" data-page-node-id="h0BQf1k2nF1DcblPTnuQPi">设置</button>
+      <button class="navi navi-more" id="moreBtn" data-more="1">更多</button>
     </nav>
     <div class="side-q" data-page-node-id="VbSzHzi7URQfuohhN9fRHC">
       <div class="side-q-h" data-page-node-id="61alIORSRj7ZtizFAIfAJe">顶部快捷</div>
@@ -360,6 +444,9 @@ html.desktop .app{min-height:calc(100vh - 34px)}
             <div class="capture-types" id="captureTypes" data-page-node-id="ymAB19nUVcnsf0ax5cj0oJ"><button class="mchip is-on" data-mode="auto" title="系统项">自动判断</button><button class="mchip" data-mode="todo" title="系统项">待办</button><button class="mchip" data-mode="note" title="系统项">随心记</button><button class="mchip" data-mode="money" title="系统项">记一笔支出</button><button class="mchip" data-mode="inbox" title="系统项">只丢进收件箱</button><button class="mchip" data-mode="rt_kcal_in" title="健身 · 数值 · kcal">热量摄入</button><button class="mchip" data-mode="rt_kcal_out" title="健身 · 数值 · kcal">热量消耗</button><button class="mchip" data-mode="rt_weight" title="健身 · 数值 · kg">体重</button></div>
             <button class="mchip mchip-cfg" id="cfgBtn" data-cfg="toggle" data-page-node-id="jTvxz5gm8Dfr36Ew5zgldV" style="font-size: 10px;">自定义</button>
           </div>
+          <!-- 品类胶囊：只在「记一笔支出」时出现（见 renderCaptureCats）。
+               不选就是「自动」，照旧走关键词猜，所以不点的人一步都没多。 -->
+          <div class="capture-cats" id="captureCats"></div>
           
           <div id="capCfg" data-page-node-id="8mzKuVxzbJcI3odfKB2lpF"></div>
         </div>
@@ -523,14 +610,8 @@ html.desktop .app{min-height:calc(100vh - 34px)}
           
         </div>
         <div class="block" data-page-node-id="S3hOvUF4MJSz4jD24qCBPN">
-          <div class="block-h" data-page-node-id="y3i2tDP9c0Xd3Eq7IOnYDA"><span class="tag" data-page-node-id="af5OiFKGJZl58rMj6yzqd9">记账分类</span><span class="block-note" data-page-node-id="SnL6tZIE0TDCWs1yfTfRm1">可改名，可选图标</span></div>
-          <div class="kv" data-page-node-id="HLuNNkRLDiEOdCTRjRnYvm"><span class="kv-k" data-page-node-id="30XlXxahiwMaSTQodbfGFi">餐饮 · 出行 · 数码 · 生活 · 娱乐 · 医疗 · 服饰</span><span class="kv-v" data-page-node-id="yg4yCI76f07E9jJUH7FJHa">7 个</span></div>
-        </div>
-        <div class="block" id="desktopBlock" style="display:none">
-          <div class="block-h"><span class="tag">桌面版</span><span class="block-note">exe 外壳设置</span></div>
-          <div class="kv"><span class="kv-k">开机自动启动</span><span class="kv-v"><input type="checkbox" id="cfgAutostart"></span></div>
-          <div class="kv"><span class="kv-k">拖到屏幕边缘自动吸附</span><span class="kv-v"><input type="checkbox" id="cfgSnap"></span></div>
-          <div class="note" id="dataPath"></div>
+          <div class="block-h" data-page-node-id="y3i2tDP9c0Xd3Eq7IOnYDA"><span class="tag" data-page-node-id="af5OiFKGJZl58rMj6yzqd9">记账品类</span><span class="block-note" data-page-node-id="SnL6tZIE0TDCWs1yfTfRm1">删掉只去掉选项，已记的还在</span><button class="addbtn" data-cat-new="1">+ 新建品类</button></div>
+          <div id="settingsCats"></div>
         </div>
         <div class="block" data-page-node-id="pTElcKJf3HBHXaAUhBhgFp">
           <div class="block-h" data-page-node-id="38tLVIVG0f6iVXf7xVuX9L"><span class="tag" data-page-node-id="JjbHjR787dWssvtBF5fYlQ">数据</span><span class="block-note" data-page-node-id="X6CS0Veq0l6hfIP3cJ8VxW">都在本机，随时能导出</span></div>
@@ -567,7 +648,28 @@ html.desktop .app{min-height:calc(100vh - 34px)}
     </div>
   </main>
 </div>
+<!-- 手机端：底部中间那颗「记一笔」+ 它下面的遮罩。
+     点开把速记框展开成底部弹层 —— 弹层内容就是原来那个 #capture，没有第二份。 -->
+<div class="capmask" id="capMask" data-cap-close="1"></div>
+<button class="fab" id="fabCap" data-cap-open="1">记一笔</button>
 <div class="toast" id="toast" data-page-node-id="C61ZT2aZp6jIyHUiAKbiqA">已取消今天的打卡</div>
+
+<!-- 「更多」抽屉：只在 ≤560px 有入口（底部 Tab 栏那颗「更多」）。
+     记账 / 设置 这两个一级入口在手机上收进这里，桌面侧栏里仍然原位保留。 -->
+<div class="sheet" id="moreSheet">
+  <div class="sheet-mask" data-more-close="1"></div>
+  <div class="sheet-box" role="dialog" aria-modal="true" aria-label="更多">
+    <div class="sheet-h">更多</div>
+    <div class="sheettabs">
+      <button class="navi" data-go="ledger">记账</button>
+      <button class="navi" data-go="settings">设置</button>
+    </div>
+    <div class="sheet-quick" id="moreQuickWrap">
+      <div class="sheet-h" style="padding:0">顶部快捷</div>
+      <div class="sheet-q-l" id="moreQuickList"></div>
+    </div>
+  </div>
+</div>
 
 <div class="modal" id="goalModal" data-page-node-id="YDVsFXHls3AGXz7q29A5yc">
   <div class="modal-mask" data-goal-cancel="1" data-page-node-id="LWaPwfYAyMW1rpBGp1mdoo"></div>
@@ -797,6 +899,29 @@ function trendOf(logs){
 }
 function rtKindLabel(t){
   return t.mode==='number'?('数值'+(t.unit?(' · '+t.unit):'')):'纯文字';
+}
+/* ---- 记一笔支出：品类清单（用户自己管） ----
+   和下面的 CAT_WORDS 是两件事，别合并：
+     CATS      = 清单本身，顺序就是界面上胶囊的顺序，用户能加 / 改名 / 删；
+     CAT_WORDS = 「自动猜」用的关键词，纯提示，不进界面。
+   删掉一个品类**不动已记的流水** —— 那些记录的 category 字符串原样留着，
+   图表和流水里还看得见（分类可以错，数据不该丢）。 */
+var CATS=['餐饮','出行','数码','生活','娱乐','医疗','服饰'];
+/* 清单 + 历史里出现过、但已经不在清单里的（追加在最后）。
+   编辑弹窗用它，这样删过类之后仍然能把老记录改回原来的类。 */
+function catList(){
+  var out=CATS.slice(),seen={};
+  for(var i=0;i<out.length;i++){seen[out[i]]=1;}
+  for(var j=0;j<LOGS.length;j++){
+    var c=LOGS[j].category;
+    if(c&&!seen[c]){seen[c]=1;out.push(c);}
+  }
+  return out;
+}
+/* 改名要把已记的那几笔一起改过来，否则分类柱状图会裂成两根
+   （旧名一根、新名一根），看起来就像数据坏了。 */
+function renameCategory(from,to){
+  for(var i=0;i<LOGS.length;i++){if(LOGS[i].category===from){LOGS[i].category=to;}}
 }
 /* ---- 首页记一笔：识别（纯规则，非 AI） ---- */
 var CAT_WORDS={
@@ -1676,7 +1801,13 @@ function renderSpaces(){
   grid.appendChild(add);
 }
 function renderPins(){
-  var box=document.getElementById('sideQuickList');
+  /* 同一份置顶领域挂两处：桌面侧栏一处、手机「更多」抽屉一处。
+     渲染只有这一处代码，两个容器都从它长出来，不各写一份。 */
+  fillQuick(document.getElementById('sideQuickList'));
+  fillQuick(document.getElementById('moreQuickList'));
+}
+function fillQuick(box){
+  if(!box){return;}
   box.innerHTML='';
   var n=0;
   for(var i=0;i<DOMAINS.length;i++){
@@ -1690,8 +1821,90 @@ function renderPins(){
     box.appendChild(b);
   }
   /* 一个置顶空间都没有时，整块「顶部快捷」（含标题和那条分隔线）都不显示 —— 不放占位文案。 */
-  var host=box.closest?box.closest('.side-q'):null;
+  var host=box.closest?box.closest('.side-q,.sheet-quick'):null;
   if(host){host.classList.toggle('is-empty',n===0);}
+}
+/* 某个品类被记过多少笔。用来说明「删掉不影响已记的」不是空话 ——
+   删之前你就看得见下面挂着多少条。 */
+function catUsed(c){
+  var n=0;
+  for(var i=0;i<LOGS.length;i++){if(LOGS[i].category===c){n++;}}
+  return n;
+}
+/* 设置页的品类管理：加 / 改名 / 删。删只从清单里拿走，已记的原样留着。 */
+function renderSettingsCats(){
+  var box=document.getElementById('settingsCats');
+  if(!box){return;}
+  box.innerHTML='';
+  if(!CATS.length){
+    box.appendChild(el('div','row-empty','还没有品类。点右上「+ 新建品类」加一个。'));
+    return;
+  }
+  for(var i=0;i<CATS.length;i++){
+    var c=CATS[i];
+    var row=el('div','rt');
+    var h=el('div','rt-h');
+    h.appendChild(el('span','rt-t',c));
+    var n=catUsed(c);
+    if(n){h.appendChild(el('span','rt-kind','记过 '+n+' 笔'));}
+    var act=el('span','rt-act');
+    var rn=el('button','mini','改名');
+    rn.setAttribute('data-cat-rename',c);
+    act.appendChild(rn);
+    act.appendChild(delBtnEl('cat:'+c,c));
+    h.appendChild(act);
+    row.appendChild(h);
+    box.appendChild(row);
+  }
+}
+/* 就地输入：新建品类和改名共用同一套（old 为空就是新建）。
+   一句话的事不值得弹窗 —— 弹窗套弹窗是这个原型最容易走岔的地方。
+   row 传了就是改名（原地换掉那一行），没传就是新建（插在列表最上面）。 */
+function catInline(box,old,row){
+  var card=el('div','rt');
+  var h=el('div','rt-h');
+  h.appendChild(el('span','cfgrow-s',old?'改成叫什么':'新品类叫什么'));
+  card.appendChild(h);
+  var chips=el('div','chips');
+  chips.style.marginTop='8px';
+  var inp=el('input','inline-in');
+  inp.setAttribute('placeholder',old||'比如「宠物」');
+  inp.style.maxWidth='180px';
+  var ok=el('button','btn btn-main',old?'改名':'创建');
+  var no=el('button','btn','取消');
+  chips.appendChild(inp);chips.appendChild(ok);chips.appendChild(no);
+  card.appendChild(chips);
+  if(row){box.replaceChild(card,row);}else{box.insertBefore(card,box.firstChild);}
+  inp.focus();
+  /* 不管确认还是取消，都整块重渲染列表 —— 卡片自然消失，
+     也不用去管 host 被 replaceChild 摘下来之后 parentNode 变成 null 这件事。 */
+  function commit(){
+    var name=inp.value.trim();
+    if(!name){toast('先写个名字');inp.focus();return;}
+    if(CATS.indexOf(name)>=0&&name!==old){toast('已经有「'+name+'」了');inp.focus();return;}
+    if(old){
+      if(name===old){renderSettingsCats();return;}
+      var ci=CATS.indexOf(old);
+      if(ci>=0){CATS[ci]=name;}
+      /* 已记的那几笔一起改过来，否则分类柱状图会裂成两根（旧名一根、新名一根） */
+      renameCategory(old,name);
+      renderLedger();
+      toast('已改名，'+catUsed(name)+' 笔也跟着改过来了');
+    }else{
+      CATS.push(name);
+      toast('已加「'+name+'」');
+    }
+    renderSettingsCats();
+    renderCaptureCats();
+    renderSettingsCapture();
+  }
+  ok.addEventListener('click',commit);
+  no.addEventListener('click',function(){renderSettingsCats();});
+  inp.addEventListener('keydown',function(ev){
+    if(ev.key==='Enter'){ev.preventDefault();commit();}
+    /* 挡住 Esc 冒泡：外面还有一层全局 Esc 处理，不挡会顺手把别的待确认也解除掉 */
+    if(ev.key==='Escape'){ev.preventDefault();ev.stopPropagation();renderSettingsCats();}
+  });
 }
 function renderSettingsDomains(){
   var box=document.getElementById('settingsDomains');
@@ -2342,8 +2555,14 @@ function rtSettingsForm(t){
 
 /* ================= 首页记一笔：一个入口，就地完成 ================= */
 var CAPTURE_MODE='auto';
+/* 这一笔支出算哪个品类。'' = 自动（走关键词猜）。
+   只在「记一笔支出」模式下有意义，别的模式选了也不显示。 */
+var CAPTURE_CAT='';
 
 function renderCaptureTypes(){
+  /* 两个容器一起画：类目和品类永远同进同出。放在这里而不是各个调用点，
+     是为了少一半「忘了加一行」的机会 —— 调用 renderCaptureTypes 的地方有六处。 */
+  renderCaptureCats();
   var box=document.getElementById('captureTypes');
   if(!box){return;}
   box.innerHTML='';
@@ -2363,6 +2582,28 @@ function renderCaptureTypes(){
     if(c.k===CAPTURE_MODE){b.classList.add('is-on');}
     box.appendChild(b);
   }
+}
+/* 品类胶囊。只在「记一笔支出」时出现 —— 别的模式下选品类没有意义，
+   整行不渲染（容器空了由 .capture-cats:empty 收起，不留一块空白）。
+   第一颗「自动」= 不指定，照旧靠写的字猜，所以默认路径一步都没多。
+   清单本身在设置页里管，这里只渲染，不往代码里写死任何类名。 */
+function catPill(v,t){
+  var b=el('button','mchip',t);
+  b.setAttribute('data-cat',v);
+  b.setAttribute('title',v?'这一笔记成「'+v+'」':'不指定，按写的字猜');
+  if(CAPTURE_CAT===v){b.classList.add('is-on');}
+  return b;
+}
+function renderCaptureCats(){
+  var box=document.getElementById('captureCats');
+  if(!box){return;}
+  /* 正选着的那个如果在设置页里被删了，先落回「自动」——
+     否则会留着一颗界面上已经看不到的选中态，记出来的品类没人认得出。 */
+  if(CAPTURE_CAT&&CATS.indexOf(CAPTURE_CAT)<0){CAPTURE_CAT='';}
+  box.innerHTML='';
+  if(CAPTURE_MODE!=='money'){return;}
+  box.appendChild(catPill('','自动'));
+  for(var i=0;i<CATS.length;i++){box.appendChild(catPill(CATS[i],CATS[i]));}
 }
 function renderCaptureRes(){
   var box=document.getElementById('captureRes');
@@ -2607,7 +2848,9 @@ function submitQuick(){
     /* 这里以前只往 TODAY_LOGS 塞一行，LOGS 一个字没写 ——
        所以月度合计和分类柱状图永远停在初始那 7 笔。现在统一走 addMoney()。 */
     var note0=(r.text||'').trim();
-    var e=addMoney(r.value,note0,r.category||guessCategory(note0||v));
+    /* 优先用手选的品类，没选才轮到「规则命中」，最后才是关键词猜。
+       「我明明点了餐饮」这件事不能输给一条自动规则。 */
+    var e=addMoney(r.value,note0,CAPTURE_CAT||r.category||guessCategory(note0||v));
     if(!e){toast('金额要大于 0');inp.focus();return;}
     TODAY_LOGS.unshift({time:nowHM(),label:'支出 '+(note0?(note0+' '):'')+money(e.value)+' · '+e.category,
       ref:{k:'money',id:e.id}});
@@ -2637,6 +2880,10 @@ function submitQuick(){
     toast('已记下：'+label);
   }
   inp.value='';
+  /* 品类回到「自动」。选中态留着的话，下一笔忘了看就会被归到上一笔的类里 ——
+     那种错在界面上看不出来，比不选更糟。要它记住就改这一行。 */
+  CAPTURE_CAT='';
+  renderCaptureCats();
   renderCaptureRes();
 }
 /* ================= 快记自定义：出现哪些类目 + 自动判断规则 ================= */
@@ -2964,14 +3211,10 @@ function edFields(){
   }
   return f;
 }
+/* 编辑弹窗里的品类胶囊。走 catList() 而不是只看已记过的那几个 ——
+   顺序稳定（先清单、后被删过但历史里还有的），换一条记录时胶囊不会重排。 */
 function catOpts(){
-  var out=[],seen={};
-  for(var i=0;i<LOGS.length;i++){
-    var c=LOGS[i].category;
-    if(c&&!seen[c]){seen[c]=1;out.push([c,c]);}
-  }
-  for(var w in CAT_WORDS){if(!seen[w]){seen[w]=1;out.push([w,w]);}}
-  return out;
+  return catList().map(function(c){return [c,c];});
 }
 function editModalEl(){return document.getElementById('editModal');}
 function renderEditModal(){
@@ -3303,6 +3546,12 @@ function commitRowDelete(btn){
       if(INBOX[ii].id===key){INBOX.splice(ii,1);ok=true;break;}
     }
     kindName='收件箱条目';
+  }else if(kind==='cat'){
+    /* 只从清单里拿走。已记的那些 category 字符串一个字都不改 ——
+       分类可以错，数据不该丢。分类柱状图里那几笔历史还看得见。 */
+    var ci3=CATS.indexOf(key);
+    if(ci3>=0){CATS.splice(ci3,1);ok=true;}
+    kindName='品类';
   }
   disarmDelete();
   if(!ok){toast('这条已经不在了');return;}
@@ -3321,7 +3570,9 @@ function renderAll(){
   renderSpaces();
   renderPins();
   renderSettingsDomains();
+  renderSettingsCats();
   renderSettingsCapture();
+  renderCaptureCats();
   renderDomain(CURRENT);
   renderTodayGoals();
   renderTodayHabits();
@@ -3980,11 +4231,43 @@ document.addEventListener('input',function(e){
 });
 document.addEventListener('keydown',function(e){
   if(e.key!=='Escape'){return;}
+  /* 速记弹层在最上面那层，Esc 先关它 */
+  if(capOpen()){e.preventDefault();closeCap();return;}
+  /* 抽屉是第二层 */
+  if(moreOpen()){e.preventDefault();closeMore();return;}
   if(ED){e.preventDefault();closeEdit();return;}
   if(GOAL_EDIT){e.preventDefault();closeGoalModal();return;}
   if(ADD_KIND){e.preventDefault();closeAddModal();return;}
   disarmDelete();   /* 解除任何处于「待确认」的删除 */
 });
+/* 「更多」抽屉：手机上 记账 / 设置 的唯一入口（桌面侧栏里那两个原样保留）。
+   开关只管一个 class，和别的弹窗同一个写法。 */
+function moreSheetEl(){return document.getElementById('moreSheet');}
+function closeMore(){var s=moreSheetEl();if(s){s.classList.remove('is-on');}}
+function toggleMore(){var s=moreSheetEl();if(s){s.classList.toggle('is-on');}}
+function moreOpen(){var s=moreSheetEl();return !!s&&s.classList.contains('is-on');}
+/* 手机端那颗「记一笔」：点开把速记框展开成底部弹层。
+   弹层里就是同一份 DOM（#capture），所以规则、品类胶囊、自定义面板全都自动共用 ——
+   不会出现「弹层里少一颗胶囊」这种两份走偏的事。 */
+function capSheetEl(){return document.getElementById('capture');}
+function capOpen(){var c=capSheetEl();return !!c&&c.classList.contains('is-open');}
+function openCap(){
+  /* 先落到今日页：速记框长在那一页里，不在今日页就展不开。
+     而且记完的东西就出现在「今天记下的」，落在这一页正好看得见。 */
+  go('today');
+  var c=capSheetEl(),m=document.getElementById('capMask');
+  if(c){c.classList.add('is-open');}
+  if(m){m.classList.add('is-open');}
+  document.body.classList.add('cap-open');
+  var inp=document.getElementById('quickInput');
+  if(inp){inp.focus();}
+}
+function closeCap(){
+  var c=capSheetEl(),m=document.getElementById('capMask');
+  if(c){c.classList.remove('is-open');}
+  if(m){m.classList.remove('is-open');}
+  document.body.classList.remove('cap-open');
+}
 function go(name){
   var ps=document.querySelectorAll('.page');
   for(var i=0;i<ps.length;i++){
@@ -3995,6 +4278,11 @@ function go(name){
   for(var j=0;j<ns.length;j++){
     ns[j].classList.toggle('is-on',ns[j].getAttribute('data-go')===hl);
   }
+  /* 记账 / 设置 在手机上藏进了「更多」，所以那颗 Tab 要替它们高亮 ——
+     否则切到这两页时底部栏一处高亮都没有。仍然由 go() 一处决定。 */
+  var mb=document.getElementById('moreBtn');
+  if(mb){mb.classList.toggle('is-on',hl==='ledger'||hl==='settings');}
+  closeMore();
   var t=TITLES[name];
   var ti,su;
   if(name==='domain'){
@@ -4024,6 +4312,15 @@ document.addEventListener('click',function(e){
      顺序反了就会变成「点删除反而打开了编辑弹窗」。 */
   var del=t.closest('[data-del]');
   if(del){armRowDelete(del);return;}
+
+  /* 「更多」抽屉的开合。它们不嵌在任何别的可点元素里，
+     排在哪一组都不会抢；抽屉里那两个 [data-go] 走的是本函数最后那条分支。 */
+  if(t.closest('[data-more]')){toggleMore();return;}
+  if(t.closest('[data-more-close]')){closeMore();return;}
+
+  /* 手机端那颗「记一笔」和它的遮罩 */
+  if(t.closest('[data-cap-open]')){openCap();return;}
+  if(t.closest('[data-cap-close]')){closeCap();return;}
 
   /* 打卡按钮排在 [data-edit] 之前 —— 那条「打卡」就长在可点的整行里面，
      顺序反了就会变成「想打卡，却打开了编辑弹窗」。 */
@@ -4112,6 +4409,30 @@ document.addEventListener('click',function(e){
     renderSettingsDomains();
     renderDomain(CURRENT);
     toast(on?'已加到顶部快捷':'已从顶部快捷移除');
+    return;
+  }
+
+  /* —— 设置页：记账品类的增删改 —— */
+  var cnew=t.closest('[data-cat-new]');
+  if(cnew){
+    var cbox=document.getElementById('settingsCats');
+    if(cbox){catInline(cbox,'',null);}
+    return;
+  }
+  var crn=t.closest('[data-cat-rename]');
+  if(crn){
+    var cbox2=document.getElementById('settingsCats');
+    if(cbox2){catInline(cbox2,crn.getAttribute('data-cat-rename'),crn.closest('.rt'));}
+    return;
+  }
+  /* 速记框的品类胶囊。属性和上面两个不同名，closest 不会互相命中，
+     排在这儿只是为了让「品类相关」的分支挨着好找。 */
+  var cpick=t.closest('[data-cat]');
+  if(cpick){
+    CAPTURE_CAT=cpick.getAttribute('data-cat')||'';
+    renderCaptureCats();
+    renderCaptureRes();
+    document.getElementById('quickInput').focus();
     return;
   }
 
@@ -4416,11 +4737,15 @@ initGoalModalBtns();
 go('today');
 }
 
-/* ================= 桌面版持久化：JSON 文件存储 ================= */
+/* ================= 状态清单与序列化 =================
+   桌面壳（Tauri）已删掉，所以这两个函数**目前没有调用方**。
+   留着是因为它就是「这个应用有哪些状态」的权威清单 + 一份现成的序列化 ——
+   手机端接本地存储（localStorage / SQLite）时直接用它们，不用再数一遍。
+   DATA_VARS = 真正的数据；SCALAR_VARS = 界面状态（停在哪一页、速记选了哪个模式）。
+   两者分开，是因为将来做同步时只该同步前者。 */
 var DATA_VARS=['ITEMS','HABIT_LOGS','INBOX','NOTES','NOTE_PROMPTS','LOGS','DOMAINS',
-  'RECORD_TYPES','CAPTURE_MODES','AUTO_RULES','TODAY_LOGS','CAT_WORDS'];
-var SCALAR_VARS=['CURRENT','CAPTURE_MODE','SNAP_ON'];
-var SNAP_ON=true;
+  'RECORD_TYPES','CAPTURE_MODES','AUTO_RULES','TODAY_LOGS','CAT_WORDS','CATS'];
+var SCALAR_VARS=['CURRENT','CAPTURE_MODE'];
 function snapshot(){
   var s={v:{},s:{}};
   DATA_VARS.forEach(function(k){s.v[k]=window[k];});
@@ -4432,80 +4757,9 @@ function restore(raw){
   DATA_VARS.forEach(function(k){if(s.v&&s.v[k]!==undefined)window[k]=s.v[k];});
   SCALAR_VARS.forEach(function(k){if(s.s&&s.s[k]!==undefined)window[k]=s.s[k];});
 }
-var LAST_SAVED='';
-var SAVE_ERR_SHOWN=false;
-function persist(force){
-  var t=window.__TAURI__;
-  if(!t){return;}
-  var snap=snapshot();
-  if(!force&&snap===LAST_SAVED){return;}
-  t.core.invoke('save_state',{json:snap}).then(function(){
-    LAST_SAVED=snap;SAVE_ERR_SHOWN=false;
-  }).catch(function(e){
-    if(!SAVE_ERR_SHOWN){SAVE_ERR_SHOWN=true;toast('保存失败：'+e);}
-  });
-}
-/* 桌面版外壳功能：自绘标题栏按钮、开机自启开关、屏幕边缘吸附 */
-function desktopWire(){
-  var t=window.__TAURI__; if(!t){return;}
-  document.documentElement.classList.add('desktop');
-  var W=t.window.getCurrentWindow();
-  document.getElementById('tbMin').addEventListener('click',function(){W.minimize();});
-  document.getElementById('tbMax').addEventListener('click',function(){W.toggleMaximize();});
-  document.getElementById('tbClose').addEventListener('click',function(){persist();W.close();});
-  /* 标题栏任意位置（除按钮外）按下即可拖动窗口 */
-  var bar=document.querySelector('.titlebar');
-  bar.addEventListener('mousedown',function(e){
-    if(e.button!==0){return;}
-    var n=e.target;
-    while(n&&n!==bar){if(n.tagName==='BUTTON'){return;}n=n.parentNode;}
-    W.startDragging();
-  });
-  document.getElementById('desktopBlock').style.display='';
-  var cbAuto=document.getElementById('cfgAutostart'),cbSnap=document.getElementById('cfgSnap');
-  cbSnap.checked=!!SNAP_ON;
-  cbSnap.addEventListener('change',function(){SNAP_ON=cbSnap.checked;});
-  t.core.invoke('plugin:autostart|is_enabled').then(function(on){cbAuto.checked=on;}).catch(function(){});
-  cbAuto.addEventListener('change',function(){
-    t.core.invoke(cbAuto.checked?'plugin:autostart|enable':'plugin:autostart|disable').then(function(){
-      toast(cbAuto.checked?'已开启开机自启':'已关闭开机自启');
-    }).catch(function(e){cbAuto.checked=!cbAuto.checked;toast('操作失败：'+e);});
-  });
-  t.core.invoke('data_location').then(function(p){
-    document.getElementById('dataPath').textContent='数据文件：'+p;
-  }).catch(function(){});
-  setInterval(function(){
-    if(!SNAP_ON){return;}
-    Promise.all([W.isMaximized(),W.isFullscreen(),W.outerPosition(),W.outerSize(),W.currentMonitor()])
-    .then(function(r){
-      if(r[0]||r[1]){return;}
-      var p=r[2],s=r[3],m=r[4]; if(!m){return;}
-      var TH=28,mp=m.position,ms=m.size,nx=p.x,ny=p.y;
-      if(Math.abs(nx-mp.x)<TH){nx=mp.x;}
-      else if(Math.abs((nx+s.width)-(mp.x+ms.width))<TH){nx=mp.x+ms.width-s.width;}
-      if(Math.abs(ny-mp.y)<TH){ny=mp.y;}
-      else if(Math.abs((ny+s.height)-(mp.y+ms.height))<TH){ny=mp.y+ms.height-s.height;}
-      if(nx!==p.x||ny!==p.y){W.setPosition(t.window.physicalPosition(nx,ny));}
-    }).catch(function(){});
-  },250);
-}
-(function(){
-  var t=window.__TAURI__;
-  if(!t){__boot();return;}   /* 浏览器直接打开时仍可当演示用 */
-  t.core.invoke('load_state').then(function(raw){
-    if(raw){try{restore(raw);}catch(e){console.error('restore failed',e);}}
-    LAST_SAVED=snapshot();
-    __boot();
-    persist(true);   /* 启动即落盘一次，确认存储链路可用 */
-    try{desktopWire();}catch(e){console.error('desktopWire failed',e);}
-    setInterval(persist,2000);
-    addEventListener('blur',persist);
-    document.addEventListener('visibilitychange',function(){if(document.hidden)persist();});
-  }).catch(function(e){
-    console.error('load_state failed',e);
-    __boot();
-  });
-})();
+/* 浏览器打开、以后打进手机壳，走的都是这一条 */
+__boot();
+
 </script>
 
 
