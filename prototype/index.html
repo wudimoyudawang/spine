@@ -1,9 +1,8 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>个人计划中枢 · 设计原型 v0.5</title>
+<html lang="zh-CN" data-page-node-id="MSaP57o9voDlopTCE3ZyJv" data-dm-ref="1" style=""><head data-page-node-id="KjtCuTmawkAcWV2z6am8f0">
+<meta charset="utf-8" data-page-node-id="KwnGKCnT4OE0y6AKA0FkHi">
+<meta name="viewport" content="width=device-width, initial-scale=1" data-page-node-id="J6IYzwlwpgZo1LKzBEf2Lp">
+<title>个人计划中枢 · 设计原型 v0.8</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{--bg:#F5F6F8;--card:#FFFFFF;--line:#E6E8EE;--line2:#D8DCE4;--text:#1F2430;--sub:#5A6272;--muted:#8A93A3;--accent:#2F6FEB;--accent-bg:#EAF1FE;--ok:#0F7A5A;--ok-bg:#E8F6F1;--warn:#A85B00;--warn-bg:#FDF3E3;--danger:#C0392B;--danger-bg:#FDECEA;--mask:rgba(31,36,48,.34);--r:12px}
@@ -41,6 +40,8 @@ body{background:var(--bg);color:var(--text);font:14px/1.6 system-ui,-apple-syste
 .tag{font-size:12px;font-weight:500;color:var(--sub)}
 .tag-danger{color:var(--danger)}
 .block-note{margin-left:auto;font-size:12px;color:var(--muted)}
+/* 区块头没有「说明文字」时，由按钮自己顶到最右（否则会紧贴标签） */
+.block-h>.tag+.addbtn{margin-left:auto}
 .list{list-style:none;display:flex;flex-direction:column;gap:2px}
 .row{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line)}
 .row:first-child{border-top:0}
@@ -217,6 +218,70 @@ body{background:var(--bg);color:var(--text);font:14px/1.6 system-ui,-apple-syste
 .test-bad{color:var(--danger)}
 .toast{position:fixed;left:50%;bottom:32px;z-index:60;transform:translate(-50%,12px);background:var(--text);color:#fff;font-size:13px;padding:9px 18px;border-radius:20px;opacity:0;pointer-events:none;transition:opacity .18s,transform .18s}
 .toast-on{opacity:1;transform:translate(-50%,0)}
+/* --- 今日页：金额摘要一行（记账在今日页唯一的痕迹，不占块） --- */
+.moneyline{display:flex;align-items:center;gap:6px;margin:-8px 0 14px;font-size:12px;color:var(--sub);flex-wrap:wrap}
+.moneyline b{color:var(--text);font-weight:500;font-variant-numeric:tabular-nums}
+.moneyline .res-fix{margin-left:auto;color:var(--accent);cursor:pointer;white-space:nowrap}
+/* --- 收件箱：就地归类面板（不跳页、不弹窗） --- */
+.clsbox{margin-top:8px;padding-top:9px;border-top:1px dashed var(--line2);display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.clsbox-k{flex:none;font-size:11px;color:var(--muted)}
+/* --- 复盘：导出面板 --- */
+.rev-out{width:100%;min-height:150px;margin-top:10px;padding:11px 13px;border:1px solid var(--line2);border-radius:9px;background:var(--bg);font:inherit;font-size:12px;line-height:1.75;color:var(--text);resize:vertical;white-space:pre-wrap}
+.revbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px}
+/* --- 自绘星标（不用星号 / 齿轮这类字符当图标） --- */
+.star{width:15px;height:15px;display:block}
+.row-acts{flex:none;display:flex;align-items:center;gap:4px}
+/* --- 流水行：文字占满，删除按钮贴右 --- */
+.flowrow{display:flex;align-items:center;gap:8px}
+.flowrow .grow{flex:1;min-width:0}
+/* --- 可编辑条目：整行就是入口，点一下弹窗改 ---
+   入口做在整行上而不是加一颗「编辑」按钮：一行里已经有打卡、删除两颗按钮了，
+   再加第三颗，窄屏上会把标题挤成一条缝。 */
+.row-edit{cursor:pointer}
+.row-edit:hover .row-name{color:var(--accent)}
+.logrow-edit{cursor:pointer;border-radius:8px;padding:5px 8px;margin:0 -8px}
+.logrow-edit:hover{background:var(--bg)}
+/* --- 子项：待办 / 习惯 / 长期目标 三部分共用同一套渲染 ---
+   注意类名不能再叫 .grow —— 那个类已经被「占满剩余空间的 span」占用了（.flowrow .grow）。 */
+.node-caret{width:14px;height:14px;flex:none;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.node-caret.is-leaf{visibility:hidden}                 /* 没有子项也占位，标题才不会左右跳 */
+.node-caret.is-closed .dir-caret{transform:rotate(-90deg)}
+.dir-caret{width:14px;height:14px;display:block;color:var(--muted);transition:transform .15s}
+.dir-c{flex:none;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+/* 打卡统计：行内那颗「连续 N 天 · 累计 M 天」。
+   数字用等宽数字（tabular-nums），否则连续 9→10 天时整行会左右抖。
+   还没有任何打卡记录时**根本不渲染这颗** —— 「连续 0 天 · 累计 0 天」是噪音。 */
+.streak{flex:none;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.streak b{font-weight:500;color:var(--sub)}
+.streak b.on{color:var(--ok)}
+/* 行尾那颗「加子项」。用虚线框 + 自绘加号，和计划行那排实心的「+1/+2/+5」进度按钮
+   在视觉上分开 —— 不然「加 1 个百分点」和「加一条子项」会长得一样。 */
+.nodebtn{width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;padding:0;border:1px dashed var(--line2);border-radius:7px;background:transparent;color:var(--muted);cursor:pointer}
+.nodebtn:hover{border-style:solid;border-color:var(--accent);background:var(--card);color:var(--accent)}
+.nodebtn svg{width:12px;height:12px;display:block}
+.dirpath{color:var(--muted)}
+/* 子项：左侧一条 1px 竖线，把「它挂在谁下面」画出来。
+   竖线用绝对定位的伪元素画，不用 border-left —— 带圆角的元素画单边线，线两端会跟着圆角弯下去。 */
+.ind{position:relative}
+.ind::before{content:"";position:absolute;left:var(--ind,0);top:1px;bottom:1px;width:1px;background:var(--line2)}
+/* 就地加子项的那一行输入框。加一条子项就是「一句话」，不值得为它弹一个窗 */
+.subin{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:6px 8px;margin:2px 0;border-radius:8px;background:var(--accent-bg)}
+/* --- 复盘「数值趋势」：条目可加可删 --- */
+.trend-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line)}
+.trend-row:first-child{border-top:0}
+.trend-k{width:74px;flex:none;font-size:13px}
+.trend-v{flex:1;min-width:0;font-size:12px;color:var(--sub)}
+/* 复盘页「习惯打卡」那张表：名字（可长，占满剩余）+ 连续/累计（定宽数字）+ 这一期。
+   名字列不能写死宽度 —— 习惯名是用户自己起的，「下班前清空收件箱」这种一写死就折行。 */
+.rev-h{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line)}
+.rev-h:first-child{border-top:0}
+.rev-hk{flex:1;min-width:0;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rev-hs{flex:none;font-size:12px;color:var(--sub);font-variant-numeric:tabular-nums}
+.rev-hx{flex:none;min-width:82px;text-align:right;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.trend-pick{display:flex;flex-wrap:wrap;gap:6px;padding:10px 0 2px;margin-top:4px;border-top:1px dashed var(--line2)}
+/* --- 编辑弹窗里的并排字段 --- */
+.field-2{display:flex;gap:10px}
+.field-2>*{flex:1 1 0;min-width:0}
 @media (max-width:920px){
   .app{flex-direction:column}
   .side{width:auto;border-right:0;border-bottom:1px solid var(--line)}
@@ -230,334 +295,327 @@ body{background:var(--bg);color:var(--text);font:14px/1.6 system-ui,-apple-syste
   .g2,.g3,.g4{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 </style>
-</head>
-<body>
-<div class="app">
-  <aside class="side">
-    <div class="brand">
-      <div class="brand-t">个人计划中枢</div>
-      <div class="brand-s">设计原型 v0.5 · 只看结构</div>
+<style id="__dm_no_drag_style__">* { -webkit-user-drag: none !important; }</style><style id="__dm_bindable_badge_style__">[data-sp-bindable="database"]{outline:1px dashed #0088ff;outline-offset:2px;border-radius:4px;}[data-sp-bindable="database"] *{pointer-events:none !important;transition:none !important;animation:none !important;}[data-sp-bindable="database"]{transition:none !important;animation:none !important;}</style></head>
+<body data-page-node-id="GSawu8YWGlcVIEl280nw2U" style="position: relative;">
+<div class="app" data-page-node-id="XLWuzRRA9VNlQ0VjnFqzxn">
+  <aside class="side" data-page-node-id="0A4CUzEbBOaHhzoKKCy68Y">
+    <div class="brand" data-page-node-id="zeZhDdBnXAGgCPOYJwRdl1">
+      <div class="brand-t" data-page-node-id="3gE6rTAPOCRyVHzQ3wkVNy">个人计划中枢</div>
+      <div class="brand-s" data-page-node-id="m8yEkUR8qnZRaujpI6Aqmi">设计原型 v0.8 · 可编辑</div>
     </div>
-    <nav class="nav">
-      <button class="navi is-on" data-go="today">今日</button>
-      <button class="navi" data-go="inbox">收集</button>
-      <button class="navi" data-go="notes">随心记</button>
-      <button class="navi" data-go="spaces">空间</button>
-      <button class="navi" data-go="ledger">记账</button>
-      <button class="navi" data-go="review">复盘</button>
-      <button class="navi navi-split" data-go="settings">设置</button>
+    <nav class="nav" data-page-node-id="Ki5DKtzN60LiPXVXeYkzM2">
+      <button class="navi is-on" data-go="today" data-page-node-id="GZQhq8UFgIEGmwXaYThA8Y">今日</button>
+      <button class="navi" data-go="inbox" data-page-node-id="MSMj0iQVpmc3kbeBwavZFb">收集</button>
+      <button class="navi" data-go="notes" data-page-node-id="R4VuMQ1zsay2hwDmRx6gbs">随心记</button>
+      <button class="navi" data-go="spaces" data-page-node-id="XqP99BwXrQfnB4SCMzEJqB">空间</button>
+      <button class="navi" data-go="ledger" data-page-node-id="SEWn4mnyTipfjhjJvuSrfm">记账</button>
+      <button class="navi" data-go="review" data-page-node-id="kFCmckWwteXboTzTJnlxjj">复盘</button>
+      <button class="navi navi-split" data-go="settings" data-page-node-id="h0BQf1k2nF1DcblPTnuQPi">设置</button>
     </nav>
-    <div class="side-q">
-      <div class="side-q-h">顶部快捷</div>
-      <div class="nav" id="sideQuickList"></div>
+    <div class="side-q" data-page-node-id="VbSzHzi7URQfuohhN9fRHC">
+      <div class="side-q-h" data-page-node-id="61alIORSRj7ZtizFAIfAJe">顶部快捷</div>
+      <div class="nav" id="sideQuickList" data-page-node-id="3AA5ZzsjnjUOjMAuDF9GNK"><button class="navi navi-q" data-domain="fitness"><span class="dot"></span><span>健身</span></button></div>
     </div>
   </aside>
 
-  <main class="main">
-    <header class="topbar">
-      <h1 class="ptitle" id="ptitle">今日</h1>
-      <div class="pdate" id="pdate">9月18日 周五</div>
+  <main class="main" data-page-node-id="oJOXLRMEGV4PIsHDD0Y40s">
+    <header class="topbar" data-page-node-id="CsNHu8FsGCa5DZz75DYzSf">
+      <h1 class="ptitle" id="ptitle" data-page-node-id="Z5cZlWtefPNbzkgByj4ACN">今日</h1>
+      <div class="pdate" id="pdate" data-page-node-id="ValFGJoWqLY89JO9baO8AZ">9月18日 周五</div>
     </header>
 
-    <div class="pages">
+    <div class="pages" data-page-node-id="rJ4AHVllrjjZlRyH7J9TUu">
 
-      <section class="page is-on" data-page="today">
-        <div class="capture" id="capture">
-          <div class="capture-row">
-            <input id="quickInput" class="capture-in" placeholder="想记什么就写什么 —— 事情、花了多少、热量、体重、一句话…">
-            <button class="capture-btn" id="quickBtn">记下</button>
+      <section class="page is-on" data-page="today" data-page-node-id="SvClNRLGemSpLinAxl9Z7T">
+        <div class="capture" id="capture" data-page-node-id="hHSvCFAqkGICzl65tnv3IC">
+          <div class="capture-row" data-page-node-id="J8As9jm0wizB0jpkmyq19D">
+            <input id="quickInput" class="capture-in" placeholder="想记什么就写什么：事情、金额、热量、体重、一句话" data-page-node-id="RfCReB1Y6RD5LfO1bAxYZR">
+            <button class="capture-btn" id="quickBtn" data-page-node-id="oOsV2TSPX81O033FzQdHGl">记下</button>
           </div>
-          <div class="capture-foot">
-            <div class="capture-types" id="captureTypes"></div>
-            <button class="mchip mchip-cfg" id="cfgBtn" data-cfg="toggle">⚙ 自定义</button>
+          <div class="capture-foot" data-page-node-id="d0pduWMPhWwHCPhXqHyUwj">
+            <div class="capture-types" id="captureTypes" data-page-node-id="ymAB19nUVcnsf0ax5cj0oJ"><button class="mchip is-on" data-mode="auto" title="系统项">自动判断</button><button class="mchip" data-mode="todo" title="系统项">待办</button><button class="mchip" data-mode="note" title="系统项">随心记</button><button class="mchip" data-mode="money" title="系统项">记一笔支出</button><button class="mchip" data-mode="inbox" title="系统项">只丢进收件箱</button><button class="mchip" data-mode="rt_kcal_in" title="健身 · 数值 · kcal">热量摄入</button><button class="mchip" data-mode="rt_kcal_out" title="健身 · 数值 · kcal">热量消耗</button><button class="mchip" data-mode="rt_weight" title="健身 · 数值 · kg">体重</button></div>
+            <button class="mchip mchip-cfg" id="cfgBtn" data-cfg="toggle" data-page-node-id="jTvxz5gm8Dfr36Ew5zgldV" style="font-size: 10px;">自定义</button>
           </div>
-          <div class="capture-res" id="captureRes"></div>
-          <div id="capCfg"></div>
+          <div class="capture-res" id="captureRes" data-page-node-id="qlHRelSrFs58gRJ4EdSEe1"><span>任何页面按 </span><span class="kbd">/</span><span> 直接开始记 · 回车即存 · 认不出来也不会丢</span></div>
+          <div id="capCfg" data-page-node-id="8mzKuVxzbJcI3odfKB2lpF"></div>
         </div>
-        <div class="note" style="margin:-6px 0 16px">
-          一个框解决所有记录：写一句话，回车就存，<b>不跳页、不填表</b>。<b>认不出来也不会丢</b>，默认进收件箱等以后归类。
-          <br>下面哪些类目出现、系统怎么判断你写的话 —— 都由你在 <b>⚙ 自定义</b> 里定。
+        
+
+        <div class="moneyline" id="todayMoney" data-page-node-id="xyIYpk8QAAgICpTu6Kw1FU"><span>今天 </span><b>¥38</b><span>· 2 笔</span><span>　本月 </span><b>¥1681</b><span class="res-fix" data-go="ledger">去记账</span></div>
+
+        <div class="block block-danger" data-page-node-id="BQY9spWMYgEx8uGcQc4Bh0">
+          <div class="block-h" data-page-node-id="PANCquM2YNw822Y4d4bxyp"><span class="tag tag-danger" data-page-node-id="ZmdFnFBDDqq1GG1bwyjHJO">逾期</span><span class="block-note" data-page-node-id="Ovw5MFTCoOVMFqcPmbreu3">一直置顶</span></div>
+          <ul class="list" id="overdueList" data-page-node-id="uDSQgseFwFfFERyHCG4Vv0"><li class="row row-edit" data-edit="item:it1" style="padding-left: 0px;"><span class="node-caret is-leaf"></span><span class="cbox"></span><span class="row-main"><span class="row-name">交上月报销单</span><span class="row-meta">工作 · 逾期 2026-09-16 周三</span></span><button class="nodebtn" data-sub="it1" data-subk="item" data-subdom="" title="在「交上月报销单」下面加一条子项" aria-label="在「交上月报销单」下面加一条子项"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M6 1.6v8.8M1.6 6h8.8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path></svg></button><button class="delbtn" data-del="item:it1" data-del-name="交上月报销单" title="删除「交上月报销单」" aria-label="删除「交上月报销单」">×</button></li><li class="row row-edit" data-edit="item:it2" style="padding-left: 0px;"><span class="node-caret is-leaf"></span><span class="cbox"></span><span class="row-main"><span class="row-name">给张工回邮件</span><span class="row-meta">工作 · 逾期 2026-09-17 周四</span></span><button class="nodebtn" data-sub="it2" data-subk="item" data-subdom="" title="在「给张工回邮件」下面加一条子项" aria-label="在「给张工回邮件」下面加一条子项"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M6 1.6v8.8M1.6 6h8.8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path></svg></button><button class="delbtn" data-del="item:it2" data-del-name="给张工回邮件" title="删除「给张工回邮件」" aria-label="删除「给张工回邮件」">×</button></li></ul>
         </div>
 
-        <div class="block block-danger">
-          <div class="block-h"><span class="tag tag-danger">逾期</span><span class="block-note">永远置顶，不用往下翻</span></div>
-          <ul class="list" id="overdueList"></ul>
+        <div class="block" data-page-node-id="CoJpBe4u0x9fev9ooKEKgW">
+          <div class="block-h" data-page-node-id="qigvHETjncPsMpmX6pCpBy"><span class="tag" data-page-node-id="Z9ugTrvvCsRBmBRhHPchF4">今天</span><button class="addbtn" data-add-open="todo" data-page-node-id="iBAnW07ci1uPofxp6PwIdb">+ 新增待办</button></div>
+          <ul class="list" id="dueList" data-page-node-id="ODzPx5wQBLmE8ZJbY2ev4R"><li class="row row-edit" data-edit="item:it3" style="padding-left: 0px;"><span class="node-caret" data-fold="it3" title="折叠或展开子项" aria-label="折叠或展开子项"><svg viewBox="0 0 16 16" class="dir-caret" aria-hidden="true"><path d="M4 6.3l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg></span><span class="cbox"></span><span class="row-main"><span class="row-name">写周报</span><span class="row-meta">工作 · 今天</span></span><span class="dir-c">2 项</span><button class="nodebtn" data-sub="it3" data-subk="item" data-subdom="" title="在「写周报」下面加一条子项" aria-label="在「写周报」下面加一条子项"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M6 1.6v8.8M1.6 6h8.8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path></svg></button><button class="delbtn" data-del="item:it3" data-del-name="写周报" title="删除「写周报」" aria-label="删除「写周报」">×</button></li><li class="row row-edit ind" data-edit="item:it8" style="padding-left: 22px; --ind: 9px;"><span class="node-caret is-leaf"></span><span class="cbox"></span><span class="row-main"><span class="row-name">整理本周产出</span><span class="row-meta">写周报 · 工作 · 今天</span></span><button class="nodebtn" data-sub="it8" data-subk="item" data-subdom="" title="在「整理本周产出」下面加一条子项" aria-label="在「整理本周产出」下面加一条子项"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M6 1.6v8.8M1.6 6h8.8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path></svg></button><button class="delbtn" data-del="item:it8" data-del-name="整理本周产出" title="删除「整理本周产出」" aria-label="删除「整理本周产出」">×</button></li><li class="row row-edit ind" data-edit="item:it9" style="padding-left: 22px; --ind: 9px;"><span class="node-caret is-leaf"></span><span class="cbox"></span><span class="row-main"><span class="row-name">补上周遗留的两条</span><span class="row-meta">写周报 · 工作 · 今天</span></span><button class="nodebtn" data-sub="it9" data-subk="item" data-subdom="" title="在「补上周遗留的两条」下面加一条子项" aria-label="在「补上周遗留的两条」下面加一条子项"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M6 1.6v8.8M1.6 6h8.8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path></svg></button><button class="delbtn" data-del="item:it9" data-del-name="补上周遗留的两条" title="删除「补上周遗留的两条」" aria-label="删除「补上周遗留的两条」">×</button></li><li class="row row-edit" data-edit="item:it4" style="padding-left: 0px;"><span class="node-caret is-leaf"></span><span class="cbox"></span><span class="row-main"><span class="row-name">买跑鞋</span><span class="row-meta">个人 · 今天</span></span><button class="nodebtn" data-sub="it4" data-subk="item" data-subdom="" title="在「买跑鞋」下面加一条子项" aria-label="在「买跑鞋」下面加一条子项"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M6 1.6v8.8M1.6 6h8.8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path></svg></button><button class="delbtn" data-del="item:it4" data-del-name="买跑鞋" title="删除「买跑鞋」" aria-label="删除「买跑鞋」">×</button></li></ul>
         </div>
 
-        <div class="block">
-          <div class="block-h"><span class="tag">今天</span><span class="block-note" id="todayCount"></span><button class="addbtn" data-add-open="todo">+ 新增待办</button></div>
-          <ul class="list" id="dueList"></ul>
+        <div class="block" data-page-node-id="uQqtodiffCM2yG60u4hdtD">
+          <div class="block-h" data-page-node-id="hINKU4BpP2pc4IqMX6doYm"><span class="tag" data-page-node-id="Svh3ziBqErWvaKvaIoPbyq">习惯</span><span class="block-note" data-page-node-id="MP5wXTV3VBDmkCtJDEVktt">今天该打卡的</span><button class="addbtn" data-add-open="habit" data-page-node-id="7kctpBG874RSDXWtur76Y1">+ 新增习惯</button></div>
+          <ul class="list" id="todayHabits" data-page-node-id="SZ5UUfMirgoWJ4j0M1qy4C"><li class="row row-edit" data-edit="habit:h-fit-1" style="padding-left: 0px;"><span class="node-caret is-leaf"></span><span class="cbox"></span><span class="row-main"><span class="row-name">训练日打卡</span><span class="row-meta">健身 · 每周 4 次</span></span><span class="streak" title="这个习惯：连续打卡 3 天，累计打卡 4 天"><b class="on">连续 3 天</b> · 累计 4 天</span><button class="tick tick-on" data-tick="1" data-tick-key="h-fit-1">已打卡</button><button class="nodebtn" data-sub="h-fit-1" data-subk="habit" data-subdom="fitness" title="在「训练日打卡」下面加一条子项" aria-label="在「训练日打卡」下面加一条子项"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M6 1.6v8.8M1.6 6h8.8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path></svg></button><button class="delbtn" data-del="habit:h-fit-1" data-del-name="训练日打卡" title="删除「训练日打卡」" aria-label="删除「训练日打卡」">×</button></li><li class="row row-edit" data-edit="habit:h-study-1" style="padding-left: 0px;"><span class="node-caret is-leaf"></span><span class="cbox"></span><span class="row-main"><span class="row-name">阅读 30 分钟</span><span class="row-meta">学习 · 每天</span></span><span class="streak" title="这个习惯：连续打卡 1 天，累计打卡 5 天"><b class="on">连续 1 天</b> · 累计 5 天</span><button class="tick" data-tick="1" data-tick-key="h-study-1">打卡</button><button class="nodebtn" data-sub="h-study-1" data-subk="habit" data-subdom="study" title="在「阅读 30 分钟」下面加一条子项" aria-label="在「阅读 30 分钟」下面加一条子项"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M6 1.6v8.8M1.6 6h8.8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path></svg></button><button class="delbtn" data-del="habit:h-study-1" data-del-name="阅读 30 分钟" title="删除「阅读 30 分钟」" aria-label="删除「阅读 30 分钟」">×</button></li><li class="row row-edit" data-edit="habit:h-work-1" style="padding-left: 0px;"><span class="node-caret is-leaf"></span><span class="cbox"></span><span class="row-main"><span class="row-name">下班前清空收件箱</span><span class="row-meta">工作 · 工作日</span></span><button class="tick" data-tick="1" data-tick-key="h-work-1">打卡</button><button class="nodebtn" data-sub="h-work-1" data-subk="habit" data-subdom="work" title="在「下班前清空收件箱」下面加一条子项" aria-label="在「下班前清空收件箱」下面加一条子项"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M6 1.6v8.8M1.6 6h8.8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path></svg></button><button class="delbtn" data-del="habit:h-work-1" data-del-name="下班前清空收件箱" title="删除「下班前清空收件箱」" aria-label="删除「下班前清空收件箱」">×</button></li><li class="row row-edit" data-edit="habit:h-life-1" style="padding-left: 0px;"><span class="node-caret" data-fold="h-life-1" title="折叠或展开子项" aria-label="折叠或展开子项"><svg viewBox="0 0 16 16" class="dir-caret" aria-hidden="true"><path d="M4 6.3l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg></span><span class="cbox"></span><span class="row-main"><span class="row-name">健康作息</span><span class="row-meta">个人 · 一组习惯</span></span><span class="dir-c">2 项</span><span class="streak" title="这个习惯：连续打卡 3 天，累计打卡 3 天"><b class="on">连续 3 天</b> · 累计 3 天</span><button class="tick" data-tick="1" data-tick-key="h-life-1">打卡</button><button class="nodebtn" data-sub="h-life-1" data-subk="habit" data-subdom="life" title="在「健康作息」下面加一条子项" aria-label="在「健康作息」下面加一条子项"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M6 1.6v8.8M1.6 6h8.8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path></svg></button><button class="delbtn" data-del="habit:h-life-1" data-del-name="健康作息" title="删除「健康作息」" aria-label="删除「健康作息」">×</button></li><li class="row row-edit ind" data-edit="habit:h-life-2" style="padding-left: 22px; --ind: 9px;"><span class="node-caret is-leaf"></span><span class="cbox"></span><span class="row-main"><span class="row-name">饮水 2L</span><span class="row-meta">健康作息 · 个人 · 每天</span></span><span class="streak" title="这个习惯：连续打卡 5 天，累计打卡 5 天"><b class="on">连续 5 天</b> · 累计 5 天</span><button class="tick tick-on" data-tick="1" data-tick-key="h-life-2">已打卡</button><button class="nodebtn" data-sub="h-life-2" data-subk="habit" data-subdom="life" title="在「饮水 2L」下面加一条子项" aria-label="在「饮水 2L」下面加一条子项"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M6 1.6v8.8M1.6 6h8.8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path></svg></button><button class="delbtn" data-del="habit:h-life-2" data-del-name="饮水 2L" title="删除「饮水 2L」" aria-label="删除「饮水 2L」">×</button></li><li class="row row-edit ind" data-edit="habit:h-life-3" style="padding-left: 22px; --ind: 9px;"><span class="node-caret is-leaf"></span><span class="cbox"></span><span class="row-main"><span class="row-name">23:30 前睡</span><span class="row-meta">健康作息 · 个人 · 工作日</span></span><span class="streak" title="这个习惯：连续打卡 1 天，累计打卡 1 天"><b class="on">连续 1 天</b> · 累计 1 天</span><button class="tick tick-on" data-tick="1" data-tick-key="h-life-3">已打卡</button><button class="nodebtn" data-sub="h-life-3" data-subk="habit" data-subdom="life" title="在「23:30 前睡」下面加一条子项" aria-label="在「23:30 前睡」下面加一条子项"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M6 1.6v8.8M1.6 6h8.8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path></svg></button><button class="delbtn" data-del="habit:h-life-3" data-del-name="23:30 前睡" title="删除「23:30 前睡」" aria-label="删除「23:30 前睡」">×</button></li></ul>
         </div>
 
-        <div class="block">
-          <div class="block-h"><span class="tag">习惯</span><span class="block-note">今天该打卡的</span><button class="addbtn" data-add-open="habit">+ 新增习惯</button></div>
-          <ul class="list" id="todayHabits"></ul>
+        <div class="block" data-page-node-id="hByqJFkx8LNLNR4B6hh4M3">
+          <div class="block-h" data-page-node-id="6kZGGmORUUvfSUpJ1Vc6az"><span class="tag" data-page-node-id="sjp2YeFs15xTAES0TwHJnb">计划</span><span class="block-note" data-page-node-id="CMMDHAWp4vGYRVKgF3HDic">点条目调进度</span><button class="addbtn" data-add-open="goal" data-page-node-id="s1qK0ZIKxsb5Ay0GN2PAe9">+ 新增长期计划</button></div>
+          <div id="todayGoals" data-page-node-id="VuCfYHsewtVVbDeMz4hNnY"><div class="row row-goal" data-goal-open="g-fitness-1" style="padding-left: 0px;"><span class="node-caret" data-fold="g-fitness-1" title="折叠或展开子项" aria-label="折叠或展开子项"><svg viewBox="0 0 16 16" class="dir-caret" aria-hidden="true"><path d="M4 6.3l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg></span><span class="row-main"><span class="row-name">硬拉 100kg</span><span class="row-meta">健身 · 长期 · 80%</span></span><span class="bar"><span class="bar-fill" style="width: 80%;"></span></span><span class="row-val">80%</span><span class="dir-c">2 项</span><button class="nodebtn" data-sub="g-fitness-1" data-subk="goal" data-subdom="fitness" title="在「硬拉 100kg」下面加一条子项" aria-label="在「硬拉 100kg」下面加一条子项"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M6 1.6v8.8M1.6 6h8.8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path></svg></button><button class="delbtn" data-del="goal:g-fitness-1" data-del-name="硬拉 100kg" title="删除「硬拉 100kg」" aria-label="删除「硬拉 100kg」">×</button></div><div class="row row-goal ind" data-goal-open="g-fitness-1a" style="padding-left: 22px; --ind: 9px;"><span class="node-caret is-leaf"></span><span class="row-main"><span class="row-name">周期一：85kg × 5</span><span class="row-meta">硬拉 100kg · 健身 · 长期 · 100%</span></span><span class="bar"><span class="bar-fill" style="width: 100%;"></span></span><span class="row-val">100%</span><button class="nodebtn" data-sub="g-fitness-1a" data-subk="goal" data-subdom="fitness" title="在「周期一：85kg × 5」下面加一条子项" aria-label="在「周期一：85kg × 5」下面加一条子项"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M6 1.6v8.8M1.6 6h8.8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path></svg></button><button class="delbtn" data-del="goal:g-fitness-1a" data-del-name="周期一：85kg × 5" title="删除「周期一：85kg × 5」" aria-label="删除「周期一：85kg × 5」">×</button></div><div class="row row-goal ind" data-goal-open="g-fitness-1b" style="padding-left: 22px; --ind: 9px;"><span class="node-caret is-leaf"></span><span class="row-main"><span class="row-name">周期二：95kg × 3</span><span class="row-meta">硬拉 100kg · 健身 · 长期 · 40%</span></span><span class="bar"><span class="bar-fill" style="width: 40%;"></span></span><span class="row-val">40%</span><button class="nodebtn" data-sub="g-fitness-1b" data-subk="goal" data-subdom="fitness" title="在「周期二：95kg × 3」下面加一条子项" aria-label="在「周期二：95kg × 3」下面加一条子项"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M6 1.6v8.8M1.6 6h8.8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path></svg></button><button class="delbtn" data-del="goal:g-fitness-1b" data-del-name="周期二：95kg × 3" title="删除「周期二：95kg × 3」" aria-label="删除「周期二：95kg × 3」">×</button></div><div class="row row-goal" data-goal-open="g-fitness-2" style="padding-left: 0px;"><span class="node-caret is-leaf"></span><span class="row-main"><span class="row-name">体脂降到 18%</span><span class="row-meta">健身 · 长期 · 35%</span></span><span class="bar"><span class="bar-fill" style="width: 35%;"></span></span><span class="row-val">35%</span><button class="nodebtn" data-sub="g-fitness-2" data-subk="goal" data-subdom="fitness" title="在「体脂降到 18%」下面加一条子项" aria-label="在「体脂降到 18%」下面加一条子项"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M6 1.6v8.8M1.6 6h8.8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path></svg></button><button class="delbtn" data-del="goal:g-fitness-2" data-del-name="体脂降到 18%" title="删除「体脂降到 18%」" aria-label="删除「体脂降到 18%」">×</button></div><div class="row row-goal" data-goal-open="g-study-1" style="padding-left: 0px;"><span class="node-caret" data-fold="g-study-1" title="折叠或展开子项" aria-label="折叠或展开子项"><svg viewBox="0 0 16 16" class="dir-caret" aria-hidden="true"><path d="M4 6.3l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg></span><span class="row-main"><span class="row-name">读完《置身事内》</span><span class="row-meta">学习 · 长期 · 60%</span></span><span class="bar"><span class="bar-fill" style="width: 60%;"></span></span><span class="row-val">60%</span><span class="dir-c">2 项</span><button class="nodebtn" data-sub="g-study-1" data-subk="goal" data-subdom="study" title="在「读完《置身事内》」下面加一条子项" aria-label="在「读完《置身事内》」下面加一条子项"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M6 1.6v8.8M1.6 6h8.8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path></svg></button><button class="delbtn" data-del="goal:g-study-1" data-del-name="读完《置身事内》" title="删除「读完《置身事内》」" aria-label="删除「读完《置身事内》」">×</button></div><div class="row row-goal ind" data-goal-open="g-study-1a" style="padding-left: 22px; --ind: 9px;"><span class="node-caret is-leaf"></span><span class="row-main"><span class="row-name">第 1–5 章</span><span class="row-meta">读完《置身事内》 · 学习 · 长期 · 100%</span></span><span class="bar"><span class="bar-fill" style="width: 100%;"></span></span><span class="row-val">100%</span><button class="nodebtn" data-sub="g-study-1a" data-subk="goal" data-subdom="study" title="在「第 1–5 章」下面加一条子项" aria-label="在「第 1–5 章」下面加一条子项"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M6 1.6v8.8M1.6 6h8.8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path></svg></button><button class="delbtn" data-del="goal:g-study-1a" data-del-name="第 1–5 章" title="删除「第 1–5 章」" aria-label="删除「第 1–5 章」">×</button></div><div class="row row-goal ind" data-goal-open="g-study-1b" style="padding-left: 22px; --ind: 9px;"><span class="node-caret is-leaf"></span><span class="row-main"><span class="row-name">第 6–10 章</span><span class="row-meta">读完《置身事内》 · 学习 · 长期 · 50%</span></span><span class="bar"><span class="bar-fill" style="width: 50%;"></span></span><span class="row-val">50%</span><button class="nodebtn" data-sub="g-study-1b" data-subk="goal" data-subdom="study" title="在「第 6–10 章」下面加一条子项" aria-label="在「第 6–10 章」下面加一条子项"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M6 1.6v8.8M1.6 6h8.8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path></svg></button><button class="delbtn" data-del="goal:g-study-1b" data-del-name="第 6–10 章" title="删除「第 6–10 章」" aria-label="删除「第 6–10 章」">×</button></div><div class="row row-goal" data-goal-open="g-work-1" style="padding-left: 0px;"><span class="node-caret is-leaf"></span><span class="row-main"><span class="row-name">知识库项目 v1 上线</span><span class="row-meta">工作 · 长期 · 45%</span></span><span class="bar"><span class="bar-fill" style="width: 45%;"></span></span><span class="row-val">45%</span><button class="nodebtn" data-sub="g-work-1" data-subk="goal" data-subdom="work" title="在「知识库项目 v1 上线」下面加一条子项" aria-label="在「知识库项目 v1 上线」下面加一条子项"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M6 1.6v8.8M1.6 6h8.8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path></svg></button><button class="delbtn" data-del="goal:g-work-1" data-del-name="知识库项目 v1 上线" title="删除「知识库项目 v1 上线」" aria-label="删除「知识库项目 v1 上线」">×</button></div><div class="row row-goal" data-goal-open="g-life-1" style="padding-left: 0px;"><span class="node-caret" data-fold="g-life-1" title="折叠或展开子项" aria-label="折叠或展开子项"><svg viewBox="0 0 16 16" class="dir-caret" aria-hidden="true"><path d="M4 6.3l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg></span><span class="row-main"><span class="row-name">家庭年度旅行成行</span><span class="row-meta">个人 · 长期 · 50%</span></span><span class="bar"><span class="bar-fill" style="width: 50%;"></span></span><span class="row-val">50%</span><span class="dir-c">2 项</span><button class="nodebtn" data-sub="g-life-1" data-subk="goal" data-subdom="life" title="在「家庭年度旅行成行」下面加一条子项" aria-label="在「家庭年度旅行成行」下面加一条子项"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M6 1.6v8.8M1.6 6h8.8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path></svg></button><button class="delbtn" data-del="goal:g-life-1" data-del-name="家庭年度旅行成行" title="删除「家庭年度旅行成行」" aria-label="删除「家庭年度旅行成行」">×</button></div><div class="row row-goal ind" data-goal-open="g-life-1a" style="padding-left: 22px; --ind: 9px;"><span class="node-caret is-leaf"></span><span class="row-main"><span class="row-name">定目的地和日期</span><span class="row-meta">家庭年度旅行成行 · 个人 · 长期 · 100%</span></span><span class="bar"><span class="bar-fill" style="width: 100%;"></span></span><span class="row-val">100%</span><button class="nodebtn" data-sub="g-life-1a" data-subk="goal" data-subdom="life" title="在「定目的地和日期」下面加一条子项" aria-label="在「定目的地和日期」下面加一条子项"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M6 1.6v8.8M1.6 6h8.8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path></svg></button><button class="delbtn" data-del="goal:g-life-1a" data-del-name="定目的地和日期" title="删除「定目的地和日期」" aria-label="删除「定目的地和日期」">×</button></div><div class="row row-goal ind" data-goal-open="g-life-1b" style="padding-left: 22px; --ind: 9px;"><span class="node-caret is-leaf"></span><span class="row-main"><span class="row-name">办签证</span><span class="row-meta">家庭年度旅行成行 · 个人 · 长期 · 20%</span></span><span class="bar"><span class="bar-fill" style="width: 20%;"></span></span><span class="row-val">20%</span><button class="nodebtn" data-sub="g-life-1b" data-subk="goal" data-subdom="life" title="在「办签证」下面加一条子项" aria-label="在「办签证」下面加一条子项"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M6 1.6v8.8M1.6 6h8.8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path></svg></button><button class="delbtn" data-del="goal:g-life-1b" data-del-name="办签证" title="删除「办签证」" aria-label="删除「办签证」">×</button></div></div>
         </div>
 
-        <div class="block">
-          <div class="block-h"><span class="tag">计划</span><span class="block-note">点条目可调整进度</span><button class="addbtn" data-add-open="goal">+ 新增长期计划</button></div>
-          <div id="todayGoals"></div>
-        </div>
-
-        <div class="block">
-          <div class="block-h"><span class="tag">今天记下的</span><span class="block-note">记完立刻能看见，就在原地</span></div>
-          <div id="todayLog"></div>
+        <div class="block" data-page-node-id="qkSUWaB4lX4b3TVgVc1NQO">
+          <div class="block-h" data-page-node-id="Tx03KOh0NesVrRQAD1r4cG"><span class="tag" data-page-node-id="tG24PbQaKaMWwOIy7oNkdH">今天记下的</span><span class="block-note" data-page-node-id="CVx12u4LwVzuZJDufU3fAy">刚记的都在这儿</span></div>
+          <div id="todayLog" data-page-node-id="t7fBolCZTGZzObYUx2LkqU"><div class="logrow logrow-edit" data-edit-log="0"><span class="logrow-d">08:15</span><span class="logrow-v">早餐 ¥12 · 餐饮</span></div><div class="logrow logrow-edit" data-edit-log="1"><span class="logrow-d">10:30</span><span class="logrow-v">体重 71.4 kg</span></div><div class="logrow logrow-edit" data-edit-log="2"><span class="logrow-d">12:40</span><span class="logrow-v">午餐 ¥32 · 餐饮</span></div></div>
         </div>
       </section>
 
-      <section class="page" data-page="inbox">
-        <div class="quick">
-          <input id="inboxInput" class="quick-in" placeholder="想到什么就写下来，先扔进收件箱">
-          <button class="quick-btn" id="inboxBtn">存下</button>
+      <section class="page" data-page="inbox" data-page-node-id="6THb7CHNYmu78LJIsuJGh7">
+        <div class="quick" data-page-node-id="3NdaPL9Y4XCWALWoaHHWWi">
+          <input id="inboxInput" class="quick-in" placeholder="想到什么就写下来，先扔进收件箱" data-page-node-id="D6A4yD05XvFZ8UjMdK1dTp">
+          <button class="quick-btn" id="inboxBtn" data-page-node-id="SqAym8MROVqpE06Yi7elrB">存下</button>
         </div>
-        <div class="block">
-          <div class="block-h"><span class="tag">收件箱</span><span class="block-note" id="inboxCount" data-n="3">3 条待归类</span></div>
-          <ul class="list" id="inboxNew">
-            <li class="row"><span class="cbox"></span><span class="row-main"><span class="row-name">把体检报告拍照存档</span><span class="row-meta">没有日期 · 没有领域</span></span><button class="chip">归类</button></li>
-            <li class="row"><span class="cbox"></span><span class="row-main"><span class="row-name">问问李工那个接口文档在哪</span><span class="row-meta">没有日期 · 没有领域</span></span><button class="chip">归类</button></li>
-            <li class="row"><span class="cbox"></span><span class="row-main"><span class="row-name">想学一下 GraphRAG</span><span class="row-meta">没有日期 · 没有领域</span></span><button class="chip">归类</button></li>
-          </ul>
-          <div class="note">收件箱只解决一件事：<b>先记下来，别丢</b>。要不要变成待办、归到哪个领域，可以以后再说 —— 大部分的事情其实不需要日期。</div>
+        <div class="block" data-page-node-id="eb6QawSsjFv7FIluZm3N2l">
+          <div class="block-h" data-page-node-id="VeZIunFRu1b4qqlW7O6N32"><span class="tag" data-page-node-id="yKza8YtoDod5cJvvNrnhFT">收件箱</span><span class="block-note" id="inboxCount" data-page-node-id="TejVI1MCFI2NsYVjFxm95g">3 条待归类</span></div>
+          <ul class="list" id="inboxNew" data-page-node-id="9FOBrC2rQRD5FkQZIr6SQY"><li class="row"><span class="row-main"><span class="row-name">问问李工那个接口文档在哪</span><span class="row-meta">记于 9月17日 周四 · 没有领域</span></span><button class="chip" data-cls="in1">归类</button><button class="delbtn" data-del="inbox:in1" data-del-name="问问李工那个接口文档在哪" title="删除「问问李工那个接口文档在哪」" aria-label="删除「问问李工那个接口文档在哪」">×</button></li><li><div class="clsbox"><span class="clsbox-k">归到：</span><button class="mchip" data-cls-to="todo" data-cls-id="in1">今天待办</button><button class="mchip" data-cls-to="note" data-cls-id="in1">随心记</button><button class="mchip" data-cls-to="fitness" data-cls-id="in1">健身</button><button class="mchip" data-cls-to="study" data-cls-id="in1">学习</button><button class="mchip" data-cls-to="work" data-cls-id="in1">工作</button><button class="mchip" data-cls-to="life" data-cls-id="in1">个人</button><button class="mchip" data-cls-cancel="1">先留着</button></div></li><li class="row"><span class="row-main"><span class="row-name">想学一下 GraphRAG</span><span class="row-meta">记于 9月17日 周四 · 没有领域</span></span><button class="chip" data-cls="in2">归类</button><button class="delbtn" data-del="inbox:in2" data-del-name="想学一下 GraphRAG" title="删除「想学一下 GraphRAG」" aria-label="删除「想学一下 GraphRAG」">×</button></li><li class="row"><span class="row-main"><span class="row-name">换一盒充电电池</span><span class="row-meta">记于 9月18日 周五 · 没有领域</span></span><button class="chip" data-cls="in3">归类</button><button class="delbtn" data-del="inbox:in3" data-del-name="换一盒充电电池" title="删除「换一盒充电电池」" aria-label="删除「换一盒充电电池」">×</button></li></ul>
+          
+          <div class="note" data-page-node-id="Vt7hK2sMqX5nRj9dLpW4Bf">归类就是把它变成别处的正经条目，然后从这里消失。</div>
         </div>
       </section>
 
-      <section class="page" data-page="notes">
-        <div class="block">
-          <textarea class="ta" id="noteInput" placeholder="随便写。这里没有标题、没有分类、没有必填项。"></textarea>
-          <div class="hint">今天可以想想：最近哪件事让你反复想起？</div>
-          <div class="chips">
-            <button class="btn btn-main">存下</button>
-            <button class="btn">换一个提示</button>
+      <section class="page" data-page="notes" data-page-node-id="6AIKh7xDCrBCCNtzxZeDuD">
+        <div class="block" data-page-node-id="meNzqhaFTXmNNBg0HhX8C0">
+          <textarea class="ta" id="noteInput" placeholder="随便写。没有标题、没有分类、没有必填项。"></textarea>
+          <div class="hint" id="noteHint" data-page-node-id="T8ABjrKd6rKmQ3KyXrgC8q">今天可以想想：最近哪件事让你反复想起？</div>
+          <div class="chips" data-page-node-id="yqVnkMA7kQoLD3C7blX7dC">
+            <button class="btn btn-main" id="noteSaveBtn" data-page-node-id="AppGfDHn0dNjdtZlda1R7s">存下</button>
+            <button class="btn" id="notePromptBtn" data-page-node-id="beRBYXrpcKj3E9rNjbE5iC">换一个提示</button>
           </div>
-          <div class="note">这条提示会以半透明方式显示，不挡路、不催促，写不写都由你。<b>默认不会进入任何统计和复盘</b> —— 想知道自己会被审视，就写不出真的东西。</div>
+          
         </div>
-        <div class="block">
-          <div class="block-h"><span class="tag">过去写过的</span><span class="block-note">按天倒序</span></div>
-          <div class="noteitem"><div class="noteitem-d">9月17日 周三</div><div class="noteitem-c">今天试着把周报提前到周三写完，发现其实两个小时就够。之前一直拖到周五，大概是怕写完就要面对下一周。</div></div>
-          <div class="noteitem"><div class="noteitem-d">9月15日 周一</div><div class="noteitem-c">早睡这件事，卡住我的不是工作，是手机。</div></div>
-          <div class="noteitem"><div class="noteitem-d">9月12日 周五</div><div class="noteitem-c">体检报告出来了，其他都好，就是血脂偏高。要开始认真对待吃饭这件事了。</div></div>
+        <div class="block" data-page-node-id="8ahUxZWI6BNz83BtOHkJIi">
+          <div class="block-h" data-page-node-id="dyXymhRpVhkD9tAvfzyXtg"><span class="tag" data-page-node-id="2WBfmJyafnyrp13nxwUr65">过去写过的</span><span class="block-note" id="noteCount" data-page-node-id="PrzbXy7HADWrVLYNhIdfqu">3 条 · 按天倒序</span></div>
+          <div id="noteList" data-page-node-id="M3XisNH2sZh8HDCEvYRxDZ"><div class="noteitem"><div class="noteitem-d flowrow"><span class="grow">9月17日 周四</span><button class="delbtn" data-del="note:nt1" data-del-name="今天试着把周报提前到周三写完" title="删除「今天试着把周报提前到周三写完」" aria-label="删除「今天试着把周报提前到周三写完」">×</button></div><div class="noteitem-c">今天试着把周报提前到周三写完，发现其实两个小时就够。之前一直拖到周五，大概是怕写完就要面对下一周。</div></div><div class="noteitem"><div class="noteitem-d flowrow"><span class="grow">9月15日 周二</span><button class="delbtn" data-del="note:nt2" data-del-name="早睡这件事，卡住我的不是工作" title="删除「早睡这件事，卡住我的不是工作」" aria-label="删除「早睡这件事，卡住我的不是工作」">×</button></div><div class="noteitem-c">早睡这件事，卡住我的不是工作，是手机。</div></div><div class="noteitem"><div class="noteitem-d flowrow"><span class="grow">9月12日 周六</span><button class="delbtn" data-del="note:nt3" data-del-name="体检报告出来了，其他都好，就" title="删除「体检报告出来了，其他都好，就」" aria-label="删除「体检报告出来了，其他都好，就」">×</button></div><div class="noteitem-c">体检报告出来了，其他都好，就是血脂偏高。要开始认真对待吃饭这件事了。</div></div></div>
+        </div>
+        <div class="note" data-page-node-id="Zc3mN8vKtQ6rW2xHjLp9Df">随心记不进统计，也不进复盘。</div>
+      </section>
+
+      <section class="page" data-page="spaces" data-page-node-id="iwF3GHI8nRPzT5H1pD3hn8">
+        <div class="block-h" data-page-node-id="KezbRWl5bw5Sfn5Ly3QmTj"><span class="tag" data-page-node-id="PosIcx2e8PsrlsECKjGAr2">领域</span><span class="block-note" data-page-node-id="pSs8fFq6YKZem3qs3FIhFR" style="">点星标，放进左上角快捷区</span></div>
+        <div class="grid g4" id="spaceGrid" data-page-node-id="qi12G9zv3ABrWcUfF2IBsW"><div class="card" data-go="domain" data-domain="fitness"><div class="card-t">健身</div><div class="card-s">2 项待办 · 1 个习惯 · 4 个目标 · 6 个记录项</div><div class="card-ops"><button class="iconbtn is-on" data-pin="fitness" title="取消顶部快捷" aria-label="取消顶部快捷"><svg viewBox="0 0 16 16" class="star" aria-hidden="true"><path d="M8 1.9l1.85 3.75 4.14.6-3 2.92.71 4.13L8 11.35l-3.7 1.95.71-4.13-3-2.92 4.14-.6z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" fill="currentColor"></path></svg></button></div></div><div class="card" data-go="domain" data-domain="study"><div class="card-t">学习</div><div class="card-s">2 项待办 · 1 个习惯 · 3 个目标 · 2 个记录项</div><div class="card-ops"><button class="iconbtn" data-pin="study" title="加到顶部快捷" aria-label="加到顶部快捷"><svg viewBox="0 0 16 16" class="star" aria-hidden="true"><path d="M8 1.9l1.85 3.75 4.14.6-3 2.92.71 4.13L8 11.35l-3.7 1.95.71-4.13-3-2.92 4.14-.6z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" fill="none"></path></svg></button></div></div><div class="card" data-go="domain" data-domain="work"><div class="card-t">工作</div><div class="card-s">6 项待办 · 1 个习惯 · 1 个目标</div><div class="card-ops"><button class="iconbtn" data-pin="work" title="加到顶部快捷" aria-label="加到顶部快捷"><svg viewBox="0 0 16 16" class="star" aria-hidden="true"><path d="M8 1.9l1.85 3.75 4.14.6-3 2.92.71 4.13L8 11.35l-3.7 1.95.71-4.13-3-2.92 4.14-.6z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" fill="none"></path></svg></button></div></div><div class="card" data-go="domain" data-domain="life"><div class="card-t">个人</div><div class="card-s">2 项待办 · 3 个习惯 · 3 个目标</div><div class="card-ops"><button class="iconbtn" data-pin="life" title="加到顶部快捷" aria-label="加到顶部快捷"><svg viewBox="0 0 16 16" class="star" aria-hidden="true"><path d="M8 1.9l1.85 3.75 4.14.6-3 2.92.71 4.13L8 11.35l-3.7 1.95.71-4.13-3-2.92 4.14-.6z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" fill="none"></path></svg></button></div></div><div class="card card-add" data-newdomain="1"><div class="card-t">+ 新建领域</div><div class="card-s">考证 / 育儿 / 副业 …</div></div></div>
+        
+        <div class="note" data-page-node-id="Hb5tR9wQmZ2vK8nLpX4Cd">一张卡就是一个领域，点进去管它下面的习惯、待办和目标。</div>
+      </section>
+
+      <section class="page" data-page="domain" data-page-node-id="IuHHmsG9U8Zsct9z7ygnfq">
+        <div class="block" data-page-node-id="MWlVYB6XkB1x7QPgk0Lucw">
+          <div class="block-h" data-page-node-id="hQXg2ED5HwcBWv2tTIu6cu"><span class="tag" data-page-node-id="OA1msKiXY88AEA7gGneIgV">习惯</span><span class="block-note" data-page-node-id="7f6Vs5gXP0gT2tCQugW2Qk">要重复做的事</span><button class="addbtn" data-add-open="habit" data-page-node-id="UbxWh4PRTVI16jI36T1oe2">+ 新增习惯</button></div>
+          <ul class="list" id="dHabits" data-page-node-id="IJEFhrjtfarpvXFP4D2j3L"><li class="row row-edit" data-edit="habit:h-fit-1" style="padding-left: 0px;"><span class="node-caret is-leaf"></span><span class="cbox"></span><span class="row-main"><span class="row-name">训练日打卡</span><span class="row-meta">每周 4 次</span></span><span class="streak" title="这个习惯：连续打卡 3 天，累计打卡 4 天"><b class="on">连续 3 天</b> · 累计 4 天</span><button class="tick tick-on" data-tick="1" data-tick-key="h-fit-1">已打卡</button><button class="nodebtn" data-sub="h-fit-1" data-subk="habit" data-subdom="fitness" title="在「训练日打卡」下面加一条子项" aria-label="在「训练日打卡」下面加一条子项"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M6 1.6v8.8M1.6 6h8.8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path></svg></button><button class="delbtn" data-del="habit:h-fit-1" data-del-name="训练日打卡" title="删除「训练日打卡」" aria-label="删除「训练日打卡」">×</button></li></ul>
+        </div>
+        <div class="block" data-page-node-id="2R9dddIglbq4UzqRc2Kl1L">
+          <div class="block-h" data-page-node-id="qRNvyLmwTujqIMhjsG1nJk"><span class="tag" data-page-node-id="tq7rwtsMJLj1BH3FZTqvrM">待办</span><span class="block-note" data-page-node-id="j4nrr9AFaJNl1iCYBdLkSe">一次就完的事</span><button class="addbtn" data-add-open="todo" data-page-node-id="E0TWyhPsYZy84SZXIDGQrq">+ 新增待办</button></div>
+          <ul class="list" id="dTodos" data-page-node-id="VbnoqVFo0PqVLInMQFOToe"><li class="row row-edit" data-edit="dtodo:fitness|t-fit-1" style="padding-left: 0px;"><span class="node-caret is-leaf"></span><span class="cbox"></span><span class="row-main"><span class="row-name">换瑜伽垫</span><span class="row-meta">9月21日 周一</span></span><button class="nodebtn" data-sub="t-fit-1" data-subk="todo" data-subdom="fitness" title="在「换瑜伽垫」下面加一条子项" aria-label="在「换瑜伽垫」下面加一条子项"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M6 1.6v8.8M1.6 6h8.8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path></svg></button><button class="delbtn" data-del="dtodo:fitness|t-fit-1" data-del-name="换瑜伽垫" title="删除「换瑜伽垫」" aria-label="删除「换瑜伽垫」">×</button></li><li class="row row-edit" data-edit="dtodo:fitness|t-fit-2" style="padding-left: 0px;"><span class="node-caret is-leaf"></span><span class="cbox"></span><span class="row-main"><span class="row-name">约体测</span><span class="row-meta">没有日期</span></span><button class="nodebtn" data-sub="t-fit-2" data-subk="todo" data-subdom="fitness" title="在「约体测」下面加一条子项" aria-label="在「约体测」下面加一条子项"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M6 1.6v8.8M1.6 6h8.8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path></svg></button><button class="delbtn" data-del="dtodo:fitness|t-fit-2" data-del-name="约体测" title="删除「约体测」" aria-label="删除「约体测」">×</button></li></ul>
+        </div>
+        <div class="block" data-page-node-id="KvHb6k6L5Gaum5BzEmU7VO">
+          <div class="block-h" data-page-node-id="OwivaTZnPIaLHYJm0hHZu2"><span class="tag" data-page-node-id="DPyDRyrnSCxQNkT5mgEYtW">长期目标</span><span class="block-note" data-page-node-id="adgmuTR3HtspqfULkyXzbz">拖滑杆，或点 +1/+2/+5</span></div>
+          <div id="dGoals" data-page-node-id="HsavVr6w6yIDAvitLKz7q0"><div class="goalrow" data-goal-open="g-fitness-1" style="padding-left: 0px;"><span class="node-caret" data-fold="g-fitness-1" title="折叠或展开子项" aria-label="折叠或展开子项"><svg viewBox="0 0 16 16" class="dir-caret" aria-hidden="true"><path d="M4 6.3l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg></span><span class="goal-main"><span class="row-name">硬拉 100kg</span><span class="row-meta">当前 80kg × 5 次</span></span><input class="gbar" type="range" min="0" max="100" step="1" data-goal-range="g-fitness-1" aria-label="硬拉 100kg 进度" aria-valuetext="80%" style="--v: 80%;"><span class="goal-val" data-goal-val="g-fitness-1">80%</span><div class="goal-btns"><button class="gbtn" data-goal-add="1" data-goal-id="g-fitness-1" title="增加 1 个百分点">+1</button><button class="gbtn" data-goal-add="2" data-goal-id="g-fitness-1" title="增加 2 个百分点">+2</button><button class="gbtn" data-goal-add="5" data-goal-id="g-fitness-1" title="增加 5 个百分点">+5</button></div><span class="dir-c">2 项</span><button class="nodebtn" data-sub="g-fitness-1" data-subk="goal" data-subdom="fitness" title="在「硬拉 100kg」下面加一条子项" aria-label="在「硬拉 100kg」下面加一条子项"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M6 1.6v8.8M1.6 6h8.8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path></svg></button><button class="delbtn" data-del="goal:g-fitness-1" data-del-name="硬拉 100kg" title="删除「硬拉 100kg」" aria-label="删除「硬拉 100kg」">×</button></div><div class="goalrow ind" data-goal-open="g-fitness-1a" style="padding-left: 22px; --ind: 9px;"><span class="node-caret is-leaf"></span><span class="goal-main"><span class="row-name">周期一：85kg × 5</span><span class="row-meta">硬拉 100kg · 两周内</span></span><input class="gbar" type="range" min="0" max="100" step="1" data-goal-range="g-fitness-1a" aria-label="周期一：85kg × 5 进度" aria-valuetext="100%" style="--v: 100%;"><span class="goal-val" data-goal-val="g-fitness-1a">100%</span><div class="goal-btns"><button class="gbtn" data-goal-add="1" data-goal-id="g-fitness-1a" title="增加 1 个百分点">+1</button><button class="gbtn" data-goal-add="2" data-goal-id="g-fitness-1a" title="增加 2 个百分点">+2</button><button class="gbtn" data-goal-add="5" data-goal-id="g-fitness-1a" title="增加 5 个百分点">+5</button></div><button class="nodebtn" data-sub="g-fitness-1a" data-subk="goal" data-subdom="fitness" title="在「周期一：85kg × 5」下面加一条子项" aria-label="在「周期一：85kg × 5」下面加一条子项"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M6 1.6v8.8M1.6 6h8.8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path></svg></button><button class="delbtn" data-del="goal:g-fitness-1a" data-del-name="周期一：85kg × 5" title="删除「周期一：85kg × 5」" aria-label="删除「周期一：85kg × 5」">×</button></div><div class="goalrow ind" data-goal-open="g-fitness-1b" style="padding-left: 22px; --ind: 9px;"><span class="node-caret is-leaf"></span><span class="goal-main"><span class="row-name">周期二：95kg × 3</span><span class="row-meta">硬拉 100kg · 再两周</span></span><input class="gbar" type="range" min="0" max="100" step="1" data-goal-range="g-fitness-1b" aria-label="周期二：95kg × 3 进度" aria-valuetext="40%" style="--v: 40%;"><span class="goal-val" data-goal-val="g-fitness-1b">40%</span><div class="goal-btns"><button class="gbtn" data-goal-add="1" data-goal-id="g-fitness-1b" title="增加 1 个百分点">+1</button><button class="gbtn" data-goal-add="2" data-goal-id="g-fitness-1b" title="增加 2 个百分点">+2</button><button class="gbtn" data-goal-add="5" data-goal-id="g-fitness-1b" title="增加 5 个百分点">+5</button></div><button class="nodebtn" data-sub="g-fitness-1b" data-subk="goal" data-subdom="fitness" title="在「周期二：95kg × 3」下面加一条子项" aria-label="在「周期二：95kg × 3」下面加一条子项"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M6 1.6v8.8M1.6 6h8.8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path></svg></button><button class="delbtn" data-del="goal:g-fitness-1b" data-del-name="周期二：95kg × 3" title="删除「周期二：95kg × 3」" aria-label="删除「周期二：95kg × 3」">×</button></div><div class="goalrow" data-goal-open="g-fitness-2" style="padding-left: 0px;"><span class="node-caret is-leaf"></span><span class="goal-main"><span class="row-name">体脂降到 18%</span><span class="row-meta">当前约 21%</span></span><input class="gbar" type="range" min="0" max="100" step="1" data-goal-range="g-fitness-2" aria-label="体脂降到 18% 进度" aria-valuetext="35%" style="--v: 35%;"><span class="goal-val" data-goal-val="g-fitness-2">35%</span><div class="goal-btns"><button class="gbtn" data-goal-add="1" data-goal-id="g-fitness-2" title="增加 1 个百分点">+1</button><button class="gbtn" data-goal-add="2" data-goal-id="g-fitness-2" title="增加 2 个百分点">+2</button><button class="gbtn" data-goal-add="5" data-goal-id="g-fitness-2" title="增加 5 个百分点">+5</button></div><button class="nodebtn" data-sub="g-fitness-2" data-subk="goal" data-subdom="fitness" title="在「体脂降到 18%」下面加一条子项" aria-label="在「体脂降到 18%」下面加一条子项"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M6 1.6v8.8M1.6 6h8.8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path></svg></button><button class="delbtn" data-del="goal:g-fitness-2" data-del-name="体脂降到 18%" title="删除「体脂降到 18%」" aria-label="删除「体脂降到 18%」">×</button></div></div>
+          <div style="margin-top:10px" data-page-node-id="zGfgpyjNiyi1x0XpzKa9S4"><button class="btn" id="dAddGoalBtn" data-goal-new="1" data-page-node-id="b59LheHGQ9eKRfzsKWE6FS">+ 新增长期计划</button></div>
+        </div>
+        <div class="block" data-page-node-id="4817QGR7Ye3Dxm6brGGYD9">
+          <div class="block-h" data-page-node-id="zJWkEAlUA6VOUENL7xOCQM"><span class="tag" data-page-node-id="TluPRaOUCxGpzx95h88QmI">记录项</span><span class="block-note" data-page-node-id="BkFbGpSsQoJcKDrzeGCcgs">名字和记录方式都你自己定</span></div>
+          <div id="dRecordTypes" data-page-node-id="cYLZzC52PXwMom9cZ7j7ej"><div class="rt"><div class="rt-h"><span class="rt-t">热量摄入</span><span class="rt-kind">数值 · kcal</span><span class="rule-to">快记</span><div class="rt-act"><button class="mini" data-rt-add="rt_kcal_in">记一条</button><button class="mini" data-rt-edit="rt_kcal_in">设置</button></div></div><div class="rt-body"><div class="logrow"><span class="logrow-d">9月18日</span><span class="logrow-v"></span><span class="logrow-n">1800kcal</span></div><div class="logrow"><span class="logrow-d">9月17日</span><span class="logrow-v"></span><span class="logrow-n">1920kcal</span></div><div class="logrow"><span class="logrow-d">9月16日</span><span class="logrow-v"></span><span class="logrow-n">1750kcal</span></div><div class="logrow"><span class="logrow-d">趋势</span><span class="logrow-v">最近 1800kcal · 上次 1920kcal</span><span class="logrow-n">-120kcal</span></div></div></div><div class="rt"><div class="rt-h"><span class="rt-t">热量消耗</span><span class="rt-kind">数值 · kcal</span><span class="rule-to">快记</span><div class="rt-act"><button class="mini" data-rt-add="rt_kcal_out">记一条</button><button class="mini" data-rt-edit="rt_kcal_out">设置</button></div></div><div class="rt-body"><div class="logrow"><span class="logrow-d">9月18日</span><span class="logrow-v"></span><span class="logrow-n">520kcal</span></div><div class="logrow"><span class="logrow-d">9月17日</span><span class="logrow-v"></span><span class="logrow-n">480kcal</span></div><div class="logrow"><span class="logrow-d">趋势</span><span class="logrow-v">最近 520kcal · 上次 480kcal</span><span class="logrow-n">+40kcal</span></div></div></div><div class="rt"><div class="rt-h"><span class="rt-t">体重</span><span class="rt-kind">数值 · kg</span><span class="rule-to">快记</span><div class="rt-act"><button class="mini" data-rt-add="rt_weight">记一条</button><button class="mini" data-rt-edit="rt_weight">设置</button></div></div><div class="rt-body"><div class="logrow"><span class="logrow-d">9月18日</span><span class="logrow-v"></span><span class="logrow-n">71.4kg</span></div><div class="logrow"><span class="logrow-d">9月15日</span><span class="logrow-v"></span><span class="logrow-n">71.7kg</span></div><div class="logrow"><span class="logrow-d">9月12日</span><span class="logrow-v"></span><span class="logrow-n">72.1kg</span></div><div class="logrow"><span class="logrow-d">趋势</span><span class="logrow-v">最近 71.4kg · 上次 71.7kg</span><span class="logrow-n">-0.3kg</span></div></div></div><div class="rt"><div class="rt-h"><span class="rt-t">力量训练</span><span class="rt-kind">纯文字</span><div class="rt-act"><button class="mini" data-rt-add="rt_strength">记一条</button><button class="mini" data-rt-edit="rt_strength">设置</button></div></div><div class="rt-body"><div class="logrow"><span class="logrow-d">9月16日 周三</span><span class="logrow-v">深蹲 80kg × 5 × 5 · 硬拉 90kg × 3 × 3 · 组间休息 2 分钟</span></div><div class="logrow"><span class="logrow-d">9月13日 周日</span><span class="logrow-v">深蹲 77.5kg × 5 × 5 · 硬拉 87.5kg × 3 × 3</span></div></div></div><div class="rt"><div class="rt-h"><span class="rt-t">有氧</span><span class="rt-kind">纯文字</span><div class="rt-act"><button class="mini" data-rt-add="rt_cardio">记一条</button><button class="mini" data-rt-edit="rt_cardio">设置</button></div></div><div class="rt-body"><div class="logrow"><span class="logrow-d">9月17日 周三</span><span class="logrow-v">跑步 7.1km · 42 分钟 · 配速 5'55" · 平均心率 148</span></div></div></div><div class="rt"><div class="rt-h"><span class="rt-t">深蹲最大重量</span><span class="rt-kind">数值 · kg</span><div class="rt-act"><button class="mini" data-rt-add="rt_squat">记一条</button><button class="mini" data-rt-edit="rt_squat">设置</button></div></div><div class="rt-body"><div class="logrow"><span class="logrow-d">9月16日</span><span class="logrow-v"></span><span class="logrow-n">80kg</span></div><div class="logrow"><span class="logrow-d">9月13日</span><span class="logrow-v"></span><span class="logrow-n">77.5kg</span></div><div class="logrow"><span class="logrow-d">9月10日</span><span class="logrow-v"></span><span class="logrow-n">75kg</span></div><div class="logrow"><span class="logrow-d">趋势</span><span class="logrow-v">最近 80kg · 上次 77.5kg</span><span class="logrow-n">+2.5kg</span></div></div></div></div>
+          <div style="margin-top:10px" data-page-node-id="b3tb9BRO3XQtPuoZzQ57BW"><button class="btn" id="dAddRt" data-newrt="1" data-page-node-id="oGYk4yFO4v6qs1Ksdl4ER7">+ 新增记录项</button></div>
+          
+          <div class="note" data-page-node-id="Mp7kQ3vRtW9xN5zLbH2Jf">行尾的 + 是在这条下面加一条子项。子项建完就定死了，改不了上级。</div>
+        </div>
+        <div class="block" data-page-node-id="UvzkpwYAkh5j7q4zwqD0FS">
+          <div class="block-h" data-page-node-id="eesQ9fn0rG0lZZjehTOadg"><span class="tag" data-page-node-id="ovyPcsHfhKsAoFIQQ8pZmr">领域设置</span><span class="block-note" data-page-node-id="yiHHmM4Q2RUiabeAWQFzBU">改名、置顶、删除</span></div>
+          <div class="chips" data-page-node-id="7b7VW2M3zCAWNPhkxJlnve">
+            <input class="inline-in" id="dRenameIn" style="max-width:180px" data-page-node-id="mAEkJhet2TAr0xS0PKVp8e">
+            <button class="btn" id="dRenameBtn" data-page-node-id="SOeqJloAOobim7etGndbWX">改名</button>
+            <button class="btn" id="dPinBtn" data-page-node-id="oAXeP49BtO2dDQvAG2BAc4">从顶部快捷移除</button>
+            <button class="btn" id="dDelBtn" data-page-node-id="2SCnn9YUv1bijnApBGYDcq">删除领域</button>
+          </div>
+          
         </div>
       </section>
 
-      <section class="page" data-page="spaces">
-        <div class="block-h"><span class="tag">领域</span><span class="block-note">点 ☆ 把它放到左上角，随时一键进入</span></div>
-        <div class="grid g4" id="spaceGrid"></div>
-        <div class="note">每个领域里都有<b>待办、习惯、长期目标</b>这三样，结构完全一样 —— 变的只是名字和你填进去的东西。所以「考证」「育儿」「副业」这类领域，随时新建一个就行，不用等谁给你加。
-        <br>领域可以改名、可以删。删除只删入口，里面的内容会回到收件箱等你重新归类。
-        <br><b>热量、体重不在这里</b> —— 它们是<b>健身领域下面的数值记录项</b>，和「深蹲最大重量」「模拟考试分数」是同一种东西，只是名字和单位不同。点「健身」就能看到；以后想加「喝水量」「睡眠时长」「阅读页数」，加一条记录项就行，不用改这个应用。</div>
+      <section class="page" data-page="ledger" data-page-node-id="1AV6BRGVzd3hW0ooEG74QK">
+        <div class="block" data-page-node-id="38qscSYhDGlGx26QsxYXZa">
+          <div class="block-h" data-page-node-id="OlisgmdrWlJD8gC11tAEoX"><span class="tag" data-page-node-id="w89Arko6JZFIhaflLbgDX2">本月</span><span class="block-note" data-page-node-id="hSVqjKlUTEpMgjD5jjUzmu">按月合计，从多到少</span></div>
+          <div class="stat" data-page-node-id="5X0DmANgKJpjN2TOah076y"><div class="stat-v" id="ledgerTotal" data-page-node-id="ySzQ0GLz5LZsYfd55PTUqz">¥1681</div><div class="stat-k" id="ledgerSub" data-page-node-id="xnHPDoDOkFDbEBeOPh1zwM">2026 年 9 月支出合计</div></div>
+          <div id="ledgerBars" data-page-node-id="SLTfK6OagBovBJ12lQndyc"><div class="barrow"><span class="barrow-n">数码</span><span class="bar"><span class="bar-fill" style="width: 53%;"></span></span><span class="barrow-v">¥899</span></div><div class="barrow"><span class="barrow-n">生活</span><span class="bar"><span class="bar-fill" style="width: 27%;"></span></span><span class="barrow-v">¥460</span></div><div class="barrow"><span class="barrow-n">娱乐</span><span class="bar"><span class="bar-fill" style="width: 12%;"></span></span><span class="barrow-v">¥210</span></div><div class="barrow"><span class="barrow-n">餐饮</span><span class="bar"><span class="bar-fill" style="width: 6%;"></span></span><span class="barrow-v">¥106</span></div><div class="barrow"><span class="barrow-n">出行</span><span class="bar"><span class="bar-fill" style="width: 0%;"></span></span><span class="barrow-v">¥6</span></div></div>
+        </div>
+        <div class="quick" data-page-node-id="IRblnlfmr8SIbqJDoK43HE">
+          <input id="ledgerInput" class="quick-in" placeholder="比如 32 午餐，分类可以留空" data-page-node-id="KGT9AdTJ7TsnKXAQBuv431">
+          <button class="quick-btn" id="ledgerBtn" data-page-node-id="WI064XaQeKXFXib8BXqapv">记下</button>
+        </div>
+        <div class="block" data-page-node-id="A2bAtDghSGhTjXyYUhCSp4">
+          <div class="block-h" data-page-node-id="94TBWNgpcLYOCp7IDG35Zf"><span class="tag" data-page-node-id="7Gc5X3Wr8ySaAwhebWO5D2">最近流水</span><span class="block-note" id="ledgerFlowNote" data-page-node-id="x8Ebrmu1PbC0Hzx6LKh9Av">7 笔 · 点 × 删</span></div>
+          <div id="ledgerFlow" data-page-node-id="4q7N1FaVOh4R5PsoP2caUz"><div class="noteitem"><div class="noteitem-d">9月18日 周五 · 餐饮</div><div class="noteitem-c flowrow"><span class="grow">¥32</span><button class="delbtn" data-del="money:0" data-del-name="餐饮 ¥32" title="删除「餐饮 ¥32」" aria-label="删除「餐饮 ¥32」">×</button></div></div><div class="noteitem"><div class="noteitem-d">9月18日 周五 · 出行</div><div class="noteitem-c flowrow"><span class="grow">¥6</span><button class="delbtn" data-del="money:1" data-del-name="出行 ¥6" title="删除「出行 ¥6」" aria-label="删除「出行 ¥6」">×</button></div></div><div class="noteitem"><div class="noteitem-d">9月17日 周四 · 餐饮</div><div class="noteitem-c flowrow"><span class="grow">¥48</span><button class="delbtn" data-del="money:2" data-del-name="餐饮 ¥48" title="删除「餐饮 ¥48」" aria-label="删除「餐饮 ¥48」">×</button></div></div><div class="noteitem"><div class="noteitem-d">9月16日 周三 · 数码</div><div class="noteitem-c flowrow"><span class="grow">¥899</span><button class="delbtn" data-del="money:3" data-del-name="数码 ¥899" title="删除「数码 ¥899」" aria-label="删除「数码 ¥899」">×</button></div></div><div class="noteitem"><div class="noteitem-d">9月15日 周二 · 餐饮</div><div class="noteitem-c flowrow"><span class="grow">¥26</span><button class="delbtn" data-del="money:4" data-del-name="餐饮 ¥26" title="删除「餐饮 ¥26」" aria-label="删除「餐饮 ¥26」">×</button></div></div><div class="noteitem"><div class="noteitem-d">9月14日 周一 · 生活</div><div class="noteitem-c flowrow"><span class="grow">¥460</span><button class="delbtn" data-del="money:5" data-del-name="生活 ¥460" title="删除「生活 ¥460」" aria-label="删除「生活 ¥460」">×</button></div></div><div class="noteitem"><div class="noteitem-d">9月12日 周六 · 娱乐</div><div class="noteitem-c flowrow"><span class="grow">¥210</span><button class="delbtn" data-del="money:6" data-del-name="娱乐 ¥210" title="删除「娱乐 ¥210」" aria-label="删除「娱乐 ¥210」">×</button></div></div></div>
+        </div>
+        
+        <div class="note" data-page-node-id="Nq4wR8tKmZ5vB2xLpHj9Dc">「按项目看」这一版不做，所以没有这个数字。</div>
       </section>
 
-      <section class="page" data-page="domain">
-        <div class="block">
-          <div class="block-h"><span class="tag">习惯</span><span class="block-note">这个领域里要重复做的事</span></div>
-          <ul class="list" id="dHabits"></ul>
+      <section class="page" data-page="review" data-page-node-id="AIjboAZ4U7AqWCRAPblvz3">
+        <div class="seg" id="revSeg" data-page-node-id="GMzREv3Kv02Hux9NHHTnj3">
+          <button data-revmode="week" class="is-on" data-page-node-id="sm6i0GQf4tEhnADhcRvA8x">本周</button>
+          <button data-revmode="month" data-page-node-id="8gEJ2BNc8sQ4Osy40kQnSi">本月</button>
+          <button data-revmode="custom" data-page-node-id="ilVvWrAdG9tNvjS0XFBQKM">自定义</button>
         </div>
-        <div class="block">
-          <div class="block-h"><span class="tag">待办</span><span class="block-note">一次就完的事，不跳到别的页面</span></div>
-          <ul class="list" id="dTodos"></ul>
+        <div class="revbar" id="revRange" data-page-node-id="WCmFtJkhVgCk0wOsIU8Ekv"><span class="clsbox-k">这一期：9月14日 周一 – 9月18日 周五　共 5 天</span></div>
+        <div class="revbar" id="revCustom" data-page-node-id="2WtZvKmzd7XfUphIWeIjtR"></div>
+        <div class="grid g3" style="margin-bottom:12px" id="revStats" data-page-node-id="TpC0YNF7NJcx9r5NCMpioy"><div class="card" style="cursor: default;"><div class="stat-v">5 / 10</div><div class="stat-k">待办完成</div></div><div class="card" style="cursor: default;"><div class="stat-v">5 / 5</div><div class="stat-k">习惯有打卡的天数</div></div><div class="card" style="cursor: default;"><div class="stat-v">2</div><div class="stat-k">训练次数</div></div></div>
+        <div class="block" data-page-node-id="3lkdejeK4z4Iw6CNUzXC6j">
+          <div class="block-h" data-page-node-id="sEtoLdHFTUSg6IdKsCeOZO"><span class="tag" data-page-node-id="mQ3yUfrVMaWEIBZxc9rznY">数值趋势</span><span class="block-note" data-page-node-id="Cy1h8P67r2mNODx6tQ8Mvm">和上一期比</span></div>
+          <div id="revTrend" data-page-node-id="gHwvklV2FrP7Ql3CuAlNeH"><div class="trend-row"><span class="trend-k">支出</span><span class="trend-v">¥1471 · 上一期 ¥210</span><button class="delbtn" data-del="trend:0" data-del-name="支出" title="删除「支出」" aria-label="删除「支出」">×</button></div><div class="trend-row"><span class="trend-k">体重</span><span class="trend-v">71.6 kg · 上一期 72.1 kg</span><button class="delbtn" data-del="trend:1" data-del-name="体重" title="删除「体重」" aria-label="删除「体重」">×</button></div><div class="trend-row"><span class="trend-k">热量摄入</span><span class="trend-v">1,823 kcal · 上一期 没记</span><button class="delbtn" data-del="trend:2" data-del-name="热量摄入" title="删除「热量摄入」" aria-label="删除「热量摄入」">×</button></div><button class="addbtn" data-trendpick="1">+ 添加一项</button></div>
         </div>
-        <div class="block">
-          <div class="block-h"><span class="tag">长期目标</span><span class="block-note">点条目可调整 · 拖滑杆或点 +1/+2/+5</span></div>
-          <div id="dGoals"></div>
-          <div style="margin-top:10px"><button class="btn" id="dAddGoalBtn" data-goal-new="1">+ 新增长期计划</button></div>
+        <div class="block" data-page-node-id="Rh4pQ2xBmZ7nLcVtWd8sKa">
+          <div class="block-h" data-page-node-id="Uk3nBv9dTq5yMsXfJg2rHp"><span class="tag" data-page-node-id="Lp6cWz1eYr8uAoDkSf4mNv">习惯打卡</span><span class="block-note" data-page-node-id="Zb7tGq3hVw5nRmJyEo9cXd">连续 / 累计 · 这一期</span></div>
+          <div id="revHabits" data-page-node-id="Nf2sKd8mCp4xVbRjLw6tQy"><div class="rev-h"><span class="rev-hk">训练日打卡</span><span class="rev-hs">连续 3 天 · 累计 4 天</span><span class="rev-hx">这一期 4 天</span></div><div class="rev-h"><span class="rev-hk">阅读 30 分钟</span><span class="rev-hs">连续 1 天 · 累计 5 天</span><span class="rev-hx">这一期 3 天</span></div><div class="rev-h"><span class="rev-hk">下班前清空收件箱</span><span class="rev-hs">还没有打卡记录</span><span class="rev-hx">—</span></div><div class="rev-h"><span class="rev-hk">健康作息</span><span class="rev-hs">连续 3 天 · 累计 3 天</span><span class="rev-hx">这一期 3 天</span></div><div class="rev-h"><span class="rev-hk" style="padding-left: 14px;">饮水 2L</span><span class="rev-hs">连续 5 天 · 累计 5 天</span><span class="rev-hx">这一期 5 天</span></div><div class="rev-h"><span class="rev-hk" style="padding-left: 14px;">23:30 前睡</span><span class="rev-hs">连续 1 天 · 累计 1 天</span><span class="rev-hx">这一期 1 天</span></div></div>
         </div>
-        <div class="block">
-          <div class="block-h"><span class="tag">记录项</span><span class="block-note">名称和方式都你自己定 · 两种方式</span></div>
-          <div id="dRecordTypes"></div>
-          <div style="margin-top:10px"><button class="btn" id="dAddRt" data-newrt="1">+ 新增记录项</button></div>
-          <div class="note">
-            <b>纯文字</b>适合记过程和感受：今天练了什么、错在哪、这本书讲了什么。<br>
-            <b>数值</b>适合看趋势：热量摄入、体重、深蹲最大重量、模拟考试分数 —— 填个单位就行。<br>
-            两种都写进同一张记录表，所以领域之间不打架，以后想加「睡眠时长」「喝水量」也只是再来一条，不用改结构。<br>
-            <b>每条记录项都会自动出现在首页快记的类目里</b>（在「⚙ 自定义」里可以关掉某几条）—— 所以你在首页写「1800 kcal」，一个字都不用跳页就记进了健身的「热量摄入」。<br>
-            删除记录项只是把它从界面收起来，<b>已经记下的内容仍在导出文件里</b> —— 和领域一样，改主意了可以再建回来。
+        <div class="block" data-page-node-id="cXIzE8iBcWXQMocEcX8D0o">
+          <div class="block-h" data-page-node-id="rdBUjlAxhLVLXJSBW4aRqz"><span class="tag" data-page-node-id="qgjwMCAUkhu9IzMhj56s5F">这一期记下的事</span><span class="block-note" data-page-node-id="Qk4DkCVANmY0DRTMYU5hrm">记录项与打卡</span></div>
+          <div id="revItems" data-page-node-id="H5STEFyHLfEVTTqPugugEq"><div class="noteitem"><div class="noteitem-d">9月17日 周四 · 有氧</div><div class="noteitem-c">跑步 7.1km · 42 分钟 · 配速 5'55" · 平均心率 148</div></div><div class="noteitem"><div class="noteitem-d">9月17日 周四 · 学习笔记</div><div class="noteitem-c">第 6 章讲土地财政，和之前看的新闻对上了。</div></div><div class="noteitem"><div class="noteitem-d">9月16日 周三 · 力量训练</div><div class="noteitem-c">深蹲 80kg × 5 × 5 · 硬拉 90kg × 3 × 3 · 组间休息 2 分钟</div></div></div>
+        </div>
+        <div class="block" data-page-node-id="N3YvHS7EW86f17vHrgqBBs">
+          <div class="block-h" data-page-node-id="9wwUZyu6cbVMwAOwKOQCGQ"><span class="tag" data-page-node-id="L7IlWGCKAHbMD65xCTjaDp">下一步</span><span class="block-note" data-page-node-id="YaqyLtlesHS8adukx2k98S">结论可以变成待办</span></div>
+          <input class="inline-in" id="revConclusion" placeholder="这一期想留下的一句话" data-page-node-id="R4uz4GMEYT7kkiJDDRd6HV">
+          <div class="chips" style="margin-top:8px" data-page-node-id="wM6Hq3aVIkLpe8NAkGgL8U">
+            <button class="btn btn-main" id="revToItemBtn" data-page-node-id="msLAqNrlk7jK0WZE7sQSFS">写成新事项</button>
+            <button class="btn" id="revExportBtn" data-page-node-id="KuzyM5ZNweT4n4H8UcCqLh">导出这一期</button>
           </div>
-        </div>
-        <div class="block">
-          <div class="block-h"><span class="tag">领域设置</span><span class="block-note">低频操作放这里，不占空间页</span></div>
-          <div class="chips">
-            <input class="inline-in" id="dRenameIn" style="max-width:180px">
-            <button class="btn" id="dRenameBtn">改名</button>
-            <button class="btn" id="dPinBtn">加到顶部快捷</button>
-            <button class="btn" id="dDelBtn">删除领域</button>
-          </div>
-          <div class="note">删除是二次确认的，且<b>只删掉入口</b> —— 里面的待办、习惯、记录会回到收件箱等你重新归类。<b>分类可以错，数据不该丢。</b></div>
-        </div>
-      </section>
-
-      <section class="page" data-page="ledger">
-        <div class="block">
-          <div class="block-h"><span class="tag">本月</span><span class="block-note">按分类从多到少</span></div>
-          <div class="stat"><div class="stat-v" id="ledgerTotal"></div><div class="stat-k">2026 年 9 月支出合计</div></div>
-          <div id="ledgerBars"></div>
-        </div>
-        <div class="quick">
-          <input class="quick-in" placeholder="32 午餐 —— 一行记一笔，分类可留空">
-          <button class="quick-btn">记下</button>
-        </div>
-        <div class="block">
-          <div class="block-h"><span class="tag">最近流水</span><span class="block-note">点任意一条可改</span></div>
-          <div class="noteitem"><div class="noteitem-d">9月18日 周五 · 餐饮</div><div class="noteitem-c">午餐 ¥32</div></div>
-          <div class="noteitem"><div class="noteitem-d">9月18日 周五 · 出行</div><div class="noteitem-c">地铁 ¥6</div></div>
-          <div class="noteitem"><div class="noteitem-d">9月16日 周三 · 数码</div><div class="noteitem-c">固态硬盘 ¥899</div></div>
-        </div>
-        <div class="block">
-          <div class="block-h"><span class="tag">按项目看</span><span class="block-note">给一次事件打同一个标签</span></div>
-          <div class="kv"><span class="kv-k">国庆出行（9月30日 – 10月6日）</span><span class="kv-v">¥1,240 · 8 笔</span></div>
-          <div class="note">「项目」不另建数据表，只是给流水加同一个标签，用来回答「这次旅行一共花了多少」。</div>
+          <div id="revOut" data-page-node-id="L7L9RUi4vYo3FbKMes2GQD"></div>
+          <div class="note" data-page-node-id="Rt6yK2mQwZ8vN4xLpB5Hf">复盘最容易漏的一步，是把结论写成待办。随心记不进复盘。</div>
         </div>
       </section>
 
-      <section class="page" data-page="review">
-        <div class="seg">
-          <button class="is-on">本周</button>
-          <button>本月</button>
-          <button>自定义</button>
+      <section class="page" data-page="settings" data-page-node-id="rA7CxCwmYNWc2IdCP7UFVo">
+        <div class="block" data-page-node-id="b9FqenHrPZGDDGcWHX7jUx">
+          <div class="block-h" data-page-node-id="xsjA8v1PTV06vcrdjjiK8i"><span class="tag" data-page-node-id="2hDy6EuH71VVRDDcqXF1HS">领域</span><span class="block-note" data-page-node-id="MJM2AboqOa9hm9LuXUF4Df">和「空间」是同一份</span></div>
+          <div id="settingsDomains" data-page-node-id="y1aEvrcjmyVq50KpjfnrZX"><div class="kv"><span class="kv-k">健身 · 2 项待办 · 1 个习惯 · 4 个目标</span><span class="kv-v">已置顶</span></div><div class="kv"><span class="kv-k">学习 · 2 项待办 · 1 个习惯 · 3 个目标</span><span class="kv-v">—</span></div><div class="kv"><span class="kv-k">工作 · 6 项待办 · 1 个习惯 · 1 个目标</span><span class="kv-v">—</span></div><div class="kv"><span class="kv-k">个人 · 2 项待办 · 3 个习惯 · 3 个目标</span><span class="kv-v">—</span></div><div class="kv"><span class="kv-k">共 4 个领域 · 可增可删可改名</span><span class="kv-v">1 个在快捷区</span></div></div>
+          <div class="note" data-page-node-id="hhFcZoBCi2r3lC1ZX30EQu">「已置顶」= 也在左上角快捷区里。</div>
         </div>
-        <div class="grid g3" style="margin-bottom:12px">
-          <div class="card" style="cursor:default"><div class="stat-v">11 / 14</div><div class="stat-k">待办完成</div></div>
-          <div class="card" style="cursor:default"><div class="stat-v">5 / 7</div><div class="stat-k">习惯有打卡的天数</div></div>
-          <div class="card" style="cursor:default"><div class="stat-v">3</div><div class="stat-k">训练次数</div></div>
+        <div class="block" data-page-node-id="5GRQVV6k5fyOVEFgOzTKze">
+          <div class="block-h" data-page-node-id="iWVWLuj21gRKMJyRqmDu2x"><span class="tag" data-page-node-id="Uh2oFcTtLYbmJYEAb6uE0L">快记类目与自动判断</span><span class="block-note" data-page-node-id="ujDBKyM5r6oMOot4uOPHst">和首页的「自定义」是同一处</span></div>
+          <div id="settingsCapture" data-page-node-id="ve9yEDetD6a4UyLtE0yGEG"><div class="kv"><span class="kv-k">首页快记里出现的类目</span><span class="kv-v">自动判断 · 待办 · 随心记 · 记一笔支出 · 只丢进收件箱 · 热量摄入 · 热量消耗 · 体重</span></div><div class="kv"><span class="kv-k">自动判断规则</span><span class="kv-v">生效 4 / 共 4 条</span></div><div class="kv"><span class="kv-k">其中你自己写的</span><span class="kv-v">1 条 · 排在内置规则前面</span></div></div>
+          
         </div>
-        <div class="block">
-          <div class="block-h"><span class="tag">数值趋势</span><span class="block-note">9月14日 – 9月20日</span></div>
-          <div class="kv"><span class="kv-k">支出</span><span class="kv-v">¥812 · 上周 ¥1,106</span></div>
-          <div class="kv"><span class="kv-k">体重</span><span class="kv-v">71.4 kg · 上周 71.7 kg</span></div>
-          <div class="kv"><span class="kv-k">日均摄入</span><span class="kv-v">约 1,850 kcal</span></div>
+        <div class="block" data-page-node-id="S3hOvUF4MJSz4jD24qCBPN">
+          <div class="block-h" data-page-node-id="y3i2tDP9c0Xd3Eq7IOnYDA"><span class="tag" data-page-node-id="af5OiFKGJZl58rMj6yzqd9">记账分类</span><span class="block-note" data-page-node-id="SnL6tZIE0TDCWs1yfTfRm1">可改名，可选图标</span></div>
+          <div class="kv" data-page-node-id="HLuNNkRLDiEOdCTRjRnYvm"><span class="kv-k" data-page-node-id="30XlXxahiwMaSTQodbfGFi">餐饮 · 出行 · 数码 · 生活 · 娱乐 · 医疗 · 服饰</span><span class="kv-v" data-page-node-id="yg4yCI76f07E9jJUH7FJHa">7 个</span></div>
         </div>
-        <div class="block">
-          <div class="block-h"><span class="tag">本周记下的事</span><span class="block-note">来自收件箱与领域页</span></div>
-          <div class="noteitem"><div class="noteitem-c">深蹲的重量这两周没动，但次数上去了。</div></div>
-          <div class="noteitem"><div class="noteitem-c">周报提前到周三写完，周五就不慌了。</div></div>
-        </div>
-        <div class="block">
-          <div class="block-h"><span class="tag">下一步</span><span class="block-note">结论可以变回事项</span></div>
-          <div class="chips">
-            <button class="btn btn-main">写成新事项</button>
-            <button class="btn">导出这一期</button>
+        <div class="block" data-page-node-id="pTElcKJf3HBHXaAUhBhgFp">
+          <div class="block-h" data-page-node-id="38tLVIVG0f6iVXf7xVuX9L"><span class="tag" data-page-node-id="JjbHjR787dWssvtBF5fYlQ">数据</span><span class="block-note" data-page-node-id="X6CS0Veq0l6hfIP3cJ8VxW">都在本机，随时能导出</span></div>
+          <div class="chips" data-page-node-id="XiCCnzyuT15q2U4AkgMgWi">
+            <button class="btn btn-main" data-page-node-id="xOsCCSEcHqBccjbf1hsOAd">导出全部数据</button>
+            <button class="btn" data-page-node-id="knvVnCohEzHe2jCcrAqRJk">从文件导入</button>
           </div>
-          <div class="note">复盘最关键的一步是把结论<b>回写成新事项</b>，否则看完就忘了。这一条是整个闭环里最容易漏掉的。</div>
+          <div class="note" data-page-node-id="IXzSnrE9NoWXNfaZjY5XH3">导出一个 JSON 文件，事项、记录、随心记都在里面。</div>
         </div>
-      </section>
-
-      <section class="page" data-page="settings">
-        <div class="block">
-          <div class="block-h"><span class="tag">领域</span><span class="block-note">和「空间」是同一份数据</span></div>
-          <div id="settingsDomains"></div>
-          <div class="note">☆ 标记的是已经放到左上角快捷区的领域。</div>
+        <div class="block" data-page-node-id="YZtzPGgmjSFAxJvqYAe6xr">
+          <div class="block-h" data-page-node-id="XpzgEwSzQnR99lFAxQ7rUZ"><span class="tag" data-page-node-id="91hGiHWCtkiKKSCsAjOU0y">这一版不做的</span><span class="block-note" data-page-node-id="rGvOkwvtG7FdfeCexU9NXg">都是定好的，不是漏了</span></div>
+          <div class="kv" data-page-node-id="Yg00rvTiAQFLne9DiKw7N1"><span class="kv-k" data-page-node-id="HhnZAHAwxActYTQRG0XI7t">账号、登录、多端同步</span><span class="kv-v" data-page-node-id="blUFIFDPZ4GgNNRFMoF1hl">第 5 步</span></div>
+          <div class="kv" data-page-node-id="2v5az2jcX3OOaV5U13Kbko"><span class="kv-k" data-page-node-id="vutR3GVprskz6T88T8U84Y">AI 语义识别（真正读懂一句话）</span><span class="kv-v" data-page-node-id="HvtwkMIoIkrps41SKIC0Xh">本轮不做 · 现在用你自己可写的规则表</span></div>
+          <div class="kv" data-page-node-id="D2ZW5IqReh9R9A4CLLhAbU"><span class="kv-k" data-page-node-id="CZgVPJ4vfsGyW4kpI7eq89">在规则里写代码 / 脚本</span><span class="kv-v" data-page-node-id="JYkOGI7CnqSl7XLXVAaMVf">不做 · 只给关键词和正则</span></div>
+          <div class="kv" data-page-node-id="5ZPdLpiPV6i0fEqbGEVeWL"><span class="kv-k" data-page-node-id="lCWHeRUx09qHFHKZpbZCbJ">手机推送提醒</span><span class="kv-v" data-page-node-id="2RODUgxMcxYBOvB33w9IL9">iOS 对 PWA 限制大，不承诺</span></div>
+          <div class="kv" data-page-node-id="lN4GO0RgJU5IqqYQde2nWs"><span class="kv-k" data-page-node-id="KFQA6ZX7xKzdFrREpPHiDM">食物库 · 拍照识别</span><span class="kv-v" data-page-node-id="JSXdptKDUAWhZ94ksOl6R2">等记录习惯稳定后再说</span></div>
         </div>
-        <div class="block">
-          <div class="block-h"><span class="tag">快记类目与自动判断</span><span class="block-note">和首页那个 ⚙ 是同一份设置</span></div>
-          <div id="settingsCapture"></div>
-          <div class="note">这些平时在<b>首页速记框右侧的 ⚙ 自定义</b>里改 —— 放在那里是因为你调整它的时机，通常正好是要记东西的那一刻，跳页会打断你。</div>
+        
+        <div class="block" data-page-node-id="q2chQy2zti1hcHpT6R1eh9">
+          <div class="block-h" data-page-node-id="eszNsMXiul5FgmjrvFjmcO"><span class="tag" data-page-node-id="2uPk4lGtN9MnGzZFy8Q3GT">外观</span><span class="block-note" data-page-node-id="DmtbcCPFqWc973eyRmbs68">先做浅色，够用</span></div>
+          <div class="kv" data-page-node-id="CsqXSamNKuBJpTyZuTGbyC"><span class="kv-k" data-page-node-id="BE89HxoWPtDAmp7keCqqws">主题</span><span class="kv-v" data-page-node-id="rxk9ALTuZ961FaAUIYVEle">浅色</span></div>
         </div>
-        <div class="block">
-          <div class="block-h"><span class="tag">记账分类</span><span class="block-note">可自定义，可选一个图标</span></div>
-          <div class="kv"><span class="kv-k">餐饮 · 出行 · 数码 · 生活 · 娱乐 · 医疗 · 服饰</span><span class="kv-v">7 个</span></div>
-        </div>
-        <div class="block">
-          <div class="block-h"><span class="tag">数据</span><span class="block-note">这份数据属于你</span></div>
-          <div class="chips">
-            <button class="btn btn-main">导出全部数据</button>
-            <button class="btn">从文件导入</button>
-          </div>
-          <div class="note">导出是一键完成的全量 JSON，包含所有事项、记录和随心记。不用等这个软件停止维护的那天再想办法搬数据 —— 随时能带走，才是真的属于你。</div>
-        </div>
-        <div class="block">
-          <div class="block-h"><span class="tag">这一版不做的</span><span class="block-note">全部已明确记录，不是忘了</span></div>
-          <div class="kv"><span class="kv-k">账号、登录、多端同步</span><span class="kv-v">第 5 步</span></div>
-          <div class="kv"><span class="kv-k">AI 语义识别（真正读懂一句话）</span><span class="kv-v">本轮不做 · 现在用你自己可写的规则表</span></div>
-          <div class="kv"><span class="kv-k">在规则里写代码 / 脚本</span><span class="kv-v">不做 · 只给关键词和正则</span></div>
-          <div class="kv"><span class="kv-k">手机推送提醒</span><span class="kv-v">iOS 对 PWA 限制大，不承诺</span></div>
-          <div class="kv"><span class="kv-k">食物库 · 拍照识别</span><span class="kv-v">等记录习惯稳定后再说</span></div>
-        </div>
-        <div class="block">
-          <div class="block-h"><span class="tag">规则引擎为什么只给关键词和正则</span><span class="block-note">这是主动取舍，不是偷懒</span></div>
-          <div class="note" style="margin-top:0">
-            你要的是「能自己写自动判断的逻辑」。做法有好几种，我选了最保守的一种：<b>关键词 + 正则</b>，再加一个能当场试的测试框。
-            <br>不给完整脚本的三个理由：<br>
-            ① <b>安全</b> —— 允许执行你写的 JS，等于把整个应用交给一段文本。这个项目要开源、以后要让朋友注册，一旦开了这个口子，任何一条被导入的规则都可能变成恶意代码。<br>
-            ② <b>可解释</b> —— 关键词和正则可以告诉你「哪条规则命中了、为什么」，脚本只能给结果。判错了你不知道为什么。<br>
-            ③ <b>可导出</b> —— 规则要能跟着数据一起导出、导入、换设备，脚本会把这件本来安全的事变成危险的事。<br>
-            <br>关键词覆盖绝大多数真实需求（「提到深蹲就归力量训练」）；真需要复杂的，切到正则。<b>不排斥以后支持脚本，但不在 v1 里为它留一个洞。</b>
-          </div>
-        </div>
-        <div class="block">
-          <div class="block-h"><span class="tag">外观</span><span class="block-note">先做浅色，够用</span></div>
-          <div class="kv"><span class="kv-k">主题</span><span class="kv-v">浅色</span></div>
-        </div>
-        <div class="block">
-          <div class="block-h"><span class="tag">技术栈</span><span class="block-note">原型说明，正式版会去掉</span></div>
-          <div class="stackrow now"><span class="stackrow-t">前端</span><span class="stackrow-s">React + TypeScript + Vite + Tailwind，PWA 加到主屏</span><span class="stackrow-w">现在</span></div>
-          <div class="stackrow now"><span class="stackrow-t">本地数据</span><span class="stackrow-s">IndexedDB（Dexie）· 未登录也完整可用</span><span class="stackrow-w">现在</span></div>
-          <div class="stackrow now"><span class="stackrow-t">类型契约</span><span class="stackrow-s">Pydantic model → OpenAPI → 生成的 TS 类型</span><span class="stackrow-w">现在</span></div>
-          <div class="stackrow"><span class="stackrow-t">后端</span><span class="stackrow-s">Python / FastAPI + SQLModel</span><span class="stackrow-w">第5步</span></div>
-          <div class="stackrow"><span class="stackrow-t">数据库</span><span class="stackrow-s">SQLite 单文件（将来可加 sqlite-vec 扩展）</span><span class="stackrow-w">第5步</span></div>
-          <div class="stackrow"><span class="stackrow-t">部署</span><span class="stackrow-s">Docker Compose 单容器 + Caddy 提供 HTTPS</span><span class="stackrow-w">第5步</span></div>
+        <div class="block" data-page-node-id="CmuFHQNpmtDjN5u3E7rwmQ">
+          <div class="block-h" data-page-node-id="wMeKe1pmiSis4xY361WmsM"><span class="tag" data-page-node-id="4LpC2T9jc5jtraMd5unpVA">技术栈</span><span class="block-note" data-page-node-id="CLow0tq6tca6vTVQqwtwFR">原型说明，正式版会去掉</span></div>
+          <div class="stackrow now" data-page-node-id="0zxhEveDi8nXQwoijKW8vw"><span class="stackrow-t" data-page-node-id="iRuAnw2yXcWSzt1ILYpdzw">前端</span><span class="stackrow-s" data-page-node-id="370KdCvECYfYT8shH4LC39">React + TypeScript + Vite + Tailwind，PWA 加到主屏</span><span class="stackrow-w" data-page-node-id="RMDmatX1130lPkq0mBad4h">现在</span></div>
+          <div class="stackrow now" data-page-node-id="s2SfQhqhk435MKYKF1Rj5u"><span class="stackrow-t" data-page-node-id="Q9sWsRKSs9fuUAGZZHXBpC">本地数据</span><span class="stackrow-s" data-page-node-id="Sx8F3w3xLlMkNECVd3M72H">IndexedDB（Dexie）· 未登录也完整可用</span><span class="stackrow-w" data-page-node-id="DrSbgKxocCN2B139xG5ICf">现在</span></div>
+          <div class="stackrow now" data-page-node-id="Yamt0V0ZeLm36d0CpINbBG"><span class="stackrow-t" data-page-node-id="FLGTtQ4NHqVdOAibJ8EQDy">类型契约</span><span class="stackrow-s" data-page-node-id="DcOfU22UxWGQ8Qh1SAzrEm">Pydantic model → OpenAPI → 生成的 TS 类型</span><span class="stackrow-w" data-page-node-id="QvKCYaGXYvdFE7HSHB4ycg">现在</span></div>
+          <div class="stackrow" data-page-node-id="DCZwudMhtWSksuHH5R8Vo1"><span class="stackrow-t" data-page-node-id="jNCOukt9OzNr4sXM6Nn7BD">后端</span><span class="stackrow-s" data-page-node-id="LvWp3OVOhZCDUsBQ0AoiIr">Python / FastAPI + SQLModel</span><span class="stackrow-w" data-page-node-id="pg89ofEGOmWXegiCTLHlHO">第5步</span></div>
+          <div class="stackrow" data-page-node-id="XEKaomAV2lGAMoxkuViLhh"><span class="stackrow-t" data-page-node-id="Al5UmrfdSMgusrwnGIOmWF">数据库</span><span class="stackrow-s" data-page-node-id="lfp3BwOmcciVCmMlzdfzO2">SQLite 单文件（将来可加 sqlite-vec 扩展）</span><span class="stackrow-w" data-page-node-id="9MA85yOSElSw8oZ4zHka7Q">第5步</span></div>
+          <div class="stackrow" data-page-node-id="LnqBfJknc2ktb2itcXzvDm"><span class="stackrow-t" data-page-node-id="dAmEzDwsCHew2D1ZaupnVO">部署</span><span class="stackrow-s" data-page-node-id="1n5RYkDIvE6CQJgNrqkznX">Docker Compose 单容器 + Caddy 提供 HTTPS</span><span class="stackrow-w" data-page-node-id="qLueawHT4f6EYISGF4yUFv">第5步</span></div>
         </div>
       </section>
 
     </div>
   </main>
 </div>
-<div class="toast" id="toast">已存进收件箱</div>
+<div class="toast" id="toast" data-page-node-id="C61ZT2aZp6jIyHUiAKbiqA">已取消今天的打卡</div>
 
-<div class="modal" id="goalModal">
-  <div class="modal-mask" data-goal-cancel="1"></div>
-  <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="gmTitle">
-    <div class="modal-h">
-      <span class="modal-t" id="gmTitle">调整长期计划</span>
-      <span class="block-note" id="gmDomain"></span>
+<div class="modal" id="goalModal" data-page-node-id="YDVsFXHls3AGXz7q29A5yc">
+  <div class="modal-mask" data-goal-cancel="1" data-page-node-id="LWaPwfYAyMW1rpBGp1mdoo"></div>
+  <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="gmTitle" data-page-node-id="kqN3crAlrpSYnwsA6Zu4Gi">
+    <div class="modal-h" data-page-node-id="EJjZHC8dtcnfEYwIVsYbNY">
+      <span class="modal-t" id="gmTitle" data-page-node-id="QVvjkZ2AIBHUzo38WiCyQ5">调整长期计划</span>
+      <span class="block-note" id="gmDomain" data-page-node-id="sngBtTL5OvZweRy17jWjPf"></span>
     </div>
-    <label class="field">
-      <span class="field-k">目标名称（必填）</span>
-      <input class="inline-in" id="gmName" placeholder="比如「读完《置身事内》」">
+    <label class="field" data-page-node-id="iipSNtJoIaTFO6sD2G5EAc">
+      <span class="field-k" data-page-node-id="RldnNBoRazc35GHSnKonVG">目标名称（必填）</span>
+      <input class="inline-in" id="gmName" placeholder="比如「读完《置身事内》」" data-page-node-id="M29NzIlGL9d1OSVq8uo1sn">
     </label>
-    <label class="field">
-      <span class="field-k">说明，选填</span>
-      <input class="inline-in" id="gmMeta" placeholder="比如「每周 30 页 · 已读 210/350 页」">
+    <label class="field" data-page-node-id="g1bFHh4Ws7a6yR7gEunDDm">
+      <span class="field-k" data-page-node-id="sr0GM1MXGqomz5Z92McYYX">说明，选填</span>
+      <input class="inline-in" id="gmMeta" placeholder="比如「每周 30 页 · 已读 210/350 页」" data-page-node-id="QIgJGbDePHogx9YByGBct6">
     </label>
-    <div class="field">
-      <span class="field-k">当前进度</span>
-      <div class="gm-prog">
-        <input type="range" class="gbar" id="gmRange" min="0" max="100" step="1" value="0" data-goal-range="__draft__" aria-label="进度">
-        <span class="goal-val" data-goal-val="__draft__">0%</span>
-        <div class="goal-btns" id="gmBtns"></div>
+    <div class="field" data-page-node-id="LOAzztt1lA72p5HM9Mt78R">
+      <span class="field-k" data-page-node-id="LcLKlYb1etKjX85xJ3cgCD">当前进度</span>
+      <div class="gm-prog" data-page-node-id="2nnBxNuTBqalrdo66pfynO">
+        <input type="range" class="gbar" id="gmRange" min="0" max="100" step="1" value="0" data-goal-range="__draft__" aria-label="进度" data-page-node-id="Bk6luZgKgWQGN5gW6kpdUb">
+        <span class="goal-val" data-goal-val="__draft__" data-page-node-id="kRvsibISZdRXq6FcGExtbJ">0%</span>
+        <div class="goal-btns" id="gmBtns" data-page-node-id="O6s4O1mwlHfxIvPneHZz8R"><button class="gbtn" data-goal-add="1" data-goal-id="__draft__" title="增加 1 个百分点">+1</button><button class="gbtn" data-goal-add="2" data-goal-id="__draft__" title="增加 2 个百分点">+2</button><button class="gbtn" data-goal-add="5" data-goal-id="__draft__" title="增加 5 个百分点">+5</button></div>
       </div>
     </div>
-    <div class="modal-f">
-      <span class="modal-hint" id="gmHint"></span>
-      <button class="btn" data-goal-cancel="1">取消</button>
-      <button class="btn btn-main" data-goal-ok="1">确认</button>
+    <div class="modal-f" data-page-node-id="PuNsZV1HBlV7ljUWjT3hE5">
+      <span class="modal-hint" id="gmHint" data-page-node-id="pLSNAimqhnFVdYSNsuTqrr"></span>
+      <button class="btn" data-goal-cancel="1" data-page-node-id="mF2TR9Gw6Vy3cieUYE7fuc">取消</button>
+      <button class="btn btn-main" data-goal-ok="1" data-page-node-id="M9lERn08mG3AtEnxGtxkED">确认</button>
     </div>
   </div>
 </div>
 
 <!-- 右上角「新增」弹窗：习惯 / 待办 / 长期计划 共用同一套交互。
      本轮只做演示 —— 能选空间、能校验、能关窗，但不写任何数据。 -->
-<div class="modal" id="addModal" data-addmodal="1">
-  <div class="modal-mask" data-addmodal-cancel="1"></div>
-  <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="amTitle">
-    <div class="modal-h">
-      <span class="modal-t" id="amTitle">新增待办</span>
-      <span class="block-note" id="amKindNote"></span>
+<div class="modal" id="addModal" data-addmodal="1" data-page-node-id="XXFDpH1MvlbzqybB7DwfNl">
+  <div class="modal-mask" data-addmodal-cancel="1" data-page-node-id="HwrJB8gtW8NxzyudZPuc8F"></div>
+  <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="amTitle" data-page-node-id="sSmhBDFHPAAVx3440zz01P">
+    <div class="modal-h" data-page-node-id="0YZgdxjyubyoLlGBHnu9Px">
+      <span class="modal-t" id="amTitle" data-page-node-id="LRHHSgjNxxXM9CLe9wMWfG">新增待办</span>
+      <span class="block-note" id="amKindNote" data-page-node-id="QCPlgDc2FohDqi3tMeiVl7"></span>
     </div>
-    <label class="field">
-      <span class="field-k" id="amNameK">内容（必填）</span>
-      <input class="inline-in" id="amName" placeholder="比如：周五前交周报">
+    <label class="field" data-page-node-id="CHartDse6mEfP2YoXTnptd">
+      <span class="field-k" id="amNameK" data-page-node-id="AKx37xqGjjbeikGcWbXtxT">内容（必填）</span>
+      <input class="inline-in" id="amName" placeholder="比如：周五前交周报" data-page-node-id="Ihb8h7FMzYo8ayKzxi8YBl">
     </label>
-    <label class="field">
-      <span class="field-k">说明，选填</span>
-      <input class="inline-in" id="amMeta" placeholder="比如：今天 / 没有日期">
+    <label class="field" data-page-node-id="B7PdzoC6qRKQHu9lDcyXhu">
+      <span class="field-k" data-page-node-id="v4Zf9q6CBEjTLwPerJ9uLI">说明，选填</span>
+      <input class="inline-in" id="amMeta" placeholder="比如：今天 / 没有日期" data-page-node-id="YVss3xtBEaQL5fkncscfi0">
     </label>
-    <div class="field">
-      <span class="field-k">放到哪个空间 <b id="amSpaceName"></b></span>
-      <div class="spacepick" id="amSpaces"></div>
+    <div class="field" data-page-node-id="dq6YtdsNoq8e96P3GLxDWB">
+      <span class="field-k" data-page-node-id="WV18lezMZLC47gQy6E6e1Z">放到哪个空间 <b id="amSpaceName" data-page-node-id="0rqyHAD0tuWSvXtm6gw3V4"></b></span>
+      <div class="spacepick" id="amSpaces" data-page-node-id="kxAu8rs7cFV8UqCpmDxFgp"></div>
     </div>
-    <div class="modal-f">
-      <span class="modal-hint" id="amHint"></span>
-      <button class="btn" data-addmodal-cancel="1">取消</button>
-      <button class="btn btn-main" data-addmodal-ok="1">新增</button>
+    <div class="modal-f" data-page-node-id="XpQ616g0KXZfVD2btugeyI">
+      <span class="modal-hint" id="amHint" data-page-node-id="DfHYoFSILl3GuMDDHWAHI2"></span>
+      <button class="btn" data-addmodal-cancel="1" data-page-node-id="tVRhXr9BvmiA3GfMsT0Thv">取消</button>
+      <button class="btn btn-main" data-addmodal-ok="1" data-page-node-id="Iv6XBDuVEUfY14FaWT6rmM">新增</button>
+    </div>
+  </div>
+</div>
+
+<!-- 编辑弹窗：今日页所有条目共用这一个（待办 / 习惯 / 支出的那一笔 / 记录项的一条 / 操作流水）。
+     里面有哪些字段按类型生成，见 edFields() —— 不写死在 HTML 里。 -->
+<div class="modal" id="editModal" data-editmodal="1" data-page-node-id="ZHwGMcBj9qXgXufepEeTQO">
+  <div class="modal-mask" data-edit-cancel="1" data-page-node-id="3yV2ss2YuWS4PAzoICeshs"></div>
+  <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="edTitle" data-page-node-id="GiHXkosy0vNDqRWUEwHZUt">
+    <div class="modal-h" data-page-node-id="PawZkMU2xn05evA2hLwpDJ">
+      <span class="modal-t" id="edTitle" data-page-node-id="wBHpimQUIh2tzUoVFaJm7e">修改待办</span>
+      <span class="block-note" id="edWhere" data-page-node-id="Sl7LJVJO76JWVHBvL8yCoG">工作</span>
+    </div>
+    <div id="edFields" data-page-node-id="b4tNxNUCN0S586FIxVwoCM"><div class="field"><span class="field-k">内容（必填）</span><input class="inline-in" data-edf="title" type="text"></div><div class="field"><span class="field-k">到期日</span><input class="inline-in" data-edf="due" type="date"></div><div class="field"><span class="field-k">状态</span><div class="spacepick"><button class="mchip is-on" data-edsel="status" data-edval="todo">待办</button><button class="mchip" data-edsel="status" data-edval="done">已完成</button></div></div><div class="field"><span class="field-k">领域</span><div class="spacepick"><button class="mchip" data-edsel="domain" data-edval="">未归类</button><button class="mchip" data-edsel="domain" data-edval="健身">健身</button><button class="mchip" data-edsel="domain" data-edval="学习">学习</button><button class="mchip is-on" data-edsel="domain" data-edval="工作">工作</button><button class="mchip" data-edsel="domain" data-edval="个人">个人</button></div></div></div>
+    <div class="modal-f" data-page-node-id="LQ5tNuLshsEpHhLNrz4yrm">
+      <span class="modal-hint" id="edHint" data-page-node-id="wIRM7PZHFCZvxmNpDFsvWd">改动会记到「今天记下的」里</span>
+      <button class="btn" data-edit-cancel="1" data-page-node-id="2IhM7WbD8TUEdJqYZBsjEb">取消</button>
+      <button class="btn btn-main" data-edit-ok="1" data-page-node-id="TtAX7EWEzSXIeMQWE41kzj">保存</button>
     </div>
   </div>
 </div>
@@ -606,6 +664,39 @@ function money(n){
   if(v%1===0){return '¥'+v;}
   return '¥'+v.toFixed(2).replace(/0$/,'');
 }
+/* 某一天某一类的合计 / 笔数 —— 今日页那行「今天花了多少」用 */
+function sumOfKindOn(logs,kind,date){
+  var t=0;
+  for(var i=0;i<logs.length;i++){
+    if(logs[i].kind===kind&&logs[i].date===date){t+=logs[i].value;}
+  }
+  return Math.round(t*100)/100;
+}
+function countOfKindOn(logs,kind,date){
+  var n=0;
+  for(var i=0;i<logs.length;i++){if(logs[i].kind===kind&&logs[i].date===date){n++;}}
+  return n;
+}
+/* 复盘用：把「9月16日 周三」这种给人看的日期还原成 2026-09-16。
+   解析不出来就返回空串 —— 不猜。猜错的日期会悄悄混进统计里，比缺一条更坏。 */
+function isoFromLabel(s,year){
+  var m=String(s==null?'':s).match(/(\d{1,2})月(\d{1,2})日/);
+  if(!m){return '';}
+  return year+'-'+pad2(+m[1])+'-'+pad2(+m[2]);
+}
+function inRange(date,from,to){
+  return !!date&&!!from&&!!to&&date>=from&&date<=to;
+}
+function shiftDays(dateStr,n){
+  var p=dateStr.split('-');var d=new Date(+p[0],+p[1]-1,+p[2]);
+  d.setDate(d.getDate()+n);
+  return isoOf(d);
+}
+function dayCount(from,to){
+  var a=from.split('-'),b=to.split('-');
+  var d1=new Date(+a[0],+a[1]-1,+a[2]),d2=new Date(+b[0],+b[1]-1,+b[2]);
+  return Math.max(1,Math.round((d2-d1)/86400000)+1);
+}
 function domainById(list,id){
   for(var i=0;i<list.length;i++){if(list[i].id===id){return list[i];}}
   return null;
@@ -643,6 +734,13 @@ function fmtCN(dateStr){
   var p=dateStr.split('-');
   return (+p[1])+'月'+(+p[2])+'日 '+weekdayCN(dateStr);
 }
+/* ISO → 记录项里那种「9月18日」。记录项的日期是给人看的短格式（不带年份），
+   所以编辑完日期要转回去，不能把 '2026-09-18' 直接塞进去。 */
+function labelFromIso(iso){
+  var p=String(iso||'').split('-');
+  if(p.length<3){return iso;}
+  return (+p[1])+'月'+(+p[2])+'日';
+}
 /* ---- 记录项（领域专属记录，用户自定义） ---- */
 function recordTypesOf(list,domainId){
   var out=[];
@@ -650,6 +748,9 @@ function recordTypesOf(list,domainId){
   return out;
 }
 function pushLog(list,id,entry){
+  /* 每条记录都要有稳定 id：今日页那条流水要能指回来改它，
+     靠下标是不行的（删掉中间一条就整体错位）。 */
+  if(entry&&!entry.id){entry.id='rd'+Date.now()+'-'+Math.floor(Math.random()*1000);}
   for(var i=0;i<list.length;i++){
     if(list[i].id===id){list[i].logs.unshift(entry);return list[i];}
   }
@@ -915,75 +1016,172 @@ function goalById(list,id){
 /* ==PARSER_END== */
 
 var TODAY='2026-09-18';
+/* status:'done' 的条目不会出现在今日页（pickToday 会跳过），
+   它们只在「复盘」里作为「这一期完成了什么」的依据。
+   parent 指向另一条待办的 id —— 这就是「子项」：一条待办可以拆成几条子待办，
+   子项还能再往下拆。id 必须是稳定的，不能用数组下标（删掉中间一条就全错位）。 */
 var ITEMS=[
-  {title:'交上月报销单',domain:'工作',due:'2026-09-16',status:'todo'},
-  {title:'给张工回邮件',domain:'工作',due:'2026-09-17',status:'todo'},
-  {title:'写周报',domain:'工作',due:'2026-09-18',status:'todo'},
-  {title:'买跑鞋',domain:'个人',due:'2026-09-18',status:'todo'},
-  {title:'交物业费',domain:'个人',due:'2026-09-21',status:'todo'}
+  {id:'it1',title:'交上月报销单',domain:'工作',due:'2026-09-16',status:'todo',parent:null},
+  {id:'it2',title:'给张工回邮件',domain:'工作',due:'2026-09-17',status:'todo',parent:null},
+  {id:'it3',title:'写周报',domain:'工作',due:'2026-09-18',status:'todo',parent:null},
+  {id:'it8',title:'整理本周产出',domain:'工作',due:'2026-09-18',status:'todo',parent:'it3'},
+  {id:'it9',title:'补上周遗留的两条',domain:'工作',due:'2026-09-18',status:'done',parent:'it3'},
+  {id:'it4',title:'买跑鞋',domain:'个人',due:'2026-09-18',status:'todo',parent:null},
+  {id:'it5',title:'交物业费',domain:'个人',due:'2026-09-21',status:'todo',parent:null},
+  {id:'it6',title:'整理周三的会议纪要',domain:'工作',due:'2026-09-16',status:'done',parent:null},
+  {id:'it7',title:'把体检报告拍照存档',domain:'个人',due:'2026-09-15',status:'done',parent:null},
+  {id:'it10',title:'做体测',domain:'健身',due:'2026-09-16',status:'done',parent:null},
+  {id:'it11',title:'预约牙医',domain:'个人',due:'2026-09-17',status:'done',parent:null}
 ];
+/* 打卡记录：只记「哪个习惯、哪天打过」。
+   key 用习惯自己的稳定 id（不是数组下标 —— 删掉中间一个，下标会整体错位）。
+   同一天打三次也只落一条（toggleHabitLog 会先查重），所以「累计打卡天数」= 去重后的条数。
+   种子数据是**故意配过**的：四个有记录的习惯分别演示 连续 5 / 4 / 3 / 1 天，其中
+   「阅读 30 分钟」中间断过（09-16、09-18 空着）—— 只给清一色满勤的话，
+   连续天数的算法写错了都看不出来。 */
+var HABIT_LOGS=[
+  /* 健身 · 训练日打卡（每周 4 次）→ 连续 3 天 · 累计 4 天 */
+  {key:'h-fit-1',date:'2026-09-14'},
+  {key:'h-fit-1',date:'2026-09-16'},
+  {key:'h-fit-1',date:'2026-09-17'},
+  {key:'h-fit-1',date:'2026-09-18'},
+  /* 学习 · 阅读 30 分钟（每天）→ 中间断过：连续 1 天 · 累计 5 天 */
+  {key:'h-study-1',date:'2026-09-12'},
+  {key:'h-study-1',date:'2026-09-13'},
+  {key:'h-study-1',date:'2026-09-14'},
+  {key:'h-study-1',date:'2026-09-15'},
+  {key:'h-study-1',date:'2026-09-17'},
+  /* 个人 · 健康作息（组）→ 连续 4 天 · 累计 4 天 */
+  {key:'h-life-1',date:'2026-09-15'},
+  {key:'h-life-1',date:'2026-09-16'},
+  {key:'h-life-1',date:'2026-09-17'},
+  {key:'h-life-1',date:'2026-09-18'},
+  /* 个人 · 饮水 2L（健康作息的子项）→ 连续 5 天 · 累计 5 天 */
+  {key:'h-life-2',date:'2026-09-14'},
+  {key:'h-life-2',date:'2026-09-15'},
+  {key:'h-life-2',date:'2026-09-16'},
+  {key:'h-life-2',date:'2026-09-17'},
+  {key:'h-life-2',date:'2026-09-18'}
+];
+/* 收件箱：先记下来别丢。归类之后这条就从这里消失。 */
+var INBOX=[
+  {id:'in1',text:'问问李工那个接口文档在哪',at:'2026-09-17'},
+  {id:'in2',text:'想学一下 GraphRAG',at:'2026-09-17'},
+  {id:'in3',text:'换一盒充电电池',at:'2026-09-18'}
+];
+/* 随心记：零字段。默认不参与任何统计与复盘（复盘页也不会读取它）。 */
+var NOTES=[
+  {id:'nt1',d:'2026-09-17',text:'今天试着把周报提前到周三写完，发现其实两个小时就够。之前一直拖到周五，大概是怕写完就要面对下一周。'},
+  {id:'nt2',d:'2026-09-15',text:'早睡这件事，卡住我的不是工作，是手机。'},
+  {id:'nt3',d:'2026-09-12',text:'体检报告出来了，其他都好，就是血脂偏高。要开始认真对待吃饭这件事了。'}
+];
+var NOTE_PROMPTS=[
+  '最近哪件事让你反复想起？',
+  '这周有件事想做没做成，卡在哪一步？',
+  '这一周只能留一件事，你留哪件？',
+  '有什么事你一直没说出口？',
+  '最近一次觉得「这样挺好」是什么时候？',
+  '今天哪个瞬间你想慢一点？'
+];
+/* 每一笔都有稳定 id：今日页那条「今天记下的」要能指回这笔支出去改，
+   靠数组下标是不行的 —— 删掉中间一笔，后面全部错位（习惯那边已经栽过一次）。 */
 var LOGS=[
-  {kind:'money',date:'2026-09-18',category:'餐饮',value:32},
-  {kind:'money',date:'2026-09-18',category:'出行',value:6},
-  {kind:'money',date:'2026-09-17',category:'餐饮',value:48},
-  {kind:'money',date:'2026-09-16',category:'数码',value:899},
-  {kind:'money',date:'2026-09-15',category:'餐饮',value:26},
-  {kind:'money',date:'2026-09-14',category:'生活',value:460},
-  {kind:'money',date:'2026-09-12',category:'娱乐',value:210}
+  {id:'lg1',kind:'money',date:'2026-09-18',category:'餐饮',value:32},
+  {id:'lg2',kind:'money',date:'2026-09-18',category:'出行',value:6},
+  {id:'lg3',kind:'money',date:'2026-09-17',category:'餐饮',value:48},
+  {id:'lg4',kind:'money',date:'2026-09-16',category:'数码',value:899},
+  {id:'lg5',kind:'money',date:'2026-09-15',category:'餐饮',value:26},
+  {id:'lg6',kind:'money',date:'2026-09-14',category:'生活',value:460},
+  {id:'lg7',kind:'money',date:'2026-09-12',category:'娱乐',value:210}
 ];
+/* 领域里的三部分（待办 / 习惯 / 长期目标）用的都是同一种**条目**：
+   条目可以挂子项，子项还能再挂子项 —— 任意级数，全部由一个 parent 字段长出来。
+     · 条目：{id, t, m, parent}   parent = 父条目的 id，null = 顶层
+   这里没有「目录」这种东西。待办是待办，它的子项也是待办；
+   习惯是习惯，它的子项也是习惯。三部分共用同一套渲染与操作
+   （见 renderTreeInto），所以「待办能建子项」就等于
+   「习惯和计划也能建子项」—— 加第三部分不需要再写一遍。
+   子项关系**只在创建时定**（行尾那颗「+」），建完不给改。 */
 var DOMAINS=[
   {
     id:'fitness',name:'健身',pinned:true,
-    habits:[{t:'训练日打卡',m:'每周 4 次'}],
-    todos:[{t:'换瑜伽垫',m:'9月21日 周一'},{t:'约体测',m:'没有日期'}],
-    goals:[{id:'g-fitness-1',t:'硬拉 100kg',m:'当前 80kg × 5 次',p:80},{id:'g-fitness-2',t:'体脂降到 18%',m:'当前约 21%',p:35}]
+    habits:[{id:'h-fit-1',t:'训练日打卡',m:'每周 4 次',parent:null}],
+    todos:[{id:'t-fit-1',t:'换瑜伽垫',m:'9月21日 周一',parent:null},
+           {id:'t-fit-2',t:'约体测',m:'没有日期',parent:null}],
+    goals:[
+      {id:'g-fitness-1',t:'硬拉 100kg',m:'当前 80kg × 5 次',p:80,parent:null},
+      {id:'g-fitness-1a',t:'周期一：85kg × 5',m:'两周内',p:100,parent:'g-fitness-1'},
+      {id:'g-fitness-1b',t:'周期二：95kg × 3',m:'再两周',p:40,parent:'g-fitness-1'},
+      {id:'g-fitness-2',t:'体脂降到 18%',m:'当前约 21%',p:35,parent:null}
+    ]
   },
   {
     id:'study',name:'学习',pinned:false,
-    habits:[{t:'阅读 30 分钟',m:'每天'}],
-    todos:[{t:'整理读书笔记',m:'没有日期'},{t:'把 SmartVoyage 的章节笔记归档',m:'没有日期'}],
-    goals:[{id:'g-study-1',t:'读完《置身事内》',m:'每周 30 页 · 已读 210/350 页',p:60}]
+    habits:[{id:'h-study-1',t:'阅读 30 分钟',m:'每天',parent:null}],
+    todos:[{id:'t-study-1',t:'整理读书笔记',m:'没有日期',parent:null},
+           {id:'t-study-2',t:'把 SmartVoyage 的章节笔记归档',m:'没有日期',parent:null}],
+    goals:[
+      {id:'g-study-1',t:'读完《置身事内》',m:'每周 30 页 · 已读 210/350 页',p:60,parent:null},
+      {id:'g-study-1a',t:'第 1–5 章',m:'讲财政',p:100,parent:'g-study-1'},
+      {id:'g-study-1b',t:'第 6–10 章',m:'当前在这',p:50,parent:'g-study-1'}
+    ]
   },
   {
     id:'work',name:'工作',pinned:false,
-    habits:[{t:'下班前清空收件箱',m:'工作日'}],
-    todos:[{t:'交上月报销单',m:'逾期 9月16日 周三'},{t:'给张工回邮件',m:'逾期 9月17日 周四'},{t:'写周报',m:'今天'}],
-    goals:[{id:'g-work-1',t:'知识库项目 v1 上线',m:'方案已定 · 待开工',p:45}]
+    habits:[{id:'h-work-1',t:'下班前清空收件箱',m:'工作日',parent:null}],
+    todos:[
+      {id:'t-work-1',t:'知识库项目上线',m:'本周五',parent:null},
+      {id:'t-work-2',t:'整理接口文档',m:'周三前',parent:'t-work-1'},
+      {id:'t-work-3',t:'跑一遍回归',m:'周四',parent:'t-work-1'},
+      {id:'t-work-4',t:'交上月报销单',m:'逾期 9月16日 周三',parent:null},
+      {id:'t-work-5',t:'给张工回邮件',m:'逾期 9月17日 周四',parent:null},
+      {id:'t-work-6',t:'写周报',m:'今天',parent:null}
+    ],
+    goals:[{id:'g-work-1',t:'知识库项目 v1 上线',m:'方案已定 · 待开工',p:45,parent:null}]
   },
   {
     id:'life',name:'个人',pinned:false,
-    habits:[{t:'饮水 2L',m:'每天'},{t:'23:30 前睡',m:'工作日'}],
-    todos:[{t:'买跑鞋',m:'今天'},{t:'交物业费',m:'9月21日 周一'}],
-    goals:[{id:'g-life-1',t:'家庭年度旅行成行',m:'还没定目的地',p:50}]
+    habits:[
+      {id:'h-life-1',t:'健康作息',m:'一组习惯',parent:null},
+      {id:'h-life-2',t:'饮水 2L',m:'每天',parent:'h-life-1'},
+      {id:'h-life-3',t:'23:30 前睡',m:'工作日',parent:'h-life-1'}
+    ],
+    todos:[{id:'t-life-1',t:'买跑鞋',m:'今天',parent:null},
+           {id:'t-life-2',t:'交物业费',m:'9月21日 周一',parent:null}],
+    goals:[
+      {id:'g-life-1',t:'家庭年度旅行成行',m:'还没定目的地',p:50,parent:null},
+      {id:'g-life-1a',t:'定目的地和日期',m:'这个月内',p:100,parent:'g-life-1'},
+      {id:'g-life-1b',t:'办签证',m:'看目的地',p:20,parent:'g-life-1'}
+    ]
   }
 ];
 /* 记录项：领域专属记录，名称与方式都由用户自定义。两种方式：text 纯文字 / number 数值
-   quick=true 表示这条记录项会出现在首页速记的类目里（可在 ⚙ 自定义 里关掉） */
+   quick=true 表示这条记录项会出现在首页速记的类目里（可在「自定义」里关掉） */
 var RECORD_TYPES=[
   {id:'rt_kcal_in',domain:'fitness',name:'热量摄入',mode:'number',unit:'kcal',quick:true,logs:[
-    {d:'9月18日',v:1800},{d:'9月17日',v:1920},{d:'9月16日',v:1750}
+    {id:'k1',d:'9月18日',v:1800},{id:'k2',d:'9月17日',v:1920},{id:'k3',d:'9月16日',v:1750}
   ]},
   {id:'rt_kcal_out',domain:'fitness',name:'热量消耗',mode:'number',unit:'kcal',quick:true,logs:[
-    {d:'9月18日',v:520},{d:'9月17日',v:480}
+    {id:'k4',d:'9月18日',v:520},{id:'k5',d:'9月17日',v:480}
   ]},
   {id:'rt_weight',domain:'fitness',name:'体重',mode:'number',unit:'kg',quick:true,logs:[
-    {d:'9月18日',v:71.4},{d:'9月15日',v:71.7},{d:'9月12日',v:72.1}
+    {id:'k6',d:'9月18日',v:71.4},{id:'k7',d:'9月15日',v:71.7},{id:'k8',d:'9月12日',v:72.1}
   ]},
   {id:'rt_strength',domain:'fitness',name:'力量训练',mode:'text',unit:'',quick:false,logs:[
-    {d:'9月16日 周三',v:'深蹲 80kg × 5 × 5 · 硬拉 90kg × 3 × 3 · 组间休息 2 分钟'},
-    {d:'9月13日 周日',v:'深蹲 77.5kg × 5 × 5 · 硬拉 87.5kg × 3 × 3'}
+    {id:'k9',d:'9月16日 周三',v:'深蹲 80kg × 5 × 5 · 硬拉 90kg × 3 × 3 · 组间休息 2 分钟'},
+    {id:'k10',d:'9月13日 周日',v:'深蹲 77.5kg × 5 × 5 · 硬拉 87.5kg × 3 × 3'}
   ]},
   {id:'rt_cardio',domain:'fitness',name:'有氧',mode:'text',unit:'',quick:false,logs:[
-    {d:'9月17日 周三',v:'跑步 7.1km · 42 分钟 · 配速 5\'55" · 平均心率 148'}
+    {id:'k11',d:'9月17日 周三',v:'跑步 7.1km · 42 分钟 · 配速 5\'55" · 平均心率 148'}
   ]},
   {id:'rt_squat',domain:'fitness',name:'深蹲最大重量',mode:'number',unit:'kg',quick:false,logs:[
-    {d:'9月16日',v:80},{d:'9月13日',v:77.5},{d:'9月10日',v:75}
+    {id:'k12',d:'9月16日',v:80},{id:'k13',d:'9月13日',v:77.5},{id:'k14',d:'9月10日',v:75}
   ]},
   {id:'rt_book',domain:'study',name:'读书',mode:'number',unit:'页',quick:false,logs:[
-    {d:'9月17日',v:24},{d:'9月15日',v:18},{d:'9月13日',v:31}
+    {id:'k15',d:'9月17日',v:24},{id:'k16',d:'9月15日',v:18},{id:'k17',d:'9月13日',v:31}
   ]},
   {id:'rt_note',domain:'study',name:'学习笔记',mode:'text',unit:'',quick:false,logs:[
-    {d:'9月17日 周三',v:'第 6 章讲土地财政，和之前看的新闻对上了。'}
+    {id:'k18',d:'9月17日 周三',v:'第 6 章讲土地财政，和之前看的新闻对上了。'}
   ]}
 ];
 /* 快记的「行为类目」：不是数值记录，而是决定这句话怎么被处理。
@@ -1012,23 +1210,215 @@ var AUTO_RULES=[
    re:'^(¥|￥|RMB)?\\s*\\d+(\\.\\d+)?',
    ex:'公里|千米|km|米|次|页|分钟|小时|组|个|杯|瓶|步', to:'money'}
 ];
+/* 今天记下的：每条尽量带上 ref —— 指回它真正改的那份数据。
+   有 ref 的能点开改（改的就是原始那一笔），没有 ref 的只是操作流水，点开只能看和移除。
+   「早餐 ¥12」故意留成没有 ref 的：它对应不上任何一笔真实支出，是历史脏数据的样子。 */
 var TODAY_LOGS=[
   {time:'08:15',label:'早餐 ¥12 · 餐饮'},
-  {time:'10:30',label:'体重 71.4 kg'},
-  {time:'12:40',label:'午餐 ¥32 · 餐饮'}
+  {time:'10:30',label:'体重 71.4 kg',ref:{k:'rt',rtId:'rt_weight',logId:'k6'}},
+  {time:'12:40',label:'午餐 ¥32 · 餐饮',ref:{k:'money',id:'lg1'}}
 ];
 var TITLES={
   today:['今日','9月18日 周五'],
-  inbox:['收集','收件箱'],
-  notes:['随心记','只写，不管'],
-  spaces:['空间','你的领域'],
+  inbox:['收集','待归类的东西'],
+  notes:['随心记','写下来就行'],
+  spaces:['空间','领域都在这儿'],
   ledger:['记账','2026 年 9 月'],
   review:['复盘','9月14日 – 9月20日'],
-  settings:['设置','数据在你手里']
+  settings:['设置','数据和偏好']
 };
 /* 长期目标进度条的快捷步长（按钮文案就是 +这个数） */
 var GOAL_STEPS=[1,2,5];
 var CURRENT='fitness';
+
+/* ---- 习惯：稳定 id + 打卡记录 ----
+   习惯不能再靠「领域id|数组下标」来定位 —— 删掉中间一个，后面全部错位，
+   打卡记录会挂到别人的头上。所以每条习惯都要有自己的 id。 */
+function ensureHabitIds(){
+  for(var i=0;i<DOMAINS.length;i++){
+    var d=DOMAINS[i];
+    for(var j=0;j<d.habits.length;j++){
+      if(!d.habits[j].id){d.habits[j].id=d.id+'-h'+(j+1);}
+    }
+  }
+}
+/* ---- 三部分的目录树：一套机制，待办 / 习惯 / 长期目标 共用 ----
+   没有「目录表」，只有 目录.parent 和 条目.parent 两个字段。
+   所以「待办支持多级目录」不是给待办写的功能，而是给 parent 写的功能 ——
+   习惯和计划拿到的是同一份实现，第三部分将来叫什么名字都不用再写一遍。 */
+var BUCKETS=['todo','habit','goal'];
+function bucketItems(d,k){
+  if(k==='habit'){return d.habits;}
+  if(k==='goal'){return d.goals;}
+  return d.todos;
+}
+function ensureTreeIds(){
+  for(var i=0;i<DOMAINS.length;i++){
+    var d=DOMAINS[i];
+    for(var b=0;b<BUCKETS.length;b++){
+      var k=BUCKETS[b];
+      var its=bucketItems(d,k);
+      for(var m=0;m<its.length;m++){
+        if(!its[m].id){its[m].id=d.id+'-'+k+'-'+(m+1);}
+        if(its[m].parent===undefined){its[m].parent=null;}
+      }
+    }
+  }
+  /* 今日页那套待办（ITEMS）也要有 id —— 它的子项同样不能靠下标定位 */
+  for(var q=0;q<ITEMS.length;q++){
+    if(!ITEMS[q].id){ITEMS[q].id='it'+(q+1);}
+    if(ITEMS[q].parent===undefined){ITEMS[q].parent=null;}
+  }
+}
+function nodeById(d,k,id){
+  if(!id){return null;}
+  var its=bucketItems(d,k);
+  for(var i=0;i<its.length;i++){if(its[i].id===id){return its[i];}}
+  return null;
+}
+/* 直接子项。parent 为 null 表示「顶层」—— 顶层不是某个容器，就是没有父项 */
+function kidsOf(d,k,parentId){
+  var out=[],its=bucketItems(d,k),p0=parentId||null;
+  for(var i=0;i<its.length;i++){
+    if((its[i].parent||null)===p0){out.push(its[i]);}
+  }
+  return out;
+}
+function kidCount(d,k,id){
+  var n=0,kids=kidsOf(d,k,id);
+  for(var i=0;i<kids.length;i++){n+=1+kidCount(d,k,kids[i].id);}
+  return n;
+}
+/* 祖先链，顶层在前。今日页那行元信息用它 ——
+   今日页要保持「今天该做什么一眼看到」，不铺成树，但得知道它挂在谁下面。 */
+function nodeAncestors(d,k,item){
+  var out=[],guard=0,id=item&&item.parent;
+  while(id&&guard++<12){
+    var p=nodeById(d,k,id);
+    if(!p){break;}
+    out.unshift(p);
+    id=p.parent;
+  }
+  return out;
+}
+function nodePath(d,k,item){
+  var an=nodeAncestors(d,k,item),names=[];
+  for(var i=0;i<an.length;i++){names.push(an[i].t||'');}
+  return names.join(' / ');
+}
+/* 有子项被折叠时记在这里。默认全展开 —— 报错、藏东西都要用户自己要求才算数。 */
+var CLOSED_NODES={};
+/* 删掉一条时，它的子项**上移一层**接管它原来的位置 ——
+   不跟着一起消失。「分类可以错，数据不该丢」这条对子项同样成立。 */
+function releaseKids(d,k,id){
+  var up=null,self=nodeById(d,k,id);
+  if(self){up=self.parent||null;}
+  var kids=kidsOf(d,k,id);
+  for(var i=0;i<kids.length;i++){kids[i].parent=up;}
+  delete CLOSED_NODES[id];
+}
+/* ---- 今日页那套待办（ITEMS）：同样有子项，但入口在今日页那片扁平列表上 ---- */
+function itemById(id){
+  for(var i=0;i<ITEMS.length;i++){if(ITEMS[i].id===id){return ITEMS[i];}}
+  return null;
+}
+function itemsOfParent(pid){
+  var out=[],p0=pid||null;
+  for(var i=0;i<ITEMS.length;i++){if((ITEMS[i].parent||null)===p0){out.push(ITEMS[i]);}}
+  return out;
+}
+function releaseItemKids(id){
+  var self=itemById(id),up=self?(self.parent||null):null;
+  var kids=itemsOfParent(id);
+  for(var i=0;i<kids.length;i++){kids[i].parent=up;}
+  delete CLOSED_NODES[id];
+}
+function habitById(id){
+  for(var i=0;i<DOMAINS.length;i++){
+    var hs=DOMAINS[i].habits;
+    for(var j=0;j<hs.length;j++){
+      if(hs[j].id===id){return {domain:DOMAINS[i],habit:hs[j]};}
+    }
+  }
+  return null;
+}
+function habitDoneOn(id,date){
+  for(var i=0;i<HABIT_LOGS.length;i++){
+    if(HABIT_LOGS[i].key===id&&HABIT_LOGS[i].date===date){return true;}
+  }
+  return false;
+}
+/* 打卡是「切换」不是「一次」：再点一下取消。返回切换后的状态 */
+function toggleHabitLog(id,date){
+  for(var i=0;i<HABIT_LOGS.length;i++){
+    if(HABIT_LOGS[i].key===id&&HABIT_LOGS[i].date===date){HABIT_LOGS.splice(i,1);return false;}
+  }
+  HABIT_LOGS.push({key:id,date:date});
+  return true;
+}
+function dropHabitLogs(id){
+  for(var i=HABIT_LOGS.length-1;i>=0;i--){
+    if(HABIT_LOGS[i].key===id){HABIT_LOGS.splice(i,1);}
+  }
+}
+/* ================= 打卡统计：连续天数 / 累计天数 =================
+   这两个数字是「同一份打卡记录」的两种读法，所以都从这里出，
+   界面上任何地方都不许自己再数一遍 —— 数出两份不一致的数字比不显示更糟。 */
+
+/* 这个习惯打过卡的所有日期，去重后按时间升序。
+   一天打三次也只算一天（toggleHabitLog 保证同一天只落一条，这里再兜一次底）。 */
+function habitDates(id){
+  var seen={},out=[];
+  for(var i=0;i<HABIT_LOGS.length;i++){
+    var l=HABIT_LOGS[i];
+    if(l.key!==id||seen[l.date]){continue;}
+    seen[l.date]=1;out.push(l.date);
+  }
+  out.sort();
+  return out;
+}
+/* 累计打卡天数 = 打过卡的不同日期数（不是次数） */
+function habitTotalDays(id){return habitDates(id).length;}
+/* 连续打卡天数：从今天往回数，遇到第一个没打卡的日子就停。
+   今天还没打卡**不算断** —— 这一天还没过完，早上打开看一眼就被判「断了」太伤人。
+   所以：今天有卡就从今天起数，今天没有就从昨天起数。 */
+function habitStreakDays(id,today){
+  var has={},dts=habitDates(id),i;
+  for(i=0;i<dts.length;i++){has[dts[i]]=1;}
+  var day=today||TODAY;
+  if(!has[day]){day=shiftDays(day,-1);}
+  var n=0;
+  while(has[day]&&n<3660){n++;day=shiftDays(day,-1);}   /* 十年封顶，防数据坏了转不出来 */
+  return n;
+}
+/* 一次拿全：界面要的就是这两个数 */
+function habitStat(id){
+  return {cur:habitStreakDays(id,TODAY),total:habitTotalDays(id)};
+}
+/* 这一期（复盘区间）里打过卡的天数 —— 复盘页那个「这一期 N 天」用的 */
+function habitDaysInRange(id,from,to){
+  var dts=habitDates(id),n=0;
+  for(var i=0;i<dts.length;i++){if(inRange(dts[i],from,to)){n++;}}
+  return n;
+}
+/* ---- 自绘图标：星标用 SVG，不用星号这类字符 ----
+   字符图标的问题是「它长得像图标，但其实是文字」—— 字体一换、字号一变就散架，
+   而且在有些系统上会被渲染成彩色的 emoji。画出来才稳定。 */
+var SVGNS='http://www.w3.org/2000/svg';
+function iconStar(on){
+  var s=document.createElementNS(SVGNS,'svg');
+  s.setAttribute('viewBox','0 0 16 16');
+  s.setAttribute('class','star');
+  s.setAttribute('aria-hidden','true');
+  var p=document.createElementNS(SVGNS,'path');
+  p.setAttribute('d','M8 1.9l1.85 3.75 4.14.6-3 2.92.71 4.13L8 11.35l-3.7 1.95.71-4.13-3-2.92 4.14-.6z');
+  p.setAttribute('stroke','currentColor');
+  p.setAttribute('stroke-width','1.4');
+  p.setAttribute('stroke-linejoin','round');
+  p.setAttribute('fill',on?'currentColor':'none');
+  s.appendChild(p);
+  return s;
+}
 
 function el(tag,cls,txt){
   var n=document.createElement(tag);
@@ -1036,56 +1426,128 @@ function el(tag,cls,txt){
   if(txt!==undefined){n.textContent=txt;}
   return n;
 }
-function itemRow(it,over){
-  var li=el('li','row');
+/* 目录行的折叠三角与「改名」铅笔 —— 同样是自绘 SVG。
+   三角要能跟着 .is-closed 旋转，所以画的是向下箭头，收起时用 CSS 转 -90°。 */
+function iconCaret(){
+  var s=document.createElementNS(SVGNS,'svg');
+  s.setAttribute('viewBox','0 0 16 16');
+  s.setAttribute('class','dir-caret');
+  s.setAttribute('aria-hidden','true');
+  var p=document.createElementNS(SVGNS,'path');
+  p.setAttribute('d','M4 6.3l4 4 4-4');
+  p.setAttribute('fill','none');
+  p.setAttribute('stroke','currentColor');
+  p.setAttribute('stroke-width','1.6');
+  p.setAttribute('stroke-linecap','round');
+  p.setAttribute('stroke-linejoin','round');
+  s.appendChild(p);
+  return s;
+}
+/* 加号的图标。自绘而不是写一个「+」字符 —— 字符图标字号一换就散架，
+   而且和旁边那排「+1/+2/+5」的文字加号混在一起就分不清了。 */
+function iconPlus(){
+  var s=document.createElementNS(SVGNS,'svg');
+  s.setAttribute('viewBox','0 0 12 12');
+  s.setAttribute('aria-hidden','true');
+  var p=document.createElementNS(SVGNS,'path');
+  p.setAttribute('d','M6 1.6v8.8M1.6 6h8.8');
+  p.setAttribute('fill','none');
+  p.setAttribute('stroke','currentColor');
+  p.setAttribute('stroke-width','1.7');
+  p.setAttribute('stroke-linecap','round');
+  s.appendChild(p);
+  return s;
+}
+/* ---- 今日页待办行 ----
+   和领域页的待办行是同一个东西，只是它读的是 ITEMS 这套数据。
+   子项直接排在父项下面并缩进一层：今日页仍然要「一眼看到今天该做什么」，
+   所以不铺成整棵树，但「写周报」下面挂着的两小条得看得见。 */
+function itemRow(it,over,depth){
+  var kids=itemsOfParent(it.id);
+  var li=el('li','row row-edit');
+  li.setAttribute('data-edit','item:'+it.id);
+  indentRow(li,depth||0);
+  li.appendChild(nodeCaretEl(it.id,kids.length>0));
   li.appendChild(el('span','cbox'));
   var main=el('span','row-main');
   main.appendChild(el('span','row-name',it.title));
+  /* 有上级就写上级路径 —— 没有上级时这一段不占位置 */
+  var path=itemPath(it);
   var tail=over?('逾期 '+it.due+' '+weekdayCN(it.due)):'今天';
-  main.appendChild(el('span','row-meta',(it.domain?it.domain+' · ':'')+tail));
+  main.appendChild(el('span','row-meta',(path?path+' · ':'')+(it.domain?it.domain+' · ':'')+tail));
   li.appendChild(main);
-  li.appendChild(delBtnEl('item:'+ITEMS.indexOf(it),it.title));
+  if(kids.length){li.appendChild(kidBadge(kids.length));}
+  li.appendChild(subBtnEl('item','',it));
+  li.appendChild(delBtnEl('item:'+it.id,it.title));
   return li;
+}
+/* 一条待办的上级路径，如「写周报」。没有上级返回空串 */
+function itemPath(it){
+  var names=[],guard=0,id=it&&it.parent;
+  while(id&&guard++<12){
+    var p=itemById(id);
+    if(!p){break;}
+    names.unshift(p.title);
+    id=p.parent;
+  }
+  return names.join(' / ');
 }
 function renderLists(){
   var r=pickToday(ITEMS,TODAY);
   var ol=document.getElementById('overdueList');
   var dl=document.getElementById('dueList');
   ol.innerHTML='';dl.innerHTML='';
-  for(var i=0;i<r.overdue.length;i++){ol.appendChild(itemRow(r.overdue[i],true));}
-  for(var j=0;j<r.due.length;j++){dl.appendChild(itemRow(r.due[j],false));}
-  document.getElementById('todayCount').textContent='待办 '+r.due.length+' 项 · 逾期 '+r.overdue.length+' 项';
+  var picked={},i,j;
+  for(i=0;i<r.overdue.length;i++){picked[r.overdue[i].id]=1;}
+  for(j=0;j<r.due.length;j++){picked[r.due[j].id]=1;}
+  var seen={};
+  /* 子项跟着父项走：只要父项在今天的列表里，子项就挂在它下面，
+     不管子项自己的截止日是哪天 —— 子项是「这件事的一部分」，不是另一个独立承诺。 */
+  function emit(box,it,depth,over){
+    if(seen[it.id]){return;}
+    seen[it.id]=1;
+    box.appendChild(itemRow(it,over,depth));
+    if(CLOSED_NODES[it.id]){return;}
+    var kids=itemsOfParent(it.id);
+    for(var q=0;q<kids.length;q++){emit(box,kids[q],depth+1,over);}
+  }
+  /* 只从「顶层」开始铺，否则父项和子项会各出现一次 */
+  function isRoot(it){return !it.parent||!picked[it.parent];}
+  for(i=0;i<r.overdue.length;i++){if(isRoot(r.overdue[i])){emit(ol,r.overdue[i],0,true);}}
+  for(j=0;j<r.due.length;j++){if(isRoot(r.due[j])){emit(dl,r.due[j],0,false);}}
 }
+/* 今日页的习惯行 —— 只是领域页那行的「多带一个领域名」版本。
+   这一页是跨领域的，不写领域就不知道它属于哪；领域页整页都是同一个领域，写了是废话。
+   **别再在这里写第二遍行结构** —— 两处各写一份，打卡按钮或统计数字早晚会分叉
+   （这个项目已经因为「两份几乎一样的代码」漏过一次删除按钮）。 */
+function habitRow(d,h,depth){return habitRowEl(d,'habit',h,depth||0,true);}
 /* 今日页「习惯」块 —— 从 DOMAINS 里各域的习惯渲染（不再是一段写死的 HTML），
-   这样删除才有可能真的落到数据上。每行 = 领域名 · 频率 */
+   这样删除和打卡才有可能真的落到数据上。每行 = 领域名 · 频率 */
 function renderTodayHabits(){
   var ul=document.getElementById('todayHabits');
   if(!ul){return;}
   ul.innerHTML='';
   var n=0;
+  function emit(d,h,depth){
+    ul.appendChild(habitRow(d,h,depth));
+    n++;
+    if(CLOSED_NODES[h.id]){return;}
+    var kids=kidsOf(d,'habit',h.id);
+    for(var q=0;q<kids.length;q++){emit(d,kids[q],depth+1);}
+  }
   for(var i=0;i<DOMAINS.length;i++){
     var d=DOMAINS[i];
-    for(var j=0;j<d.habits.length;j++){
-      var h=d.habits[j];
-      var li=el('li','row');
-      li.appendChild(el('span','cbox'));
-      var m=el('span','row-main');
-      m.appendChild(el('span','row-name',h.t));
-      m.appendChild(el('span','row-meta',d.name+' · '+(h.m||'每天')));
-      li.appendChild(m);
-      var tk=el('button','tick','打卡');
-      tk.setAttribute('data-tick','1');
-      li.appendChild(tk);
-      li.appendChild(delBtnEl('habit:'+d.id+'|'+j,h.t));
-      ul.appendChild(li);
-      n++;
-    }
+    var roots=kidsOf(d,'habit',null);
+    for(var j=0;j<roots.length;j++){emit(d,roots[j],0);}
   }
-  if(!n){ul.appendChild(el('li','row-empty','还没有习惯。点右上角「+ 新增习惯」加一个。'));}
+  if(!n){ul.appendChild(el('li','row-empty','还没有习惯。点「+ 新增习惯」加一个。'));}
 }
 function renderLedger(){
-  var s=sumByCategory(LOGS,'money','2026-09');
+  var mon=TODAY.slice(0,7);
+  var s=sumByCategory(LOGS,'money',mon);
   document.getElementById('ledgerTotal').textContent=money(s.total);
+  var sub=document.getElementById('ledgerSub');
+  if(sub){sub.textContent=(+mon.slice(0,4))+' 年 '+(+mon.slice(5,7))+' 月支出合计';}
   var box=document.getElementById('ledgerBars');
   box.innerHTML='';
   for(var i=0;i<s.rows.length;i++){
@@ -1100,6 +1562,64 @@ function renderLedger(){
     wrap.appendChild(el('span','barrow-v',money(r.value)));
     box.appendChild(wrap);
   }
+  if(!s.rows.length){box.appendChild(el('div','row-empty','这个月还没有记过支出。'));}
+  renderLedgerFlow();
+}
+/* 最近流水：直接从 LOGS 渲染，不再是一段写死的 HTML ——
+   否则首页记的那笔支出会出现在月度合计里、却不在流水里（上一版就是这个毛病）。 */
+function renderLedgerFlow(){
+  var box=document.getElementById('ledgerFlow');
+  if(!box){return;}
+  box.innerHTML='';
+  var rows=[];
+  for(var i=0;i<LOGS.length;i++){if(LOGS[i].kind==='money'){rows.push({log:LOGS[i],idx:i});}}
+  rows.sort(function(a,b){return a.log.date<b.log.date?1:(a.log.date>b.log.date?-1:0);});
+  var note=document.getElementById('ledgerFlowNote');
+  if(note){note.textContent=rows.length?(rows.length+' 笔 · 点 × 删'):'';}
+  if(!rows.length){
+    box.appendChild(el('div','row-empty','还没有记过支出。上面那个框写「32 午餐」就行。'));
+    return;
+  }
+  for(var j=0;j<rows.length;j++){
+    var l=rows[j].log;
+    var it=el('div','noteitem');
+    it.appendChild(el('div','noteitem-d',fmtCN(l.date)+' · '+l.category));
+    var c=el('div','noteitem-c flowrow');
+    c.appendChild(el('span','grow',(l.note?l.note+' ':'')+money(l.value)));
+    c.appendChild(delBtnEl('money:'+rows[j].idx,(l.note||l.category)+' '+money(l.value)));
+    it.appendChild(c);
+    box.appendChild(it);
+  }
+}
+/* 写一笔支出。所有记支出的入口（首页速记 / 记账页录入框）都走这里，
+   保证「月度合计、分类柱状图、最近流水、今日摘要」四处同时更新 ——
+   数据通道断掉往往不是写不进，而是只写了一半的地方。 */
+function addMoney(value,note,category){
+  if(!(value>0)){return null;}
+  var cat=category||guessCategory(note||'')||'未分类';
+  var entry={id:'lg'+Date.now()+'-'+Math.floor(Math.random()*1000),kind:'money',date:TODAY,
+    category:cat,value:Math.round(value*100)/100,note:String(note||'').trim()};
+  LOGS.unshift(entry);
+  renderLedger();
+  renderTodayMoney();
+  return entry;
+}
+/* 今日页那一行金额摘要。今天 / 本月两个数，与记账页同源（都读 LOGS）。 */
+function renderTodayMoney(){
+  var box=document.getElementById('todayMoney');
+  if(!box){return;}
+  box.innerHTML='';
+  var day=sumOfKindOn(LOGS,'money',TODAY);
+  var n=countOfKindOn(LOGS,'money',TODAY);
+  var total=sumByCategory(LOGS,'money',TODAY.slice(0,7)).total;
+  box.appendChild(el('span','','今天 '));
+  box.appendChild(el('b','',money(day)));
+  box.appendChild(el('span','','· '+n+' 笔'));
+  box.appendChild(el('span','','　本月 '));
+  box.appendChild(el('b','',money(total)));
+  var goLedger=el('span','res-fix','去记账');
+  goLedger.setAttribute('data-go','ledger');
+  box.appendChild(goLedger);
 }
 function renderSpaces(){
   var grid=document.getElementById('spaceGrid');
@@ -1112,10 +1632,12 @@ function renderSpaces(){
     card.appendChild(el('div','card-t',d.name));
     card.appendChild(el('div','card-s',summaryOf(d,recordTypesOf(RECORD_TYPES,d.id).length)));
     var ops=el('div','card-ops');
-    var star=el('button','iconbtn',d.pinned?'★':'☆');
+    var star=el('button','iconbtn');
     star.setAttribute('data-pin',d.id);
     star.setAttribute('title',d.pinned?'取消顶部快捷':'加到顶部快捷');
+    star.setAttribute('aria-label',d.pinned?'取消顶部快捷':'加到顶部快捷');
     if(d.pinned){star.classList.add('is-on');}
+    star.appendChild(iconStar(!!d.pinned));
     ops.appendChild(star);
     card.appendChild(ops);
     grid.appendChild(card);
@@ -1151,7 +1673,7 @@ function renderSettingsDomains(){
     var d=DOMAINS[i];
     var row=el('div','kv');
     row.appendChild(el('span','kv-k',d.name+' · '+summaryOf(d)));
-    row.appendChild(el('span','kv-v',d.pinned?'☆ 已置顶':'—'));
+    row.appendChild(el('span','kv-v',d.pinned?'已置顶':'—'));
     box.appendChild(row);
   }
   var t=el('div','kv');
@@ -1159,81 +1681,247 @@ function renderSettingsDomains(){
   t.appendChild(el('span','kv-v',pinnedOf(DOMAINS).length+' 个在快捷区'));
   box.appendChild(t);
 }
-function fillList(ulId,rows,emptyText){
-  var ul=document.getElementById(ulId);
-  ul.innerHTML='';
-  if(!rows.length){
-    var li0=el('li','row-empty',emptyText);
-    ul.appendChild(li0);
-    return;
+/* ================= 子项：一套渲染，三处共用 =================
+   待办 / 习惯 / 长期目标 走的是同一个 renderTreeInto()。
+   三者的差别只有「一行长什么样」这一件事，由调用方传进来的 rowFn 决定；
+   缩进、折叠、子项计数、加子项、删除入口全在这里 ——
+   所以给「待办」加的子项，习惯和计划天然就有了，不用再写第二遍。 */
+/* 子项行：缩进跟着层级走，从第二层起再画一条竖线 ——
+   「它挂在谁下面」要画出来，只靠几个像素的缩进，在窄屏上根本看不出来。 */
+var IND_UNIT=22;
+function indentRow(node,depth){
+  node.style.paddingLeft=(depth*IND_UNIT)+'px';
+  if(depth>0){
+    node.classList.add('ind');
+    node.style.setProperty('--ind',((depth-1)*IND_UNIT+9)+'px');
   }
-  for(var i=0;i<rows.length;i++){
-    var li=el('li','row');
-    li.appendChild(el('span','cbox'));
-    var main=el('span','row-main');
-    main.appendChild(el('span','row-name',rows[i].t));
-    main.appendChild(el('span','row-meta',rows[i].m));
-    li.appendChild(main);
-    if(rows[i].habit){
-      var tk=el('button','tick','打卡');
-      tk.setAttribute('data-tick','1');
-      li.appendChild(tk);
+  return node;
+}
+/* 行首的折叠三角。没有子项时也占着位置（藏起来），标题才不会左右跳。 */
+function nodeCaretEl(id,hasKids){
+  var c=el('span','node-caret');
+  if(!hasKids){c.classList.add('is-leaf');return c;}
+  if(CLOSED_NODES[id]){c.classList.add('is-closed');}
+  c.setAttribute('data-fold',id);
+  c.setAttribute('title','折叠或展开子项');
+  c.setAttribute('aria-label','折叠或展开子项');
+  c.appendChild(iconCaret());
+  return c;
+}
+/* 行尾那颗「+」：在这条下面加一条同类的子项。
+   k='item' 表示今日页那套待办（ITEMS），另外三种进 DOMAINS。 */
+function subBtnEl(k,domId,it){
+  var name=it.title||it.t||'';
+  var b=el('button','nodebtn');
+  b.setAttribute('data-sub',it.id);
+  b.setAttribute('data-subk',k);
+  b.setAttribute('data-subdom',domId||'');
+  b.setAttribute('title','在「'+name+'」下面加一条子项');
+  b.setAttribute('aria-label','在「'+name+'」下面加一条子项');
+  b.appendChild(iconPlus());
+  return b;
+}
+/* 折叠状态只是一个集合，翻一下就行 —— 展开是默认，折叠才要记 */
+function toggleFold(id){if(CLOSED_NODES[id]){delete CLOSED_NODES[id];}else{CLOSED_NODES[id]=1;}}
+function kidBadge(n){return el('span','dir-c',n+' 项');}
+/* 「连续 N 天 · 累计 M 天」的唯一措辞处 —— 习惯行和复盘页共用同一句话。
+   两处各写一份模板的话，早晚会出现「一个说连续 3 天、一个说连续 2 天」。 */
+function streakText(st){return '连续 '+st.cur+' 天 · 累计 '+st.total+' 天';}
+/* 行内那颗统计标签。一条还没打过卡的习惯不渲染它 —— 别拿两个 0 占位置。
+   st 可以由调用方传（复盘页已经算过一遍了），不传就自己取。 */
+function streakEl(id,st){
+  st=st||habitStat(id);
+  if(!st.total){return null;}
+  var s=el('span','streak');
+  if(st.cur>0){
+    s.appendChild(el('b','on','连续 '+st.cur+' 天'));
+  }else{
+    s.appendChild(el('b','','连续 '+st.cur+' 天'));
+  }
+  s.appendChild(document.createTextNode(' · 累计 '+st.total+' 天'));
+  s.setAttribute('title','连续打卡 '+st.cur+' 天，累计 '+st.total+' 天');
+  return s;
+}
+function renderTreeInto(box,d,k,rowFn,emptyText,tag){
+  if(!box){return;}
+  box.innerHTML='';
+  var total=0;
+  function walk(parentId,depth){
+    var its=kidsOf(d,k,parentId);
+    for(var i=0;i<its.length;i++){
+      var it=its[i];
+      box.appendChild(rowFn(d,k,it,depth));
+      total++;
+      if(CLOSED_NODES[it.id]){continue;}
+      walk(it.id,depth+1);
     }
-    ul.appendChild(li);
   }
+  walk(null,0);
+  if(!total){box.appendChild(el(tag||'li','row-empty',emptyText));}
+}
+/* 下面三个是「一行」的三种长相。缩进跟着 depth 走 —— 子项比父项深一层，
+   一眼就能看出它挂在谁下面。 */
+/* 习惯行**唯一**的构建处：今日页和领域页都走它，只差一个「要不要写领域名」。
+   打卡按钮带 data-tick-key（习惯的稳定 id），所以切换状态能真落进 HABIT_LOGS；
+   统计标签也在同一处生成，两边的数字不可能不一致。 */
+function habitRowEl(d,k,h,depth,showDomain){
+  var kids=kidsOf(d,k,h.id);
+  var li=el('li','row row-edit');
+  li.setAttribute('data-edit','habit:'+h.id);
+  indentRow(li,depth||0);
+  li.appendChild(nodeCaretEl(h.id,kids.length>0));
+  li.appendChild(el('span','cbox'));
+  var m=el('span','row-main');
+  m.appendChild(el('span','row-name',h.t));
+  var path=nodePath(d,k,h);
+  m.appendChild(el('span','row-meta',(path?path+' · ':'')+(showDomain?(d.name+' · '):'')+(h.m||'每天')));
+  li.appendChild(m);
+  if(kids.length){li.appendChild(kidBadge(kids.length));}
+  /* 统计就摆在打卡按钮左边 —— 「要不要给它打个卡」和「已经连了几天」是同一个决策，
+     隔开放反而要来回看两处。没打过卡的习惯这里什么也不渲染（别拿两个 0 占地方）。 */
+  var stk=streakEl(h.id);
+  if(stk){li.appendChild(stk);}
+  var tk=el('button','tick','打卡');
+  tk.setAttribute('data-tick','1');
+  tk.setAttribute('data-tick-key',h.id);
+  if(habitDoneOn(h.id,TODAY)){tk.classList.add('tick-on');tk.textContent='已打卡';}
+  li.appendChild(tk);
+  li.appendChild(subBtnEl(k,d.id,h));
+  li.appendChild(delBtnEl('habit:'+h.id,h.t));
+  return li;
+}
+function dtodoRowEl(d,k,td,depth){
+  var kids=kidsOf(d,k,td.id);
+  var li=el('li','row row-edit');
+  li.setAttribute('data-edit','dtodo:'+d.id+'|'+td.id);
+  indentRow(li,depth);
+  li.appendChild(nodeCaretEl(td.id,kids.length>0));
+  li.appendChild(el('span','cbox'));
+  var m=el('span','row-main');
+  m.appendChild(el('span','row-name',td.t));
+  var path=nodePath(d,k,td);
+  m.appendChild(el('span','row-meta',(path?path+' · ':'')+(td.m||'')));
+  li.appendChild(m);
+  if(kids.length){li.appendChild(kidBadge(kids.length));}
+  li.appendChild(subBtnEl(k,d.id,td));
+  li.appendChild(delBtnEl('dtodo:'+d.id+'|'+td.id,td.t));
+  return li;
+}
+function goalRowEl(d,k,g,depth){
+  var kids=kidsOf(d,k,g.id);
+  g.p=clampP(g.p);                     /* 越界/脏数据在渲染时归一化，保证显示与数据一致 */
+  var p=clampP(g.p);
+  var r=el('div','goalrow');
+  r.setAttribute('data-goal-open',g.id);
+  indentRow(r,depth);
+  r.appendChild(nodeCaretEl(g.id,kids.length>0));
+  var m=el('span','goal-main');
+  m.appendChild(el('span','row-name',g.t));
+  var path=nodePath(d,k,g);
+  m.appendChild(el('span','row-meta',(path?path+' · ':'')+(g.m||'')));
+  r.appendChild(m);
+  var sl=el('input','gbar');
+  sl.setAttribute('type','range');
+  sl.setAttribute('min','0');sl.setAttribute('max','100');sl.setAttribute('step','1');
+  sl.setAttribute('data-goal-range',g.id);
+  sl.setAttribute('aria-label',g.t+' 进度');
+  sl.setAttribute('aria-valuetext',p+'%');
+  sl.value=p;
+  sl.style.setProperty('--v',p+'%');
+  r.appendChild(sl);
+  var val=el('span','goal-val',p+'%');
+  val.setAttribute('data-goal-val',g.id);
+  r.appendChild(val);
+  var btns=el('div','goal-btns');
+  for(var kk=0;kk<GOAL_STEPS.length;kk++){
+    var step=GOAL_STEPS[kk];
+    var b=el('button','gbtn','+'+step);
+    b.setAttribute('data-goal-add',String(step));
+    b.setAttribute('data-goal-id',g.id);
+    b.setAttribute('title','增加 '+step+' 个百分点');
+    btns.appendChild(b);
+  }
+  r.appendChild(btns);
+  if(kids.length){r.appendChild(kidBadge(kids.length));}
+  r.appendChild(subBtnEl(k,d.id,g));
+  r.appendChild(delBtnEl('goal:'+g.id,g.t));
+  return r;
+}
+/* 在某一条下面就地插入一个单行输入框 —— 加子项不需要弹窗，一条子项就是「一句话」。
+   点它右边那颗「+」就展开这个框：Enter 建好、Esc 收起，点别处也会自己收起来。 */
+function openSubInline(anchorEl,placeholder,commit){
+  if(!anchorEl||!anchorEl.parentNode){return;}
+  var host=anchorEl.parentNode;
+  var ex=host.querySelector('[data-subin]');
+  if(ex){var ei=ex.querySelector('input');if(ei&&ei.focus){ei.focus();}return;}
+  var wrap=el(anchorEl.tagName==='LI'?'li':'div','subin');
+  wrap.setAttribute('data-subin','1');
+  var inp=el('input','inline-in');
+  inp.style.maxWidth='260px';
+  inp.style.fontSize='12px';
+  inp.setAttribute('placeholder',placeholder);
+  wrap.appendChild(inp);
+  var ok=el('button','mchip','加');
+  var no=el('button','mchip','取消');
+  wrap.appendChild(ok);
+  wrap.appendChild(no);
+  if(anchorEl.nextSibling){host.insertBefore(wrap,anchorEl.nextSibling);}
+  else{host.appendChild(wrap);}
+  inp.focus();
+  var done=false;
+  function close(){if(done){return;}done=true;if(wrap.parentNode){wrap.parentNode.removeChild(wrap);}}
+  function go(){var v=String(inp.value||'').trim();close();if(v){commit(v);}}
+  ok.addEventListener('click',go);
+  no.addEventListener('click',close);
+  inp.addEventListener('keydown',function(e){
+    /* 挡住冒泡：外面还有整行点击和弹窗的 Enter/Esc 处理，不挡会同时触发两件事 */
+    e.stopPropagation();
+    if(e.key==='Enter'){e.preventDefault();go();}
+    if(e.key==='Escape'){e.preventDefault();close();}
+  });
+  /* 点别处也收起来。延后一点再删 —— 否则会抢在「加」的 click 之前把框收掉 */
+  inp.addEventListener('blur',function(){setTimeout(close,140);});
+}
+/* 往领域里的某一条下面加一条同类的子项 */
+function addSubNode(d,k,parentId,text){
+  var p=nodeById(d,k,parentId);
+  if(!p){toast('这条已经不在了');return;}
+  var it={t:text,parent:parentId};
+  if(k==='habit'){it.id='h-'+d.id+'-'+Date.now();it.m='每天';}
+  else if(k==='goal'){it.id='g'+Date.now();it.m='';it.p=0;}
+  else{it.id='t-'+d.id+'-'+Date.now();it.m='没有日期';}
+  bucketItems(d,k).unshift(it);
+  if(CLOSED_NODES[parentId]){delete CLOSED_NODES[parentId];}
+  renderAll();
+  TODAY_LOGS.unshift({time:nowHM(),op:'新增',target:text,
+    detail:d.name+' · 「'+(p.t||'')+'」的子项',label:'新增子项 · '+text});
+  renderTodayLog();
+  toast('已在「'+(p.t||'')+'」下面加了一条');
+}
+/* 往今日页的某条待办下面加一条子项（子项继承父项的领域和日期） */
+function addSubItem(parentId,text){
+  var p=itemById(parentId);
+  if(!p){toast('这条已经不在了');return;}
+  ITEMS.push({id:'it'+Date.now()+'-'+Math.floor(Math.random()*1000),title:text,
+    domain:p.domain,due:p.due,status:'todo',parent:parentId});
+  if(CLOSED_NODES[parentId]){delete CLOSED_NODES[parentId];}
+  renderAll();
+  renderLists();
+  TODAY_LOGS.unshift({time:nowHM(),op:'新增',target:text,
+    detail:'「'+p.title+'」的子项',label:'新增子项 · '+text});
+  renderTodayLog();
+  toast('已在「'+p.title+'」下面加了一条');
 }
 function renderDomain(id){
   var d=domainById(DOMAINS,id)||DOMAINS[0];
   if(!d){return;}
   CURRENT=d.id;
-  document.getElementById('dHabits').innerHTML='';
-  document.getElementById('dTodos').innerHTML='';
-  var hab=[];
-  for(var i=0;i<d.habits.length;i++){
-    hab.push({t:d.habits[i].t,m:d.habits[i].m,habit:true});
-  }
-  fillList('dHabits',hab,'这个领域还没有习惯。在下面速记框里写一条「每周三次…」就行。');
-  fillList('dTodos',d.todos,'这个领域还没有待办。');
-  var gb=document.getElementById('dGoals');
-  gb.innerHTML='';
-  if(!d.goals.length){
-    gb.appendChild(el('div','row-empty','还没有长期目标。目标可以后加，不必现在就想清楚。'));
-  }
-  for(var j=0;j<d.goals.length;j++){
-    var g=d.goals[j];
-    if(!g.id){g.id=d.id+'-g'+(j+1);}   /* 老数据兜底：每行都要有稳定的 key */
-    g.p=clampP(g.p);                   /* 越界/脏数据在渲染时归一化，保证显示与数据一致 */
-    var p=clampP(g.p);
-    var r=el('div','goalrow');
-    r.setAttribute('data-goal-open',g.id);
-    var m=el('span','goal-main');
-    m.appendChild(el('span','row-name',g.t));
-    m.appendChild(el('span','row-meta',g.m));
-    r.appendChild(m);
-    var sl=el('input','gbar');
-    sl.setAttribute('type','range');
-    sl.setAttribute('min','0');sl.setAttribute('max','100');sl.setAttribute('step','1');
-    sl.setAttribute('data-goal-range',g.id);
-    sl.setAttribute('aria-label',g.t+' 进度');
-    sl.setAttribute('aria-valuetext',p+'%');
-    sl.value=p;
-    sl.style.setProperty('--v',p+'%');
-    r.appendChild(sl);
-    var val=el('span','goal-val',p+'%');
-    val.setAttribute('data-goal-val',g.id);
-    r.appendChild(val);
-    var btns=el('div','goal-btns');
-    for(var k=0;k<GOAL_STEPS.length;k++){
-      var step=GOAL_STEPS[k];
-      var b=el('button','gbtn','+'+step);
-      b.setAttribute('data-goal-add',String(step));
-      b.setAttribute('data-goal-id',g.id);
-      b.setAttribute('title','增加 '+step+' 个百分点');
-      btns.appendChild(b);
-    }
-    r.appendChild(btns);
-    gb.appendChild(r);
-  }
+  renderTreeInto(document.getElementById('dHabits'),d,'habit',habitRowEl,
+    '还没有习惯。写一条「每周三次」这样的就行。');
+  renderTreeInto(document.getElementById('dTodos'),d,'todo',dtodoRowEl,
+    '还没有待办。');
+  renderTreeInto(document.getElementById('dGoals'),d,'goal',goalRowEl,
+    '还没有长期目标。目标可以后加。','div');
   renderRecordTypes(d.id);
   var rin=document.getElementById('dRenameIn');
   if(rin){rin.value=d.name;}
@@ -1281,35 +1969,45 @@ function applyGoalP(id,next,via){
 function unlockGoal(id){
   delete GOAL_LOCK[id];   /* 出现了新的滑杆操作 → 仲裁窗口结束 */
 }
-/* 今日页的「计划」区块读同一份 DOMAINS 数据，避免出现两份对不上的百分比 */
+/* 今日页的「计划」区块读同一份 DOMAINS 数据，避免出现两份对不上的百分比。
+   长期计划也有子项（一个目标拆成几步走），所以这里同样是树 —— 只是默认只展开一层。 */
 function renderTodayGoals(){
   var box=document.getElementById('todayGoals');
   if(!box){return;}
   box.innerHTML='';
   var n=0;
+  function emit(d,g,depth){
+    var kids=kidsOf(d,'goal',g.id);
+    var p=clampP(g.p);
+    var wrap=el('div','row row-goal');
+    wrap.setAttribute('data-goal-open',g.id);
+    indentRow(wrap,depth);
+    wrap.appendChild(nodeCaretEl(g.id,kids.length>0));
+    var m=el('span','row-main');
+    m.appendChild(el('span','row-name',g.t));
+    var gpath=nodePath(d,'goal',g);
+    m.appendChild(el('span','row-meta',(gpath?gpath+' · ':'')+d.name+' · 长期 · '+p+'%'));
+    wrap.appendChild(m);
+    var bar=el('span','bar');
+    var f=el('span','bar-fill');
+    f.style.width=p+'%';
+    bar.appendChild(f);
+    wrap.appendChild(bar);
+    wrap.appendChild(el('span','row-val',p+'%'));
+    if(kids.length){wrap.appendChild(kidBadge(kids.length));}
+    wrap.appendChild(subBtnEl('goal',d.id,g));
+    wrap.appendChild(delBtnEl('goal:'+g.id,g.t));
+    box.appendChild(wrap);
+    n++;
+    if(CLOSED_NODES[g.id]){return;}
+    for(var i=0;i<kids.length;i++){emit(d,kids[i],depth+1);}
+  }
   for(var i=0;i<DOMAINS.length;i++){
     var d=DOMAINS[i];
-    for(var j=0;j<d.goals.length;j++){
-      var g=d.goals[j];
-      var p=clampP(g.p);
-      var wrap=el('div','row row-goal');
-      if(g.id){wrap.setAttribute('data-goal-open',g.id);}
-      var m=el('span','row-main');
-      m.appendChild(el('span','row-name',g.t));
-      m.appendChild(el('span','row-meta',d.name+' · 长期 · '+p+'%'));
-      wrap.appendChild(m);
-      var bar=el('span','bar');
-      var f=el('span','bar-fill');
-      f.style.width=p+'%';
-      bar.appendChild(f);
-      wrap.appendChild(bar);
-      wrap.appendChild(el('span','row-val',p+'%'));
-      wrap.appendChild(delBtnEl('goal:'+g.id,g.t));
-      box.appendChild(wrap);
-      n++;
-    }
+    var roots=kidsOf(d,'goal',null);
+    for(var j=0;j<roots.length;j++){emit(d,roots[j],0);}
   }
-  if(!n){box.appendChild(el('div','row-empty','还没有长期目标。点右上角「+ 新增长期计划」加一个。'));}
+  if(!n){box.appendChild(el('div','row-empty','还没有长期目标。点「+ 新增长期计划」加一个。'));}
 }
 
 /* ================= 长期计划弹窗：调整 / 新增 =================
@@ -1324,8 +2022,11 @@ function resolveGoal(id){
   if(id===DRAFT_ID&&GOAL_EDIT){return {domain:domainById(DOMAINS,GOAL_EDIT.domainId),goal:GOAL_EDIT.draft};}
   return goalById(DOMAINS,id);
 }
+/* 长期计划也有子项（一个目标拆成几步走），但**只能在创建时定** ——
+   子项入口是行尾那颗「+」，建完就不给改了。
+   这条计划已经在页面上了，从条目上直接点开就是编辑它的名称/说明/进度。 */
 function goalModalEl(){return document.getElementById('goalModal');}
-function openGoalModal(mode,goalId){
+function openGoalModal(mode,goalId,parentId){
   var d=domainById(DOMAINS,CURRENT);
   if(!d){return;}
   if(mode==='edit'){
@@ -1333,10 +2034,11 @@ function openGoalModal(mode,goalId){
     if(!hit){return;}
     d=hit.domain;
     GOAL_EDIT={mode:'edit',domainId:d.id,goalId:goalId,
-      orig:{t:hit.goal.t,m:hit.goal.m,p:clampP(hit.goal.p)},
-      draft:{id:DRAFT_ID,t:hit.goal.t,m:hit.goal.m,p:clampP(hit.goal.p)}};
+      orig:{t:hit.goal.t,m:hit.goal.m,p:clampP(hit.goal.p),parent:hit.goal.parent||null},
+      draft:{id:DRAFT_ID,t:hit.goal.t,m:hit.goal.m,p:clampP(hit.goal.p),parent:hit.goal.parent||null}};
   }else{
-    GOAL_EDIT={mode:'new',domainId:d.id,goalId:'',orig:null,draft:{id:DRAFT_ID,t:'',m:'',p:0}};
+    GOAL_EDIT={mode:'new',domainId:d.id,goalId:'',orig:null,
+      draft:{id:DRAFT_ID,t:'',m:'',p:0,parent:parentId||null}};
   }
   var isEdit=GOAL_EDIT.mode==='edit';
   document.getElementById('gmTitle').textContent=isEdit?'调整长期计划':'新增长期计划';
@@ -1344,8 +2046,8 @@ function openGoalModal(mode,goalId){
   document.getElementById('gmName').value=GOAL_EDIT.draft.t;
   document.getElementById('gmMeta').value=GOAL_EDIT.draft.m;
   document.getElementById('gmHint').textContent=isEdit
-    ?'改动会作为一条「记一笔」记到今天的记录里'
-    :'确认后会作为一条「记一笔」记到今天的记录里';
+    ?'改动会记到「今天记下的」里'
+    :'确认后记到「今天记下的」里';
   delete GOAL_LOCK[DRAFT_ID];
   syncGoalRow(DRAFT_ID,GOAL_EDIT.draft.p);   /* 滑杆与文字对齐到草稿值 */
   goalModalEl().classList.add('is-on');
@@ -1357,7 +2059,8 @@ function closeGoalModal(){
   GOAL_EDIT=null;
   delete GOAL_LOCK[DRAFT_ID];
 }
-/* 逐字段比出「具体变更内容」。返回空数组 = 没有改动 */
+/* 逐字段比出「具体变更内容」。返回空数组 = 没有改动。
+   只比这三样：子项关系（parent）创建后不给改，所以不在比对范围内。 */
 function goalDiff(orig,now){
   var out=[];
   if(orig.t!==now.t){out.push('名称「'+orig.t+'」→「'+now.t+'」');}
@@ -1382,8 +2085,10 @@ function commitGoalModal(){
   if(!d){closeGoalModal();return;}
 
   if(GOAL_EDIT.mode==='new'){
-    d.goals.push({id:'g'+Date.now(),t:name,m:meta,p:p});
-    pushGoalLog('新增',name,'新建于「'+d.name+'」· 进度 '+p+'%');
+    var npd=GOAL_EDIT.draft.parent||null;
+    d.goals.push({id:'g'+Date.now(),t:name,m:meta,p:p,parent:npd});
+    var npg=npd?nodeById(d,'goal',npd):null;
+    pushGoalLog('新增',name,'新建于「'+d.name+(npg?(' / '+npg.t):'')+'」· 进度 '+p+'%');
     closeGoalModal();
     renderAll();
     toast('已新增「'+name+'」');
@@ -1391,6 +2096,7 @@ function commitGoalModal(){
   }
   var hit=goalById(DOMAINS,GOAL_EDIT.goalId);
   if(!hit){closeGoalModal();return;}
+  /* parent 一律不动 —— 子项关系只在创建时定，编辑不碰它 */
   var changes=goalDiff(GOAL_EDIT.orig,{t:name,m:meta,p:p});
   if(!changes.length){closeGoalModal();toast('没有改动，不记这一笔');return;}
   hit.goal.t=name;hit.goal.m=meta;hit.goal.p=p;
@@ -1430,7 +2136,7 @@ function renderRecordTypes(domainId){
   box.innerHTML='';
   var list=recordTypesOf(RECORD_TYPES,domainId);
   if(!list.length&&!(RT_UI&&RT_UI.type==='new')){
-    box.appendChild(el('div','row-empty','这个领域还没有记录项。点下面「+ 新增记录项」起个名字就行 —— 比如「模拟考试分数」（数值 · 分），或者「错题复盘」（纯文字）。'));
+    box.appendChild(el('div','row-empty','还没有记录项。点「+ 新增记录项」起个名字就行，比如「模拟考试分数」（数值）或「错题复盘」（文字）。'));
   }
   for(var i=0;i<list.length;i++){
     var t=list[i];
@@ -1499,7 +2205,7 @@ function rtEntryForm(t){
   }else{
     inp=el('textarea','ta');
     inp.style.minHeight='56px';
-    inp.setAttribute('placeholder','写点什么 —— 今天的情况、感受、细节都行');
+    inp.setAttribute('placeholder','写点什么：今天的情况、感受、细节都行');
     f.appendChild(inp);
   }
   var save=el('button','btn btn-main','存下');
@@ -1617,7 +2323,7 @@ function renderCaptureTypes(){
   for(var j=0;j<cands.length;j++){if(cands[j].k===CAPTURE_MODE){found=true;}}
   if(!found){CAPTURE_MODE='auto';}
   if(!cands.length){
-    box.appendChild(el('span','cfgrow-s','类目被你全关掉了 —— 点右边「⚙ 自定义」打开几个'));
+    box.appendChild(el('span','cfgrow-s','类目全关掉了。点右边「自定义」打开几个'));
     return;
   }
   for(var i=0;i<cands.length;i++){
@@ -1660,7 +2366,10 @@ function renderTodayLog(){
   }
   for(var i=0;i<TODAY_LOGS.length;i++){
     var e=TODAY_LOGS[i];
-    var r=el('div','logrow');
+    /* 每一条都点得开：能对上真实数据的（那一笔支出、那条记录）改的就是真实数据；
+       对不上的（新增 / 删除 / 归类这类操作流水）只给看和移除 —— 不假装能改历史。 */
+    var r=el('div','logrow logrow-edit');
+    r.setAttribute('data-edit-log',String(i));
     r.appendChild(el('span','logrow-d',e.time));
     var v=el('span','logrow-v');
     if(e.op){
@@ -1680,17 +2389,21 @@ function nowHM(){
 }
 /* 速记里被识别成「待办」的那条 —— 写进 ITEMS 再重渲染，
    而不是直接往 DOM 里塞一个 li。否则它既不会被顶部计数算到，
-   也拿不到删除按钮（那条「只改 DOM 不落库」的老毛病）。 */
+   也拿不到删除按钮（那条「只改 DOM 不落库」的老毛病）。
+   新的一条一律是「顶层」—— 要挂到谁下面，写完点它右边那颗「+」。 */
 function addTodayItem(text){
-  ITEMS.unshift({title:text,domain:'',due:TODAY,status:'todo'});
+  ITEMS.unshift({id:'it'+Date.now()+'-'+Math.floor(Math.random()*1000),
+    title:text,domain:'',due:TODAY,status:'todo',parent:null});
   renderLists();
 }
 /* ================= 右上角「新增」弹窗：习惯 / 待办 / 长期计划 =================
-   三个模块共用同一套交互 —— 按钮在页面右上角，点开一个弹窗，
-   弹窗里填内容 + 选「放到哪个空间」，确认后关窗。
-   本轮只做演示效果：校验、选空间、开合都是真的，但不往 DOMAINS / TODAY_LOGS 写任何数据。 */
+   三个模块共用同一套交互 —— 按钮在页头，点开一个弹窗，
+   弹窗里填内容 + 选「放到哪个空间」，确认后写进 DOMAINS 并记一笔到今天的记录里。
+   这里加的是**顶层**条目；要加子项，点那一行右边的「+」，就地写一行就行 ——
+   子项不需要再选空间（它跟着父项走），也不该为了一句话弹一个窗。 */
 var ADD_KIND=null;      /* null | 'todo' | 'habit' | 'goal' */
 var ADD_SPACE=null;     /* 选中的空间（领域）id */
+var ADD_PARENT=null;    /* 要挂在哪一条下面（null = 顶层） */
 var ADD_KINDS={
   todo:{ title:'新增待办',    nameK:'待办内容（必填）',   namePh:'比如：周五前交周报',
          metaPh:'比如：今天 / 没有日期',   note:'一次就完的事' },
@@ -1721,11 +2434,12 @@ function renderAddSpaces(){
     lab.textContent=cur?('· 已选「'+cur.name+'」'):'· 还没选';
   }
 }
-function openAddModal(kind){
+function openAddModal(kind,parentId){
   var cfg=ADD_KINDS[kind];
   if(!cfg){return;}
   ADD_KIND=kind;
   ADD_SPACE=domainById(DOMAINS,CURRENT)?CURRENT:(DOMAINS[0]?DOMAINS[0].id:null);
+  ADD_PARENT=parentId||null;
   document.getElementById('amTitle').textContent=cfg.title;
   document.getElementById('amKindNote').textContent=cfg.note;
   document.getElementById('amNameK').textContent=cfg.nameK;
@@ -1735,7 +2449,11 @@ function openAddModal(kind){
   var mt=document.getElementById('amMeta');
   mt.value='';
   mt.setAttribute('placeholder',cfg.metaPh);
-  document.getElementById('amHint').textContent='演示版：只走交互，不会真的写数据';
+  var pd=domainById(DOMAINS,ADD_SPACE);
+  var pg=(pd&&ADD_PARENT)?nodeById(pd,kind,ADD_PARENT):null;
+  document.getElementById('amHint').textContent=pg
+    ?('确认后挂到「'+(pg.t||'')+'」下面')
+    :'确认后放进这个空间，并记到「今天记下的」里';
   renderAddSpaces();
   addModalEl().classList.add('is-on');
   setTimeout(function(){nm.focus();},0);
@@ -1745,27 +2463,96 @@ function closeAddModal(){
   if(m){m.classList.remove('is-on');}
   ADD_KIND=null;
   ADD_SPACE=null;
+  ADD_PARENT=null;
 }
 function pickAddSpace(id){
   ADD_SPACE=id;
   renderAddSpaces();
 }
+/* 就地新建空间：点了「+ 新建空间」，胶囊那一排直接换成输入框 —— 不弹第二个窗。
+   弹窗套弹窗是原型最容易走岔的地方，一层就够。 */
+function makeAddSpaceInline(){
+  var box=document.getElementById('amSpaces');
+  if(!box){return;}
+  box.innerHTML='';
+  var inp=el('input','inline-in');
+  inp.style.maxWidth='140px';
+  inp.setAttribute('placeholder','新领域名字，比如「考证」');
+  box.appendChild(inp);
+  var ok=el('button','mchip','创建');
+  var no=el('button','mchip','取消');
+  box.appendChild(ok);
+  box.appendChild(no);
+  inp.focus();
+  function commit(){
+    var name=inp.value.trim();
+    if(!name){toast('先写个名字');inp.focus();return;}
+    var used=nextDomainName(DOMAINS,name);
+    var d=newDomain('d'+Date.now(),used);
+    DOMAINS.push(d);
+    ADD_SPACE=d.id;
+    renderAll();
+    renderAddSpaces();
+    toast('已创建「'+used+'」并选上');
+  }
+  ok.addEventListener('click',commit);
+  no.addEventListener('click',function(){renderAddSpaces();});
+  inp.addEventListener('keydown',function(e){
+    /* 必须挡住冒泡：外层弹窗也监听了 Enter（= 确认新增），
+       不挡的话在这里按回车会同时触发「创建领域」和「确认新增」两个动作。 */
+    e.stopPropagation();
+    if(e.key==='Enter'){e.preventDefault();commit();}
+    if(e.key==='Escape'){e.preventDefault();renderAddSpaces();}
+  });
+}
 function commitAddModal(){
   if(!ADD_KIND){return false;}
-  var cfg=ADD_KINDS[ADD_KIND];
   var nm=document.getElementById('amName');
   var v=(nm.value||'').trim();
   if(!v){toast('先写点什么');if(nm.focus){nm.focus();}return false;}
   if(!ADD_SPACE){toast('先选一个空间');return false;}
   var d=domainById(DOMAINS,ADD_SPACE);
-  toast('已新增'+cfg.title.replace('新增','')+'「'+v+'」→ '+(d?d.name:'')+'（演示，不落数据）');
+  if(!d){toast('这个空间已经不在了');return false;}
+  var meta=(document.getElementById('amMeta').value||'').trim();
+  /* 上级要真的还在才挂上去 —— 防止「弹窗开着的时候那一条被删了」这种情况 */
+  var pid=(ADD_PARENT&&nodeById(d,ADD_KIND,ADD_PARENT))?ADD_PARENT:null;
+  var kindName='';
+  if(ADD_KIND==='todo'){
+    d.todos.push({id:'t-'+d.id+'-'+Date.now(),t:v,m:meta||'没有日期',parent:pid});
+    kindName='待办';
+  }else if(ADD_KIND==='habit'){
+    d.habits.push({id:'h-'+d.id+'-'+Date.now(),t:v,m:meta||'每天',parent:pid});
+    kindName='习惯';
+  }else{
+    d.goals.push({id:'g'+Date.now(),t:v,m:meta,p:0,parent:pid});
+    kindName='长期计划';
+  }
+  var pg2=pid?nodeById(d,ADD_KIND,pid):null;
+  var where2=d.name+(pg2?(' / '+pg2.t):'');
   closeAddModal();
+  renderAll();
+  TODAY_LOGS.unshift({time:nowHM(),op:'新增',target:v,detail:where2+' · '+kindName,label:'新增'+kindName+' · '+v});
+  renderTodayLog();
+  toast('已新增'+kindName+'「'+v+'」→ '+where2);
   return true;
 }
 addModalEl().addEventListener('keydown',function(e){
   if(!ADD_KIND){return;}
   if(e.key==='Enter'){e.preventDefault();commitAddModal();}
   else if(e.key==='Escape'){e.preventDefault();closeAddModal();}
+});
+/* 编辑弹窗：Enter = 保存，Esc = 取消。
+   两种键不抢：多行文本项里 Enter 还是换行（用 textarea 的 keydown 不 preventDefault 就行），
+   焦点在选项胶囊上时让按钮自己响应 —— 抢过来会变成「按一下同时选了选项又保存了」。 */
+editModalEl().addEventListener('keydown',function(e){
+  if(!ED){return;}
+  var tag=((e.target&&e.target.tagName)||'').toLowerCase();
+  if(e.key==='Escape'){e.preventDefault();closeEdit();return;}
+  if(e.key!=='Enter'){return;}
+  if(tag==='textarea'){return;}
+  if(tag==='button'){return;}
+  e.preventDefault();
+  commitEdit();
 });
 
 function submitQuick(){
@@ -1780,7 +2567,23 @@ function submitQuick(){
     addTodayItem(v);
     toast('已加到今天');
   }else if(r.kind==='note'){
+    addNote(v);
     toast('已存进随心记');
+  }else if(r.kind==='money'){
+    if(r.value===null){
+      toast('记支出要先写个金额');
+      inp.focus();
+      return;
+    }
+    /* 这里以前只往 TODAY_LOGS 塞一行，LOGS 一个字没写 ——
+       所以月度合计和分类柱状图永远停在初始那 7 笔。现在统一走 addMoney()。 */
+    var note0=(r.text||'').trim();
+    var e=addMoney(r.value,note0,r.category||guessCategory(note0||v));
+    if(!e){toast('金额要大于 0');inp.focus();return;}
+    TODAY_LOGS.unshift({time:nowHM(),label:'支出 '+(note0?(note0+' '):'')+money(e.value)+' · '+e.category,
+      ref:{k:'money',id:e.id}});
+    renderTodayLog();
+    toast('已记下 '+money(e.value)+' · '+e.category);
   }else if(r.kind==='rt'){
     var rt=r.rt;
     if(rt.mode==='number'&&r.value===null){
@@ -1788,10 +2591,11 @@ function submitQuick(){
       inp.focus();
       return;
     }
-    pushLog(RECORD_TYPES,rt.id,{d:fmtCN(TODAY),v:rt.mode==='number'?r.value:r.text});
+    var ent={d:fmtCN(TODAY),v:rt.mode==='number'?r.value:r.text};
+    pushLog(RECORD_TYPES,rt.id,ent);
     var dn=domainById(DOMAINS,rt.domain);
     var lb=describeCapture(r);
-    TODAY_LOGS.unshift({time:nowHM(),label:lb});
+    TODAY_LOGS.unshift({time:nowHM(),label:lb,ref:{k:'rt',rtId:rt.id,logId:ent.id}});
     renderTodayLog();
     if(rt.domain===CURRENT){renderRecordTypes(CURRENT);}
     renderSpaces();
@@ -1831,7 +2635,7 @@ function mkbtn(cls,txt,attr,val,on){
 function renderCapCfg(){
   var box=document.getElementById('capCfg');
   var btn=document.getElementById('cfgBtn');
-  if(btn){btn.textContent=CFG_OPEN?'⚙ 收起':'⚙ 自定义';}
+  if(btn){btn.textContent=CFG_OPEN?'收起':'自定义';}
   if(!box){return;}
   box.innerHTML='';
   if(!CFG_OPEN){return;}
@@ -1860,7 +2664,7 @@ function renderCapCfg(){
       row.appendChild(n);
       var sw=el('button','sw'+(isOn?' is-on':'')+(c.lock?' is-lock':''));
       if(c.lock){
-        sw.setAttribute('title','这一项关不掉 —— 它是「我不指定」的默认态，关了你每次都得手动选');
+        sw.setAttribute('title','这一项关不掉，它是默认态');
       }else{
         sw.setAttribute('data-cfgtoggle',c.k);
         sw.setAttribute('title',isOn?'点一下：不在首页出现':'点一下：在首页出现');
@@ -1869,9 +2673,9 @@ function renderCapCfg(){
       wrap.appendChild(row);
     }
     wrap.appendChild(el('div','note',
-      '上面有几个开关是开的，首页的速记框下面就显示几个类目，现在是 <b>'+shown+'</b> 个。'
-      +'<br><b>你新建的记录项会自动进到这个列表</b> —— 在「空间 → 任意领域」里加一条记录项（比如「喝水量」），它立刻就出现在这里，不用谁来给你开权限。'
-      +'<br>顺序不在这里调：顺序只影响你找不找得到，不影响记对记错。真正影响判断结果的是<b>规则</b>，所以那边可以调顺序。'));
+      '开着的开关有几个，首页速记下面就显示几个类目，现在是 <b>'+shown+'</b> 个。'
+      +'<br><b>新建的记录项会自动进这个列表</b>，不用谁来给你开权限。'
+      +'<br>顺序只影响你好不好找，不影响判断结果，所以在规则那边调。'));
   }else{
     for(var r=0;r<AUTO_RULES.length;r++){
       var ru=AUTO_RULES[r];
@@ -1888,8 +2692,8 @@ function renderCapCfg(){
       rw.appendChild(el('div','rule-m',ruleMatchLabel(ru)));
       var ops=el('div','rule-h');
       ops.style.marginTop='8px';
-      ops.appendChild(mkbtn('mini','↑ 上移','data-ruleup',ru.id,false));
-      ops.appendChild(mkbtn('mini','↓ 下移','data-ruledown',ru.id,false));
+      ops.appendChild(mkbtn('mini','上移','data-ruleup',ru.id,false));
+      ops.appendChild(mkbtn('mini','下移','data-ruledown',ru.id,false));
       ops.appendChild(mkbtn('mini','改','data-ruleedit',ru.id,false));
       if(!ru.sys){ops.appendChild(mkbtn('mini','删','data-ruledel',ru.id,false));}
       rw.appendChild(ops);
@@ -1911,9 +2715,9 @@ function renderCapCfg(){
     wrap.appendChild(tb);
 
     wrap.appendChild(el('div','note',
-      '规则从上往下匹配，<b>取第一条命中的</b>。你自己的规则永远排在内置规则前面 —— 你写的应该压过我的默认判断，所以「上移／下移」不允许跨到内置组里去。'
-      +'<br>匹配条件两种写法：<b>关键词</b>（逗号分隔，提到任意一个就算）和<b>正则</b>（写明白才开始用）。排除条件写错了会被忽略，不会把整条规则废掉。'
-      +'<br>之所以给你一个<b>测试框</b>：规则写完必须当场看见它命中什么，否则你没法知道自己写对没有 —— 一个调不动的规则，等于没有规则。'));
+      '规则从上往下匹配，<b>取第一条命中的</b>。你自己的规则永远排在内置前面，所以不能跨到内置组里。'
+      +'<br>条件两种写法：<b>关键词</b>（逗号分隔，提到一个就算）和<b>正则</b>。排除条件写错了会被忽略，不会废掉整条规则。'
+      +'<br>写完在下面的<b>测试框</b>里试一句。看不见它命中什么，就等于没写对。'));
     setTimeout(function(){
       var t=document.getElementById('ruleTestIn');
       if(!t){return;}
@@ -2070,6 +2874,313 @@ function focusCapture(){
   setTimeout(function(){c.classList.remove('capture-hot');},1200);
   document.getElementById('quickInput').focus();
 }
+/* ================= 编辑：点条目 → 弹窗改 =================
+   和长期计划弹窗同一套做法：改动先落在**草稿**上，点「保存」才写回数据；
+   点「取消」/ 点遮罩 / 按 Esc = 草稿整个丢弃，数据一行不动。
+   一个弹窗覆盖今日页的所有条目（待办 / 习惯 / 支出 / 记录项那一条），字段按类型生成 ——
+   不是给每种条目各写一个弹窗。长期计划走它自己的弹窗（那里有进度滑杆和按钮仲裁）。
+   「今天记下的」里每一条也点得开：能对上真实数据的就改真实数据，
+   对不上的（新增 / 删除 / 归类这类操作流水）就只给看和移除，不假装能改。 */
+var ED=null;   /* {k,key,title,where,draft} */
+
+function logById(id){
+  for(var i=0;i<LOGS.length;i++){if(LOGS[i].id===id){return LOGS[i];}}
+  return null;
+}
+function rtLogById(rtId,logId){
+  var rt=rtById(rtId);
+  if(!rt){return null;}
+  for(var i=0;i<rt.logs.length;i++){
+    if(rt.logs[i].id===logId){return {rt:rt,entry:rt.logs[i]};}
+  }
+  return null;
+}
+function dtodoByKey(key){
+  var p=String(key).split('|');
+  var d=domainById(DOMAINS,p[0]);
+  var it=d?nodeById(d,'todo',p[1]):null;
+  if(!d||!it){return null;}
+  return {domain:d,todo:it};
+}
+function domainOpts(){
+  var out=[['','未归类']];
+  for(var i=0;i<DOMAINS.length;i++){out.push([DOMAINS[i].name,DOMAINS[i].name]);}
+  return out;
+}
+function edFields(){
+  var f=[],d=ED;
+  /* 注意：这里**没有**「上级」字段。
+     子项关系只在创建时定（行尾那颗「+」），建完不给改 ——
+     所以编辑弹窗里没有、也不该有任何改上级的入口。 */
+  if(d.k==='item'){
+    f.push({k:'title',label:'内容（必填）',type:'text'});
+    f.push({k:'due',label:'到期日',type:'date'});
+    f.push({k:'status',label:'状态',type:'chips',opts:[['todo','待办'],['done','已完成']]});
+    f.push({k:'domain',label:'领域',type:'chips',opts:domainOpts()});
+  }else if(d.k==='dtodo'){
+    f.push({k:'t',label:'内容（必填）',type:'text'});
+    f.push({k:'m',label:'说明，选填',type:'text'});
+  }else if(d.k==='habit'){
+    f.push({k:'t',label:'习惯（必填）',type:'text'});
+    f.push({k:'m',label:'频率，选填',type:'text'});
+  }else if(d.k==='money'){
+    f.push({k:'value',label:'金额（必填）',type:'number'});
+    f.push({k:'category',label:'分类',type:'chips',opts:catOpts()});
+    f.push({k:'note',label:'备注，选填',type:'text'});
+    f.push({k:'date',label:'日期',type:'date'});
+  }else if(d.k==='rt'){
+    f.push({k:'value',label:d.draft.mode==='number'?('这次记的值（'+(d.draft.unit||'数值')+'）'):'这次记的内容',
+      type:d.draft.mode==='number'?'number':'textarea'});
+    f.push({k:'date',label:'日期',type:'date'});
+  }
+  return f;
+}
+function catOpts(){
+  var out=[],seen={};
+  for(var i=0;i<LOGS.length;i++){
+    var c=LOGS[i].category;
+    if(c&&!seen[c]){seen[c]=1;out.push([c,c]);}
+  }
+  for(var w in CAT_WORDS){if(!seen[w]){seen[w]=1;out.push([w,w]);}}
+  return out;
+}
+function editModalEl(){return document.getElementById('editModal');}
+function renderEditModal(){
+  if(!ED){return;}
+  document.getElementById('edTitle').textContent=ED.title;
+  document.getElementById('edWhere').textContent=ED.where||'';
+  document.getElementById('edHint').textContent=ED.hint||'改动会记到「今天记下的」里';
+  var box=document.getElementById('edFields');
+  box.innerHTML='';
+  var fs=edFields();
+  for(var i=0;i<fs.length;i++){
+    var f=fs[i];
+    var wrap=el('div','field');
+    wrap.appendChild(el('span','field-k',f.label));
+    var v=ED.draft[f.k];
+    if(f.type==='text'||f.type==='date'||f.type==='number'){
+      var inp=el('input','inline-in');
+      inp.setAttribute('data-edf',f.k);
+      inp.setAttribute('type',f.type==='number'?'number':f.type);
+      if(f.type==='number'){inp.setAttribute('step','any');}
+      inp.value=(v===null||v===undefined)?'':v;
+      wrap.appendChild(inp);
+    }else if(f.type==='textarea'){
+      var ta=el('textarea','ta');
+      ta.setAttribute('data-edf',f.k);
+      ta.style.minHeight='72px';
+      ta.value=v||'';
+      wrap.appendChild(ta);
+    }else if(f.type==='chips'){
+      var sp=el('div','spacepick');
+      for(var j=0;j<f.opts.length;j++){
+        var o=f.opts[j];
+        var b=el('button','mchip',o[1]);
+        b.setAttribute('data-edsel',f.k);
+        b.setAttribute('data-edval',o[0]);
+        if(String(v)===String(o[0])){b.classList.add('is-on');}
+        sp.appendChild(b);
+      }
+      wrap.appendChild(sp);
+    }
+    box.appendChild(wrap);
+  }
+  var first=box.querySelector('[data-edf]');
+  if(first&&first.focus){setTimeout(function(){first.focus();},0);}
+}
+/* 重渲染字段前先把输入框里的值收回草稿 —— 否则点一下「领域」，
+   你刚敲的内容就跟着上一次的草稿一起被抹掉了。 */
+function edSyncFromDom(){
+  if(!ED){return;}
+  var box=document.getElementById('edFields');
+  if(!box){return;}
+  var ins=box.querySelectorAll('[data-edf]');
+  for(var i=0;i<ins.length;i++){
+    ED.draft[ins[i].getAttribute('data-edf')]=ins[i].value;
+  }
+}
+function openEdit(kind,key){
+  if(kind==='item'){
+    var it=itemById(key);
+    if(!it){toast('这条已经不在了');return;}
+    ED={k:'item',key:String(key),title:'修改待办',where:(it.domain||'未归类'),
+      draft:{id:it.id,title:it.title,due:it.due||TODAY,domain:it.domain||'',status:it.status||'todo',parent:it.parent||null}};
+  }else if(kind==='dtodo'){
+    var h1=dtodoByKey(key);
+    if(!h1){toast('这条已经不在了');return;}
+    ED={k:'dtodo',key:String(key),domainId:h1.domain.id,title:'修改待办',where:h1.domain.name,
+      draft:{id:h1.todo.id,t:h1.todo.t,m:h1.todo.m||'',parent:h1.todo.parent||null}};
+  }else if(kind==='habit'){
+    var h2=habitById(key);
+    if(!h2){toast('这条已经不在了');return;}
+    ED={k:'habit',key:String(key),domainId:h2.domain.id,title:'修改习惯',where:h2.domain.name,
+      draft:{id:h2.habit.id,t:h2.habit.t,m:h2.habit.m||'',parent:h2.habit.parent||null}};
+  }else if(kind==='money'){
+    var lg=logById(key);
+    if(!lg){toast('这笔已经不在了');return;}
+    ED={k:'money',key:String(key),title:'修改这笔支出',where:fmtCN(lg.date),
+      draft:{value:lg.value,category:lg.category||'未分类',note:lg.note||'',date:lg.date}};
+  }else if(kind==='rt'){
+    var p=String(key).split('|');
+    var hit=rtLogById(p[0],p[1]);
+    if(!hit){toast('这条已经不在了');return;}
+    ED={k:'rt',key:String(key),title:'修改记录',where:hit.rt.name,
+      hint:'这是「'+hit.rt.name+'」记下的一条',
+      draft:{value:hit.entry.v,date:isoFromLabel(hit.entry.d,TODAY.slice(0,4)),mode:hit.rt.mode,unit:hit.rt.unit,rtId:hit.rt.id,logId:hit.entry.id}};
+  }else if(kind==='log'){
+    var n=Number(key);
+    var e=TODAY_LOGS[n];
+    if(!e){toast('这条已经不在了');return;}
+    ED={k:'log',key:String(n),title:'这一条',where:e.time||'',
+      hint:'当天的操作流水，改不了，只能移除',
+      draft:{label:e.label||''}};
+  }else{
+    return;
+  }
+  renderEditModal();
+  editModalEl().classList.add('is-on');
+}
+function closeEdit(){
+  var m=editModalEl();
+  if(m){m.classList.remove('is-on');}
+  ED=null;
+}
+function commitEdit(){
+  if(!ED){return;}
+  edSyncFromDom();
+  var dr=ED.draft,ch=[],target='',detail='';
+  if(ED.k==='item'){
+    var it=itemById(ED.key);
+    if(!it){closeEdit();toast('这条已经不在了');return;}
+    var t1=String(dr.title||'').trim();
+    if(!t1){toast('内容不能空');return;}
+    var st0=it.status||'todo',st1=dr.status||'todo';
+    if(it.title!==t1){ch.push('内容「'+it.title+'」→「'+t1+'」');}
+    if((it.due||'')!==(dr.due||'')){ch.push('到期日 '+(it.due||'无')+' → '+(dr.due||'无'));}
+    if((it.domain||'')!==(dr.domain||'')){ch.push('领域「'+(it.domain||'未归类')+'」→「'+(dr.domain||'未归类')+'」');}
+    if(st0!==st1){ch.push('状态 '+(st0==='done'?'已完成':'待办')+' → '+(st1==='done'?'已完成':'待办'));}
+    target=t1;
+    if(!ch.length){closeEdit();toast('没有改动，不记这一笔');return;}
+    /* parent 一律不动：子项关系创建时定死，编辑弹窗里根本没有改它的入口 */
+    it.title=t1;it.due=dr.due;it.domain=dr.domain;it.status=st1;
+    detail=ch.join('；');
+  }else if(ED.k==='dtodo'){
+    var h1=dtodoByKey(ED.key);
+    if(!h1){closeEdit();toast('这条已经不在了');return;}
+    var t2=String(dr.t||'').trim();
+    if(!t2){toast('内容不能空');return;}
+    if(h1.todo.t!==t2){ch.push('内容「'+h1.todo.t+'」→「'+t2+'」');}
+    if((h1.todo.m||'')!==(dr.m||'')){ch.push('说明「'+(h1.todo.m||'（空）')+'」→「'+(dr.m||'（空）')+'」');}
+    target=t2;
+    if(!ch.length){closeEdit();toast('没有改动，不记这一笔');return;}
+    /* parent 不动 */
+    h1.todo.t=t2;h1.todo.m=dr.m;
+    detail=ch.join('；');
+  }else if(ED.k==='habit'){
+    var h2=habitById(ED.key);
+    if(!h2){closeEdit();toast('这条已经不在了');return;}
+    var t3=String(dr.t||'').trim();
+    if(!t3){toast('习惯不能空');return;}
+    if(h2.habit.t!==t3){ch.push('习惯「'+h2.habit.t+'」→「'+t3+'」');}
+    if((h2.habit.m||'')!==(dr.m||'')){ch.push('频率「'+(h2.habit.m||'（空）')+'」→「'+(dr.m||'（空）')+'」');}
+    target=t3;
+    if(!ch.length){closeEdit();toast('没有改动，不记这一笔');return;}
+    /* parent 不动 */
+    h2.habit.t=t3;h2.habit.m=dr.m;
+    detail=ch.join('；');
+  }else if(ED.k==='money'){
+    var lg=logById(ED.key);
+    if(!lg){closeEdit();toast('这笔已经不在了');return;}
+    var val=Number(dr.value);
+    if(!(val>0)){toast('金额要大于 0');return;}
+    if(lg.value!==val){ch.push('金额 '+money(lg.value)+' → '+money(val));}
+    if((lg.category||'')!==(dr.category||'')){ch.push('分类「'+(lg.category||'未分类')+'」→「'+(dr.category||'未分类')+'」');}
+    if((lg.note||'')!==(dr.note||'')){ch.push('备注「'+(lg.note||'（空）')+'」→「'+(dr.note||'（空）')+'」');}
+    if(lg.date!==dr.date){ch.push('日期 '+fmtCN(lg.date)+' → '+fmtCN(dr.date));}
+    target=(dr.note||dr.category||'一笔支出');
+    if(!ch.length){closeEdit();toast('没有改动，不记这一笔');return;}
+    lg.value=Math.round(val*100)/100;lg.category=dr.category||'未分类';lg.note=String(dr.note||'').trim();lg.date=dr.date||lg.date;
+    detail=ch.join('；');
+  }else if(ED.k==='rt'){
+    var p2=String(ED.key).split('|');
+    var hit2=rtLogById(p2[0],p2[1]);
+    if(!hit2){closeEdit();toast('这条已经不在了');return;}
+    var nv,vv;
+    if(hit2.rt.mode==='number'){
+      nv=Number(dr.value);
+      if(dr.value===''||isNaN(nv)){toast('这是数值记录，要填个数字');return;}
+      if(Number(hit2.entry.v)!==nv){ch.push(hit2.rt.name+' '+hit2.entry.v+' → '+nv);}
+      vv=nv;
+    }else{
+      vv=String(dr.value||'').trim();
+      if(!vv){toast('内容不能空');return;}
+      if(String(hit2.entry.v)!==vv){ch.push(hit2.rt.name+'「'+hit2.entry.v+'」→「'+vv+'」');}
+    }
+    var oldD=isoFromLabel(hit2.entry.d,TODAY.slice(0,4));
+    if(oldD!==dr.date){ch.push('日期 '+fmtCN(oldD)+' → '+fmtCN(dr.date));}
+    target=hit2.rt.name;
+    if(!ch.length){closeEdit();toast('没有改动，不记这一笔');return;}
+    hit2.entry.v=vv;
+    if(dr.date&&dr.date!==oldD){hit2.entry.d=labelFromIso(dr.date);}
+    detail=ch.join('；');
+  }else if(ED.k==='log'){
+    /* 操作流水：这里是「移除这一行」，不是「修改内容」——
+       假装能改一条历史记录，比不让改更糟。 */
+    var idx3=Number(ED.key);
+    if(!(idx3>=0&&idx3<TODAY_LOGS.length)){closeEdit();toast('这条已经不在了');return;}
+    TODAY_LOGS.splice(idx3,1);
+    renderTodayLog();
+    closeEdit();
+    toast('已从今天的记录里移除');
+    return;
+  }
+  closeEdit();
+  pushGoalLog('修改',target,detail);
+  refreshAfterEdit();
+  toast('已更新「'+target+'」');
+}
+/* 一次编辑可能同时牵动今日页、领域页、记账页、复盘页 —— 全部重算，
+   避免出现「改了这一页、那一页还是旧数字」 */
+function refreshAfterEdit(){
+  renderAll();
+  renderLists();
+  renderLedger();
+  renderTodayMoney();
+  renderReview();
+  renderInbox();
+  renderNotes();
+}
+/* 打卡之后要重算的地方。行里现在有「连续 N 天 · 累计 M 天」和子项条数，
+   这些都不是点一下按钮换句文案就能同步的 —— 必须把行重画一遍。
+   只刷显示打卡统计的三处（今日页 / 当前领域页 / 复盘页），
+   不动记账、收件箱、随心记 —— 打卡是高频动作，没必要牵连无关页面。 */
+function refreshAfterTick(){
+  renderAll();
+  renderReview();
+}
+/* 「今天记下的」那一行到底绑着什么真实数据。没绑的返回 null */
+function logRefOf(e){
+  return (e&&e.ref)?e.ref:null;
+}
+function editKeyOfRef(ref){
+  if(!ref){return '';}
+  if(ref.k==='money'){return String(ref.id);}
+  if(ref.k==='rt'){return String(ref.rtId)+'|'+String(ref.logId);}
+  return '';
+}
+function openLogEdit(idx){
+  var e=TODAY_LOGS[idx];
+  if(!e){return false;}
+  var ref=logRefOf(e);
+  if(ref){
+    var key=editKeyOfRef(ref);
+    if(ref.k==='money'){ if(!logById(ref.id)){toast('这笔已经不在了');return true;} openEdit('money',ref.id); return true; }
+    if(ref.k==='rt'){ if(!rtLogById(ref.rtId,ref.logId)){toast('这条已经不在了');return true;} openEdit('rt',key); return true; }
+  }
+  openEdit('log',idx);
+  return true;
+}
+
 /* ================= 删除：领域页那颗「删除领域」+ 今日页每行的「×」 =================
    两者共用同一套「两段确认」：第一下只武装（变红、文案变化），第二下才真删；
    4 秒无操作自动解除，Esc 立即解除。disarmDelete 一次性解除全部，
@@ -2105,27 +3216,72 @@ function commitRowDelete(btn){
   var cut=spec.indexOf(':');
   var kind=cut<0?spec:spec.slice(0,cut);
   var key=cut<0?'':spec.slice(cut+1);
-  var ok=false,where='';
-  if(kind==='item'){
-    var idx=Number(key);
-    if(idx>=0&&idx<ITEMS.length){ITEMS.splice(idx,1);ok=true;}
+  var ok=false,where='',kindName='';
+  if(kind==='trend'){
+    var ti4=Number(key);
+    if(ti4>=0&&ti4<REVIEW_TRENDS.length){REVIEW_TRENDS.splice(ti4,1);ok=true;}
+    kindName='趋势项';
+  }else if(kind==='item'){
+    var it0=itemById(key);
+    if(it0){
+      releaseItemKids(key);   /* 子项上移一层，不跟着一起消失 */
+      ITEMS.splice(ITEMS.indexOf(it0),1);
+      ok=true;
+    }
+    kindName='待办';
+  }else if(kind==='dtodo'){
+    /* 领域页里的待办：spec 形如 dtodo:fitness|t-work-1 */
+    var dp=key.split('|');
+    var dd=domainById(DOMAINS,dp[0]);
+    var td0=dd?nodeById(dd,'todo',dp[1]):null;
+    if(td0){
+      releaseKids(dd,'todo',dp[1]);
+      dd.todos.splice(dd.todos.indexOf(td0),1);
+      where=dd.name;ok=true;
+    }
+    kindName='待办';
   }else if(kind==='habit'){
-    var hp=key.split('|');
-    var dh=domainById(DOMAINS,hp[0]);
-    var hi=Number(hp[1]);
-    if(dh&&hi>=0&&hi<dh.habits.length){dh.habits.splice(hi,1);where=dh.name;ok=true;}
+    /* 按习惯自己的 id 找，不按下标 —— 下标会在删掉中间一个之后整体错位 */
+    var hh=habitById(key);
+    if(hh){
+      releaseKids(hh.domain,'habit',key);
+      var hi2=hh.domain.habits.indexOf(hh.habit);
+      if(hi2>=0){hh.domain.habits.splice(hi2,1);}
+      dropHabitLogs(key);   /* 打卡记录跟着一起清，不留孤儿数据 */
+      where=hh.domain.name;ok=true;
+    }
+    kindName='习惯';
   }else if(kind==='goal'){
     var hit=goalById(DOMAINS,key);
     if(hit){
+      releaseKids(hit.domain,'goal',key);
       var gi=hit.domain.goals.indexOf(hit.goal);
       if(gi>=0){hit.domain.goals.splice(gi,1);}
       where=hit.domain.name;ok=true;
     }
+    kindName='长期计划';
+  }else if(kind==='money'){
+    var mi=Number(key);
+    if(mi>=0&&mi<LOGS.length){where=LOGS[mi].category;LOGS.splice(mi,1);ok=true;}
+    kindName='支出一笔';
+  }else if(kind==='note'){
+    for(var ni=0;ni<NOTES.length;ni++){
+      if(NOTES[ni].id===key){NOTES.splice(ni,1);ok=true;break;}
+    }
+    kindName='随心记';
+  }else if(kind==='inbox'){
+    for(var ii=0;ii<INBOX.length;ii++){
+      if(INBOX[ii].id===key){INBOX.splice(ii,1);ok=true;break;}
+    }
+    kindName='收件箱条目';
   }
   disarmDelete();
   if(!ok){toast('这条已经不在了');return;}
-  var kindName=kind==='item'?'待办':(kind==='habit'?'习惯':'长期计划');
   if(kind==='item'){renderLists();}
+  else if(kind==='money'){renderLedger();renderTodayMoney();}
+  else if(kind==='note'){renderNotes();}
+  else if(kind==='inbox'){INBOX_UI=null;renderInbox();}
+  else if(kind==='trend'){renderReview();}
   else{renderAll();}
   TODAY_LOGS.unshift({time:nowHM(),at:new Date().toISOString(),op:'删掉',target:name,
     detail:kindName+(where?(' · '+where):''),label:'删掉'+kindName+' · '+name});
@@ -2141,21 +3297,576 @@ function renderAll(){
   renderTodayGoals();
   renderTodayHabits();
 }
+/* 收件箱：先落进 INBOX 数组，再整页重渲染。
+   上一版是直接往 DOM 里塞一个 li —— 那条既数不进「几条待归类」，
+   也拿不到归类按钮，只能靠肉眼记着（和「只改 DOM 不落库」是同一个毛病）。 */
 function addToInbox(text){
-  var li=el('li','row');
-  li.appendChild(el('span','cbox'));
-  var main=el('span','row-main');
-  main.appendChild(el('span','row-name',text));
-  main.appendChild(el('span','row-meta','刚记下 · 待归类'));
-  li.appendChild(main);
-  var btn=el('button','chip','归类');
-  li.appendChild(btn);
+  var t=String(text||'').trim();
+  if(!t){return null;}
+  var e={id:'in'+Date.now(),text:t,at:TODAY};
+  INBOX.unshift(e);
+  renderInbox();
+  return e;
+}
+/* ================= 收件箱：就地归类 =================
+   归类 = 把这条变成别处的正经条目，然后从收件箱拿掉。
+   不跳页、不弹窗 —— 展开的面板就在这一行下面，归到哪儿一目了然。 */
+var INBOX_UI=null;   /* 当前展开了归类面板的条目 id */
+
+function renderInbox(){
   var ul=document.getElementById('inboxNew');
-  ul.insertBefore(li,ul.firstChild);
-  var c=document.getElementById('inboxCount');
-  var n=Number(c.getAttribute('data-n'))+1;
-  c.setAttribute('data-n',String(n));
-  c.textContent=n+' 条待归类';
+  if(!ul){return;}
+  ul.innerHTML='';
+  var cnt=document.getElementById('inboxCount');
+  if(cnt){cnt.textContent=INBOX.length?(INBOX.length+' 条待归类'):'空的';}
+  if(!INBOX.length){
+    ul.appendChild(el('li','row-empty','收件箱是空的。它只管「先记下来，别丢」。'));
+    return;
+  }
+  for(var i=0;i<INBOX.length;i++){
+    var it=INBOX[i];
+    var li=el('li','row');
+    var main=el('span','row-main');
+    main.appendChild(el('span','row-name',it.text));
+    main.appendChild(el('span','row-meta','记于 '+fmtCN(it.at)+' · 没有领域'));
+    li.appendChild(main);
+    var cls=el('button','chip','归类');
+    cls.setAttribute('data-cls',it.id);
+    li.appendChild(cls);
+    li.appendChild(delBtnEl('inbox:'+it.id,it.text));
+    ul.appendChild(li);
+    if(INBOX_UI===it.id){ul.appendChild(clsPanel(it));}
+  }
+}
+function clsPanel(it){
+  var li=el('li');
+  var box=el('div','clsbox');
+  box.appendChild(el('span','clsbox-k','归到：'));
+  var b1=el('button','mchip','今天待办');
+  b1.setAttribute('data-cls-to','todo');
+  b1.setAttribute('data-cls-id',it.id);
+  box.appendChild(b1);
+  var b2=el('button','mchip','随心记');
+  b2.setAttribute('data-cls-to','note');
+  b2.setAttribute('data-cls-id',it.id);
+  box.appendChild(b2);
+  for(var i=0;i<DOMAINS.length;i++){
+    var b=el('button','mchip',DOMAINS[i].name);
+    b.setAttribute('data-cls-to',DOMAINS[i].id);
+    b.setAttribute('data-cls-id',it.id);
+    box.appendChild(b);
+  }
+  var b3=el('button','mchip','先留着');
+  b3.setAttribute('data-cls-cancel','1');
+  box.appendChild(b3);
+  li.appendChild(box);
+  return li;
+}
+function classifyInbox(id,to){
+  var idx=-1;
+  for(var i=0;i<INBOX.length;i++){if(INBOX[i].id===id){idx=i;break;}}
+  if(idx<0){INBOX_UI=null;renderInbox();return false;}
+  var it=INBOX[idx];
+  var where='';
+  if(to==='todo'){
+    addTodayItem(it.text);
+    where='今天 · 待办';
+  }else if(to==='note'){
+    addNote(it.text);
+    where='随心记';
+  }else{
+    var d=domainById(DOMAINS,to);
+    if(!d){toast('这个领域已经不在了');return false;}
+    d.todos.push({t:it.text,m:'没有日期'});
+    where=d.name+' · 待办';
+  }
+  INBOX.splice(idx,1);
+  INBOX_UI=null;
+  renderInbox();
+  renderSpaces();
+  renderSettingsDomains();
+  if(to!=='todo'&&to!=='note'&&CURRENT===to){renderDomain(to);}
+  TODAY_LOGS.unshift({time:nowHM(),op:'归类',target:it.text,detail:where,label:'归类 · '+it.text});
+  renderTodayLog();
+  toast('已归到 '+where);
+  return true;
+}
+/* ================= 随心记：零字段，只写不管 =================
+   它写进 NOTES，不进 LOGS、不进 ITEMS、**不进复盘** ——
+   复盘页不会读这一份数据。想知道自己会被审视，就写不出真的东西。 */
+var NOTE_PROMPT_IDX=0;
+
+function addNote(text){
+  var t=String(text||'').trim();
+  if(!t){return null;}
+  var e={id:'nt'+Date.now(),d:TODAY,text:t};
+  NOTES.unshift(e);
+  renderNotes();
+  return e;
+}
+function renderNoteHint(){
+  var h=document.getElementById('noteHint');
+  if(!h){return;}
+  h.textContent='今天可以想想：'+NOTE_PROMPTS[NOTE_PROMPT_IDX%NOTE_PROMPTS.length];
+}
+function renderNotes(){
+  var box=document.getElementById('noteList');
+  if(!box){return;}
+  box.innerHTML='';
+  var c=document.getElementById('noteCount');
+  if(c){c.textContent=NOTES.length?(NOTES.length+' 条 · 按天倒序'):'';}
+  if(!NOTES.length){
+    box.appendChild(el('div','row-empty','还没有写过。上面那个框随便写点什么就行。'));
+    return;
+  }
+  var rows=NOTES.slice(0).sort(function(a,b){return a.d<b.d?1:(a.d>b.d?-1:0);});
+  for(var i=0;i<rows.length;i++){
+    var n=rows[i];
+    var it=el('div','noteitem');
+    var d=el('div','noteitem-d flowrow');
+    d.appendChild(el('span','grow',fmtCN(n.d)));
+    d.appendChild(delBtnEl('note:'+n.id,n.text.slice(0,14)));
+    it.appendChild(d);
+    it.appendChild(el('div','noteitem-c',n.text));
+    box.appendChild(it);
+  }
+}
+function wireNotes(){
+  var ta=document.getElementById('noteInput');
+  var sb=document.getElementById('noteSaveBtn');
+  var pb=document.getElementById('notePromptBtn');
+  if(sb&&ta){
+    sb.addEventListener('click',function(){
+      var v=ta.value.trim();
+      if(!v){toast('随便写点什么，一个字也行');ta.focus();return;}
+      addNote(v);
+      ta.value='';
+      toast('已存下 · 不会进任何统计');
+    });
+  }
+  if(pb){
+    pb.addEventListener('click',function(){
+      NOTE_PROMPT_IDX++;
+      renderNoteHint();
+    });
+  }
+}
+/* ================= 复盘：真实统计 + 结论回写 =================
+   这一页只读三类**真实**数据：ITEMS（待办完成）、HABIT_LOGS（打卡天数）、
+   LOGS 与数值型记录项（趋势）。所有数字都是当场算的，没有一个写死在 HTML 里 ——
+   写死的数字最坏的地方不是不准，是你不知道它不准。
+   **刻意不读 NOTES**：随心记一旦被复盘看见，人就不会再写真话。 */
+var REVIEW_MODE='week';   /* week | month | custom */
+var REVIEW_FROM='';
+var REVIEW_TO='';
+var REV_OUT_OPEN=false;
+
+function reviewRange(){
+  if(REVIEW_MODE==='month'){
+    var mon=TODAY.slice(0,7);
+    return {from:mon+'-01',to:TODAY};
+  }
+  if(REVIEW_MODE==='custom'){
+    return {from:REVIEW_FROM||startOfWeek(TODAY),to:REVIEW_TO||TODAY};
+  }
+  return {from:startOfWeek(TODAY),to:TODAY};
+}
+/* 上一期 = 等长的前一段。这样「本周 vs 上周」「本月 vs 上月」用的是同一套算法 */
+function prevRange(r){
+  var n=dayCount(r.from,r.to);
+  return {from:shiftDays(r.from,-n),to:shiftDays(r.to,-n)};
+}
+function rangeLabel(r){
+  return fmtCN(r.from)+(r.from===r.to?'':' – '+fmtCN(r.to));
+}
+function todosIn(from,to){
+  var done=0,total=0;
+  for(var i=0;i<ITEMS.length;i++){
+    if(!inRange(ITEMS[i].due,from,to)){continue;}
+    total++;
+    if(ITEMS[i].status==='done'){done++;}
+  }
+  return {done:done,total:total};
+}
+/* 习惯「有打卡的天数」—— 同一天打三次卡只算一天 */
+function habitDaysIn(from,to){
+  var seen={},n=0;
+  for(var i=0;i<HABIT_LOGS.length;i++){
+    var d=HABIT_LOGS[i].date;
+    if(!inRange(d,from,to)||seen[d]){continue;}
+    seen[d]=1;n++;
+  }
+  return n;
+}
+function moneyIn(from,to){
+  var t=0;
+  for(var i=0;i<LOGS.length;i++){
+    var l=LOGS[i];
+    if(l.kind==='money'&&inRange(l.date,from,to)){t+=l.value;}
+  }
+  return Math.round(t*100)/100;
+}
+/* 文字型记录项（力量训练 / 有氧 / 学习笔记）在这一期记了什么 —— 复盘真正想看的细节。
+   它们的日期是「9月16日 周三」这种给人看的形式，先还原成 ISO 再比。 */
+function textLogsIn(from,to){
+  var out=[];
+  var y=TODAY.slice(0,4);
+  for(var i=0;i<RECORD_TYPES.length;i++){
+    var t=RECORD_TYPES[i];
+    if(t.mode!=='text'){continue;}
+    for(var j=0;j<t.logs.length;j++){
+      var iso=isoFromLabel(t.logs[j].d,y);
+      if(inRange(iso,from,to)){out.push({d:iso,name:t.name,v:t.logs[j].v});}
+    }
+  }
+  out.sort(function(a,b){return a.d<b.d?1:(a.d>b.d?-1:0);});
+  return out;
+}
+function avgOfRt(id,from,to){
+  var rt=rtById(id);
+  if(!rt||!rt.logs.length){return null;}
+  var sum=0,n=0;
+  var y=TODAY.slice(0,4);
+  for(var i=0;i<rt.logs.length;i++){
+    if(inRange(isoFromLabel(rt.logs[i].d,y),from,to)){sum+=rt.logs[i].v;n++;}
+  }
+  return n?Math.round(sum/n*10)/10:null;
+}
+function latestRt(id){
+  var rt=rtById(id);
+  if(!rt||!rt.logs.length){return null;}
+  return trendOf(rt.logs);
+}
+/* ---- 复盘页的「数值趋势」是一份可增可删的清单，不是写死的三行 ----
+   REVIEW_TRENDS 只存「我选了哪几项」；每一项怎么算，由 metricDefs() 定义。
+   所以「加一项趋势」不需要动渲染代码 —— 它只是往这个数组里加一个 key，
+   新增记录项（睡眠时长、喝水量…）也会自动出现在可选项里。 */
+var REVIEW_TRENDS=[{k:'money'},{k:'rt',id:'rt_weight'},{k:'rt',id:'rt_kcal_in'}];
+var TREND_PICK_OPEN=false;
+
+function metricKey(o){
+  return (o.k==='rt')?('rt:'+o.id):o.k;
+}
+function metricDefs(){
+  var out=[
+    {k:'money',name:'支出',unit:'¥'},
+    {k:'habit',name:'打卡天数',unit:'天'},
+    {k:'todo',name:'待办完成',unit:''}
+  ];
+  for(var i=0;i<RECORD_TYPES.length;i++){
+    var t=RECORD_TYPES[i];
+    if(t.mode!=='number'){continue;}   /* 纯文字的记录项没法画趋势 */
+    out.push({k:'rt',id:t.id,name:t.name,unit:t.unit||''});
+  }
+  return out;
+}
+function findMetric(k,id){
+  var defs=metricDefs();
+  for(var i=0;i<defs.length;i++){
+    if(defs[i].k!==k){continue;}
+    if(k!=='rt'||defs[i].id===id){return defs[i];}
+  }
+  return null;
+}
+function thousands(n,dec){
+  var v=(dec===0)?Math.round(n):Math.round(n*10)/10;
+  var s=(v%1===0)?String(v):v.toFixed(1);
+  var p=s.split('.');
+  p[0]=p[0].replace(/\B(?=(\d{3})+(?!\d))/g,',');
+  return p.join('.');
+}
+/* 记录项本身记的都是整数（热量 1800、深蹲 80、页数 24）→ 均值也按整数显示。
+   别把「约 1823.3 kcal」这种精度硬塞给用户 —— 那不是我算得准，是我没收拾。 */
+function rtIntegerOnly(id){
+  var rt=rtById(id);
+  if(!rt||!rt.logs.length){return false;}
+  for(var i=0;i<rt.logs.length;i++){
+    if(Number(rt.logs[i].v)%1!==0){return false;}
+  }
+  return true;
+}
+/* 一项趋势在一期里长什么样。统一是「本期 · 上一期」——
+   只有这样横向比才是同一件事，而不是这周看均值、上周看最新值。 */
+function metricLine(def,d){
+  if(def.k==='money'){return money(d.money)+' · 上一期 '+money(d.moneyPrev);}
+  if(def.k==='habit'){return d.habit+' / '+d.days+' 天';}
+  if(def.k==='todo'){return d.todos.total?(d.todos.done+' / '+d.todos.total):'— 这一期没有到期的待办';}
+  var now=avgOfRt(def.id,d.range.from,d.range.to);
+  var prev=avgOfRt(def.id,d.prev.from,d.prev.to);
+  var u=def.unit?(' '+def.unit):'';
+  var dec=rtIntegerOnly(def.id)?0:1;
+  if(now===null&&prev===null){return '— 这一期和上一期都没记';}
+  return (now===null?'— 这一期没记':(thousands(now,dec)+u))
+    +' · 上一期 '+(prev===null?'没记':(thousands(prev,dec)+u));
+}
+function trendPickEl(){
+  var box=el('div','trend-pick');
+  var defs=metricDefs(),used={},n=0;
+  for(var i=0;i<REVIEW_TRENDS.length;i++){used[metricKey(REVIEW_TRENDS[i])]=1;}
+  for(var j=0;j<defs.length;j++){
+    var df=defs[j];
+    if(used[metricKey(df)]){continue;}
+    var b=el('button','mchip',df.name+(df.unit?('（'+df.unit+'）'):''));
+    b.setAttribute('data-trendadd',metricKey(df));
+    b.setAttribute('title','加上「'+df.name+'」这一项');
+    box.appendChild(b);
+    n++;
+  }
+  if(!n){box.appendChild(el('span','trend-v','能加的都已经加上了'));}
+  var no=el('button','mchip','收起');
+  no.setAttribute('data-trendpick','1');
+  box.appendChild(no);
+  return box;
+}
+function addTrend(key){
+  var parts=String(key).split(':');
+  var k=parts[0];
+  var id=parts.length>1?parts.slice(1).join(':'):'';
+  if(!findMetric(k,k==='rt'?id:'')){return false;}
+  var mk=(k==='rt')?('rt:'+id):k;
+  for(var i=0;i<REVIEW_TRENDS.length;i++){
+    if(metricKey(REVIEW_TRENDS[i])===mk){return false;}
+  }
+  REVIEW_TRENDS.push(k==='rt'?{k:'rt',id:id}:{k:k});
+  return true;
+}
+function reviewData(){
+  var r=reviewRange(),p=prevRange(r);
+  var texts=textLogsIn(r.from,r.to);
+  return {
+    range:r,prev:p,days:dayCount(r.from,r.to),
+    todos:todosIn(r.from,r.to),
+    habit:habitDaysIn(r.from,r.to),
+    money:moneyIn(r.from,r.to),
+    moneyPrev:moneyIn(p.from,p.to),
+    kcal:avgOfRt('rt_kcal_in',r.from,r.to),
+    weight:latestRt('rt_weight'),
+    train:texts.filter(function(x){return x.name==='力量训练'||x.name==='有氧';}).length,
+    texts:texts
+  };
+}
+function statCard(v,k){
+  var c=el('div','card');
+  c.style.cursor='default';
+  c.appendChild(el('div','stat-v',v));
+  c.appendChild(el('div','stat-k',k));
+  return c;
+}
+function kvRow(k,v){
+  var r=el('div','kv');
+  r.appendChild(el('span','kv-k',k));
+  r.appendChild(el('span','kv-v',v));
+  return r;
+}
+/* 只有一条体重记录时没有「上次」可比 —— 显示「—」而不是「上次 null kg」 */
+function weightText(tr){
+  if(!tr){return '— 还没有记录';}
+  if(tr.prev===null||tr.prev===undefined){return tr.last+' kg';}
+  return tr.last+' kg · 上次 '+tr.prev+' kg';
+}
+function renderReview(){
+  var d=reviewData();
+  var seg=document.getElementById('revSeg');
+  if(seg){
+    var bs=seg.querySelectorAll('[data-revmode]');
+    for(var i=0;i<bs.length;i++){
+      bs[i].classList.toggle('is-on',bs[i].getAttribute('data-revmode')===REVIEW_MODE);
+    }
+  }
+  var cust=document.getElementById('revCustom');
+  if(cust){
+    cust.innerHTML='';
+    if(REVIEW_MODE==='custom'){
+      var f=el('input','inline-in');
+      f.setAttribute('type','date');f.style.maxWidth='150px';f.value=d.range.from;
+      f.setAttribute('data-revfrom','1');
+      cust.appendChild(f);
+      cust.appendChild(el('span','clsbox-k','到'));
+      var t=el('input','inline-in');
+      t.setAttribute('type','date');t.style.maxWidth='150px';t.value=d.range.to;
+      t.setAttribute('data-revto','1');
+      cust.appendChild(t);
+    }
+  }
+  var rr=document.getElementById('revRange');
+  if(rr){
+    rr.innerHTML='';
+    rr.appendChild(el('span','clsbox-k','这一期：'+rangeLabel(d.range)+'　共 '+d.days+' 天'));
+  }
+  var st=document.getElementById('revStats');
+  if(st){
+    st.innerHTML='';
+    st.appendChild(statCard(d.todos.total?(d.todos.done+' / '+d.todos.total):'—','待办完成'));
+    st.appendChild(statCard(d.habit+' / '+d.days,'习惯有打卡的天数'));
+    st.appendChild(statCard(String(d.train),'训练次数'));
+  }
+  var tr=document.getElementById('revTrend');
+  if(tr){
+    tr.innerHTML='';
+    if(!REVIEW_TRENDS.length){
+      tr.appendChild(el('div','row-empty','这一期什么都没在看。点「+ 添加一项」，比如体重、热量摄入、深蹲最大重量。'));
+    }
+    for(var ti=0;ti<REVIEW_TRENDS.length;ti++){
+      var sel=REVIEW_TRENDS[ti];
+      var def=findMetric(sel.k,sel.id);
+      if(!def){continue;}
+      var trow=el('div','trend-row');
+      trow.appendChild(el('span','trend-k',def.name));
+      trow.appendChild(el('span','trend-v',metricLine(def,d)));
+      trow.appendChild(delBtnEl('trend:'+ti,def.name));
+      tr.appendChild(trow);
+    }
+    var pkb=el('button','addbtn','+ 添加一项');
+    pkb.setAttribute('data-trendpick','1');
+    tr.appendChild(pkb);
+    if(TREND_PICK_OPEN){tr.appendChild(trendPickEl());}
+  }
+  var it=document.getElementById('revItems');  if(it){
+    it.innerHTML='';
+    if(!d.texts.length){
+      it.appendChild(el('div','row-empty','这一期没有文字型记录。在记录项里记一条，复盘才有得看。'));
+    }else{
+      for(var j=0;j<d.texts.length;j++){
+        var x=d.texts[j];
+        var w=el('div','noteitem');
+        w.appendChild(el('div','noteitem-d',fmtCN(x.d)+' · '+x.name));
+        w.appendChild(el('div','noteitem-c',x.v));
+        it.appendChild(w);
+      }
+    }
+  }
+  renderRevHabits(d);
+  renderRevOut();
+  /* 页头那行日期原本写死在 TITLES 里，切周期后不会变 ——
+     它是「当前区间」的说明，就该跟着区间走。 */
+  var rp=document.querySelector('[data-page="review"]');
+  if(rp&&rp.classList.contains('is-on')){
+    document.getElementById('pdate').textContent=rangeLabel(d.range)+' · 共 '+d.days+' 天';
+  }
+}
+/* 导出这一期：生成一段可以直接粘走的纯文本。
+   不做静默下载 —— 生成的东西先让你看见，比落进一个你不知道的目录里好。 */
+function revText(){
+  var d=reviewData();
+  var L=[];
+  L.push('复盘 · '+rangeLabel(d.range)+'（'+d.days+' 天）');
+  L.push('');
+  L.push('待办完成：'+(d.todos.total?(d.todos.done+' / '+d.todos.total):'这一期没有到期的待办'));
+  L.push('习惯打卡：'+d.habit+' / '+d.days+' 天');
+  /* 逐条习惯的连续 / 累计。屏幕上那张「习惯打卡」表一直在，所以导出跟着它走；
+     一次都没打过卡的习惯不写进文本 —— 导出的是一份能看的复述，不是数据转储。 */
+  for(var hi=0;hi<DOMAINS.length;hi++){
+    var hd=DOMAINS[hi];
+    for(var hj=0;hj<hd.habits.length;hj++){
+      var hh=hd.habits[hj];
+      var hst=habitStat(hh.id);
+      if(!hst.total){continue;}
+      L.push('· '+hh.t+'：'+streakText(hst)+'（这一期 '+habitDaysInRange(hh.id,d.range.from,d.range.to)+' 天）');
+    }
+  }
+  L.push('训练次数：'+d.train);
+  L.push('');
+  /* 导出跟着你看的那份趋势清单走 —— 屏幕上没看的项，不必出现在导出文本里 */
+  for(var ti2=0;ti2<REVIEW_TRENDS.length;ti2++){
+    var df2=findMetric(REVIEW_TRENDS[ti2].k,REVIEW_TRENDS[ti2].id);
+    if(df2){L.push(df2.name+'：'+metricLine(df2,d));}
+  }
+  if(d.texts.length){
+    L.push('');
+    L.push('这一期记下的事：');
+    for(var i=0;i<d.texts.length;i++){
+      L.push('· '+fmtCN(d.texts[i].d)+' '+d.texts[i].name+'：'+d.texts[i].v);
+    }
+  }
+  var ci=document.getElementById('revConclusion');
+  var c=ci?ci.value.trim():'';
+  if(c){L.push('');L.push('结论：'+c);}
+  return L.join('\n');
+}
+/* 复盘页的「习惯打卡」视图。
+   行内那颗统计是「单个习惯」的视角；这一张表是横向比 ——
+   「哪条快断了」「哪条这个月一次都没打」是复盘真正要看的东西，得摆在一起才看得出来。
+   按习惯树铺（子习惯缩进一层），但**不看折叠状态** —— 统计不该被折叠藏起来。 */
+function renderRevHabits(d){
+  var box=document.getElementById('revHabits');
+  if(!box){return;}
+  box.innerHTML='';
+  var n=0;
+  function emit(dom,h,depth){
+    var st=habitStat(h.id);
+    var row=el('div','rev-h');
+    var nm=el('span','rev-hk',h.t);
+    if(depth){nm.style.paddingLeft=(depth*14)+'px';}
+    row.appendChild(nm);
+    row.appendChild(el('span','rev-hs',st.total?streakText(st):'还没有打卡记录'));
+    if(st.total){
+      row.appendChild(el('span','rev-hx','这一期 '+habitDaysInRange(h.id,d.range.from,d.range.to)+' 天'));
+    }else{
+      row.appendChild(el('span','rev-hx','—'));
+    }
+    box.appendChild(row);
+    n++;
+    var kids=kidsOf(dom,'habit',h.id);
+    for(var i=0;i<kids.length;i++){emit(dom,kids[i],depth+1);}
+  }
+  for(var i=0;i<DOMAINS.length;i++){
+    var dom=DOMAINS[i];
+    var roots=kidsOf(dom,'habit',null);
+    for(var j=0;j<roots.length;j++){emit(dom,roots[j],0);}
+  }
+  if(!n){box.appendChild(el('div','row-empty','还没有习惯。在任意空间加一个，打卡统计会出现在这里。'));}
+}
+function renderRevOut(){
+  var box=document.getElementById('revOut');
+  if(!box){return;}
+  box.innerHTML='';
+  if(!REV_OUT_OPEN){return;}
+  var t=el('textarea','rev-out');
+  t.setAttribute('readonly','readonly');
+  t.setAttribute('aria-label','这一期的复盘文本');
+  t.value=revText();
+  box.appendChild(t);
+}
+function wireReview(){
+  var seg=document.getElementById('revSeg');
+  if(seg){
+    seg.addEventListener('click',function(e){
+      var b=e.target&&e.target.closest?e.target.closest('[data-revmode]'):null;
+      if(!b){return;}
+      REVIEW_MODE=b.getAttribute('data-revmode');
+      renderReview();
+    });
+  }
+  var cust=document.getElementById('revCustom');
+  if(cust){
+    cust.addEventListener('change',function(e){
+      var t=e.target;
+      if(!t||!t.getAttribute){return;}
+      if(t.getAttribute('data-revfrom')){REVIEW_FROM=t.value;renderReview();}
+      else if(t.getAttribute('data-revto')){REVIEW_TO=t.value;renderReview();}
+    });
+  }
+  var b1=document.getElementById('revToItemBtn');
+  if(b1){
+    b1.addEventListener('click',function(){
+      var inp=document.getElementById('revConclusion');
+      var v=inp.value.trim();
+      if(!v){toast('先写一句结论');inp.focus();return;}
+      addTodayItem(v);
+      TODAY_LOGS.unshift({time:nowHM(),op:'新增',target:v,detail:'来自复盘',label:'新增待办 · '+v});
+      renderTodayLog();
+      inp.value='';
+      toast('已写成今天的待办');
+    });
+  }
+  var b2=document.getElementById('revExportBtn');
+  if(b2){
+    b2.addEventListener('click',function(){
+      REV_OUT_OPEN=true;
+      renderRevOut();
+      toast('已生成这一期的文本 · 可直接全选复制');
+    });
+  }
 }
 function wireQuick(inputId,btnId){
   var input=document.getElementById(inputId);
@@ -2180,6 +3891,31 @@ function wireCapture(){
   });
   input.addEventListener('input',renderCaptureRes);
   btn.addEventListener('click',submitQuick);
+}
+/* 记账页的录入框。格式和首页速记是同一套：一句「32 午餐」，
+   数字是金额、剩下的字拿去猜分类。走 addMoney()，所以和首页记的那笔完全同源。 */
+function wireLedger(){
+  var input=document.getElementById('ledgerInput');
+  var btn=document.getElementById('ledgerBtn');
+  if(!input||!btn){return;}
+  function submit(){
+    var v=input.value.trim();
+    if(!v){toast('先写点什么，比如「32 午餐」');input.focus();return;}
+    var n=firstNumber(v);
+    if(n===null){toast('这笔支出要先写个金额');input.focus();return;}
+    var note=restOf(v,n);
+    var e=addMoney(n,note,guessCategory(note||v));
+    if(!e){toast('金额要大于 0');input.focus();return;}
+    TODAY_LOGS.unshift({time:nowHM(),label:'支出 '+(note?(note+' '):'')+money(e.value)+' · '+e.category,
+      ref:{k:'money',id:e.id}});
+    renderTodayLog();
+    input.value='';
+    toast('已记下 '+money(e.value)+' · '+e.category);
+  }
+  input.addEventListener('keydown',function(e){
+    if(e.key==='Enter'){e.preventDefault();submit();}
+  });
+  btn.addEventListener('click',submit);
 }
 document.addEventListener('keydown',function(e){
   var tag=((e.target&&e.target.tagName)||'').toLowerCase();
@@ -2214,6 +3950,7 @@ document.addEventListener('input',function(e){
 });
 document.addEventListener('keydown',function(e){
   if(e.key!=='Escape'){return;}
+  if(ED){e.preventDefault();closeEdit();return;}
   if(GOAL_EDIT){e.preventDefault();closeGoalModal();return;}
   if(ADD_KIND){e.preventDefault();closeAddModal();return;}
   disarmDelete();   /* 解除任何处于「待确认」的删除 */
@@ -2233,7 +3970,7 @@ function go(name){
   if(name==='domain'){
     var d=domainById(DOMAINS,CURRENT);
     ti=d?d.name:'领域';
-    su='领域页 · 习惯 + 待办 + 目标 + 记录项';
+    su='习惯 · 待办 · 目标 · 记录项';
   }else{
     ti=(t||['',''])[0];
     su=(t||['',''])[1];
@@ -2241,6 +3978,12 @@ function go(name){
   document.getElementById('ptitle').textContent=ti;
   document.getElementById('pdate').textContent=su;
   window.scrollTo(0,0);
+  /* 这几页的内容是「当场算出来的」，切过去时重算一次 ——
+     否则在别的页面改了数据，切回来看到的还是上一次的数字。 */
+  if(name==='ledger'){renderLedger();}
+  else if(name==='inbox'){renderInbox();}
+  else if(name==='notes'){renderNotes();}
+  else if(name==='review'){renderReview();}
 }
 document.addEventListener('click',function(e){
   var t=e.target;
@@ -2250,6 +3993,85 @@ document.addEventListener('click',function(e){
      顺序反了就会变成「点删除反而打开了编辑弹窗」。 */
   var del=t.closest('[data-del]');
   if(del){armRowDelete(del);return;}
+
+  /* 打卡按钮排在 [data-edit] 之前 —— 那条「打卡」就长在可点的整行里面，
+     顺序反了就会变成「想打卡，却打开了编辑弹窗」。 */
+  var k=t.closest('[data-tick]');
+  if(k){
+    var tkey=k.getAttribute('data-tick-key');
+    if(tkey&&habitById(tkey)){
+      /* 打卡真的落进 HABIT_LOGS —— 复盘里那个「有打卡的天数」就是数它 */
+      var onNow=toggleHabitLog(tkey,TODAY);
+      /* 先把手上这颗按钮改掉，再整体重渲染：重渲染之后这颗节点会被换掉，
+         但「点过的按钮文案要变」是个已经在测的契约，别让它变成薛定谔的按钮。 */
+      k.classList.toggle('tick-on',onNow);
+      k.textContent=onNow?'已打卡':'打卡';
+      toast(onNow?'已打卡':'已取消今天的打卡');
+      /* 必须重渲染：打卡一落数据，行内那颗「连续 N 天 · 累计 M 天」立刻过期，
+         复盘页那张习惯表也一样。只改按钮文字的话，统计会停在点之前的样子 ——
+         数字看着没错，其实已经是上一秒的真相，这种错最难发现。 */
+      refreshAfterTick();
+    }else{
+      k.classList.toggle('tick-on');
+      k.textContent=k.classList.contains('tick-on')?'已打卡':'打卡';
+    }
+    return;
+  }
+
+  /* 子项那颗「+」和折叠三角必须排在 [data-edit] 之前 ——
+     它们就长在「整行可点」的那一行里面，顺序反了会变成
+     「想加子项 / 想折叠，却打开了编辑弹窗」。 */
+  var subBtn=t.closest('[data-sub]');
+  if(subBtn){
+    var sId=subBtn.getAttribute('data-sub');
+    var sK=subBtn.getAttribute('data-subk')||'todo';
+    var sDom=subBtn.getAttribute('data-subdom')||'';
+    var sRow=subBtn.parentNode;
+    if(sK==='item'){
+      openSubInline(sRow,'这一条拆成哪几步？写完按回车',function(v){addSubItem(sId,v);});
+    }else{
+      var sD=domainById(DOMAINS,sDom)||domainById(DOMAINS,CURRENT);
+      if(sD){
+        var sKind=(sK==='habit')?'habit':(sK==='goal'?'goal':'todo');
+        openSubInline(sRow,sKind==='goal'?'这个目标拆成哪几步？':
+                            (sKind==='habit'?'这个习惯下面还有什么？':'这一条拆成哪几步？'),
+          function(v){addSubNode(sD,sKind,sId,v);});
+      }
+    }
+    return;
+  }
+  var foldEl=t.closest('[data-fold]');
+  if(foldEl){
+    toggleFold(foldEl.getAttribute('data-fold'));
+    renderAll();
+    renderLists();
+    return;
+  }
+
+  /* —— 编辑弹窗 —— */
+  var edsel=t.closest('[data-edsel]');
+  if(edsel){
+    if(!ED){return;}
+    edSyncFromDom();   /* 先把你刚敲的字收进草稿，再换选项 */
+    var efk=edsel.getAttribute('data-edsel');
+    var efv=edsel.getAttribute('data-edval');
+    ED.draft[efk]=(efv==='__root__')?null:efv;
+    renderEditModal();
+    return;
+  }
+  if(t.closest('[data-edit-cancel]')){closeEdit();return;}
+  if(t.closest('[data-edit-ok]')){commitEdit();return;}
+
+  var elog=t.closest('[data-edit-log]');
+  if(elog){openLogEdit(Number(elog.getAttribute('data-edit-log')));return;}
+
+  var edt=t.closest('[data-edit]');
+  if(edt){
+    var espec=edt.getAttribute('data-edit');
+    var ecut=espec.indexOf(':');
+    openEdit(ecut<0?espec:espec.slice(0,ecut),ecut<0?'':espec.slice(ecut+1));
+    return;
+  }
 
   var pin=t.closest('[data-pin]');
   if(pin){
@@ -2308,7 +4130,7 @@ document.addEventListener('click',function(e){
 
   var rup=t.closest('[data-ruleup]');
   if(rup){
-    if(!moveRule(rup.getAttribute('data-ruleup'),-1)){toast('已经在最上面 —— 你的规则不会跑到内置规则后面');}
+    if(!moveRule(rup.getAttribute('data-ruleup'),-1)){toast('已经在最上面，自己的规则不会跑到内置后面');}
     renderCapCfg();
     return;
   }
@@ -2384,7 +4206,7 @@ document.addEventListener('click',function(e){
     var step=Number(ga.getAttribute('data-goal-add'))||0;
     var gh=resolveGoal(gid);
     if(gh){
-      /* ★ 从权威值 g.p 累加，不读滑杆的 DOM 值 —— 这就是「按钮结果优先」的落点 */
+      /* 从权威值 g.p 累加，不读滑杆的 DOM 值 —— 这就是「按钮结果优先」的落点 */
       var np=applyGoalP(gid,gh.goal.p+step,'button');
       toast((gh.goal.t||'新目标')+' · '+np+'%');
     }
@@ -2406,7 +4228,7 @@ document.addEventListener('click',function(e){
   var asp=t.closest('[data-addspace]');
   if(asp){pickAddSpace(asp.getAttribute('data-addspace'));return;}
 
-  if(t.closest('[data-addspace-new]')){toast('演示：这里会就地新建一个空间');return;}
+  if(t.closest('[data-addspace-new]')){makeAddSpaceInline();return;}
 
   var aopen=t.closest('[data-add-open]');
   if(aopen){openAddModal(aopen.getAttribute('data-add-open'));return;}
@@ -2427,14 +4249,37 @@ document.addEventListener('click',function(e){
     return;
   }
 
+  /* —— 收件箱：就地归类 —— */
+  var cto=t.closest('[data-cls-to]');
+  if(cto){
+    classifyInbox(cto.getAttribute('data-cls-id'),cto.getAttribute('data-cls-to'));
+    return;
+  }
+  if(t.closest('[data-cls-cancel]')){INBOX_UI=null;renderInbox();return;}
+  var cl=t.closest('[data-cls]');
+  if(cl){
+    var cid=cl.getAttribute('data-cls');
+    INBOX_UI=(INBOX_UI===cid)?null:cid;
+    renderInbox();
+    return;
+  }
+
+  /* —— 复盘：数值趋势的增删 —— */
+  var tadd=t.closest('[data-trendadd]');
+  if(tadd){
+    if(addTrend(tadd.getAttribute('data-trendadd'))){toast('已加进这一期的趋势');}
+    renderReview();
+    return;
+  }
+  var tpick=t.closest('[data-trendpick]');
+  if(tpick){
+    TREND_PICK_OPEN=!TREND_PICK_OPEN;
+    renderReview();
+    return;
+  }
+
   var g=t.closest('[data-go]');
   if(g){go(g.getAttribute('data-go'));return;}
-
-  var k=t.closest('[data-tick]');
-  if(k){
-    k.classList.toggle('tick-on');
-    k.textContent=k.classList.contains('tick-on')?'已打卡':'打卡';
-  }
 });
 function makeNewDomainCard(host){
   var card=el('div','card');
@@ -2512,17 +4357,33 @@ document.getElementById('dDelBtn').addEventListener('click',function(){
   go('spaces');
   toast('已删除「'+d.name+'」· 内容已回到收件箱');
 });
+ensureHabitIds();
+ensureTreeIds();
 renderLists();
 renderTodayHabits();
 renderLedger();
 renderAll();
+renderTodayMoney();
+renderInbox();
+renderNotes();
+renderNoteHint();
+renderReview();
 renderCaptureTypes();
 renderCaptureRes();
 renderCapCfg();
 renderTodayLog();
 wireCapture();
+wireLedger();
+wireNotes();
+wireReview();
 wireQuick('inboxInput','inboxBtn');
 initGoalModalBtns();
+/* 落地页显式走一次 go()：页头的标题/副标题、左侧导航的高亮、区块可见性
+   三样都由 go() 一处决定。只靠 HTML 上那个静态 is-on 的话，
+   谁用编辑器点两下再保存，落地页和页头就会各说各话（已经发生过一次）。 */
+go('today');
 </script>
-</body>
-</html>
+
+
+
+</body></html>
