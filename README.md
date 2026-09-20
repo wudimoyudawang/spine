@@ -9,11 +9,15 @@
 
 ## 当前状态
 
-**原型 v0.11 —— 只做手机端。**
+**原型 v0.12 —— 只做手机端，数据存在本机。**
 
 - 手机上直接看：<https://spine-mobile-proto.app.workbuddy.host/>
-- 本地打开：[`prototype/index.html`](prototype/index.html)，零依赖，双击即开
-  （浏览器里只演示，关掉页面数据不留存）。
+- 本地打开：[`prototype/index.html`](prototype/index.html)，零依赖，双击即开。
+  **记的东西会存在这台设备的浏览器里**，关掉再打开还在；设置页可以整份导出 JSON 带走。
+
+> **2026-09-20 决定：用 uni-app 重写前端。** 从这一刻起，这份单文件原型是
+> **行为参照物**（新工程要逐条对齐它已经定稿的行为），不是最终形态。
+> 理由、边界、以及重构时要一并换掉的东西，见 [`PROMPT.md`](PROMPT.md) 第 7 节。
 
 数据模型、交互约定、导航结构已经定稿（见 [`docs/开工方案.md`](docs/开工方案.md)）。
 后端 / 账号 / 多端同步尚未开始 —— 按计划那是要用到真实数据之后的第 5 步。
@@ -87,7 +91,7 @@
 | 层 | 选型 | 状态 |
 |---|---|---|
 | 前端 | React + TypeScript + Vite + Tailwind | 计划中 |
-| 前端存储 | IndexedDB（Dexie），通过 `StorageAdapter` 抽象层访问 | 计划中 |
+| 前端存储 | IndexedDB（Dexie），通过 `StorageAdapter` 抽象层访问（原型现用 localStorage 顶着，接口就是 `snapshot()` / `restore()` 两个函数） | 原型已落本机 · 正式版待做 |
 | 类型共享 | Pydantic → OpenAPI → 生成的 TS 类型 | 计划中 |
 | 后端 | Python + FastAPI + SQLModel | 第 5 步 |
 | 数据库 | SQLite 单文件 | 第 5 步 |

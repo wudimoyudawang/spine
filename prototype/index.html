@@ -615,10 +615,12 @@ body{background:var(--bg);color:var(--text);font:14px/1.6 system-ui,-apple-syste
         </div>
         <div class="block" data-page-node-id="pTElcKJf3HBHXaAUhBhgFp">
           <div class="block-h" data-page-node-id="38tLVIVG0f6iVXf7xVuX9L"><span class="tag" data-page-node-id="JjbHjR787dWssvtBF5fYlQ">数据</span><span class="block-note" data-page-node-id="X6CS0Veq0l6hfIP3cJ8VxW">都在本机，随时能导出</span></div>
+          <div class="kv"><span class="kv-k">本机存储</span><span class="kv-v" id="storeState">已自动保存</span></div>
           <div class="chips" data-page-node-id="XiCCnzyuT15q2U4AkgMgWi">
-            <button class="btn btn-main" data-page-node-id="xOsCCSEcHqBccjbf1hsOAd">导出全部数据</button>
-            <button class="btn" data-page-node-id="knvVnCohEzHe2jCcrAqRJk">从文件导入</button>
+            <button class="btn btn-main" data-export="1" data-page-node-id="xOsCCSEcHqBccjbf1hsOAd">导出全部数据</button>
+            <button class="btn" data-import="1" data-page-node-id="knvVnCohEzHe2jCcrAqRJk">从文件导入</button>
           </div>
+          <input type="file" id="importFile" accept=".json,application/json" style="display:none">
           <div class="note" data-page-node-id="IXzSnrE9NoWXNfaZjY5XH3">导出一个 JSON 文件，事项、记录、随心记都在里面。</div>
         </div>
         <div class="block" data-page-node-id="YZtzPGgmjSFAxJvqYAe6xr">
@@ -4322,6 +4324,15 @@ document.addEventListener('click',function(e){
   if(t.closest('[data-cap-open]')){openCap();return;}
   if(t.closest('[data-cap-close]')){closeCap();return;}
 
+  /* 设置页「数据」区块：导出 / 导入 */
+  if(t.closest('[data-export]')){exportState();return;}
+  if(t.closest('[data-import]')){
+    var fimp=document.getElementById('importFile');
+    /* 先清空 value：连着导两次同一个文件时，不清空就不会再触发 change */
+    if(fimp){fimp.value='';fimp.click();}
+    return;
+  }
+
   /* 打卡按钮排在 [data-edit] 之前 —— 那条「打卡」就长在可点的整行里面，
      顺序反了就会变成「想打卡，却打开了编辑弹窗」。 */
   var k=t.closest('[data-tick]');
@@ -4709,7 +4720,9 @@ document.getElementById('dDelBtn').addEventListener('click',function(){
   go('spaces');
   toast('已删除「'+d.name+'」· 内容已回到收件箱');
 });
-function __boot(){
+/* 渲染全世界：导入之后也要走一遍，所以从 __boot 里单独拆出来。
+   注意这里**只渲染、不绑事件** —— wire* 那几行跑第二遍会把事件绑两次。 */
+function renderEverything(){
 ensureHabitIds();
 ensureTreeIds();
 renderLists();
@@ -4725,6 +4738,9 @@ renderCaptureTypes();
 renderCaptureRes();
 renderCapCfg();
 renderTodayLog();
+}
+function __boot(){
+renderEverything();
 wireCapture();
 wireLedger();
 wireNotes();
@@ -4738,9 +4754,8 @@ go('today');
 }
 
 /* ================= 状态清单与序列化 =================
-   桌面壳（Tauri）已删掉，所以这两个函数**目前没有调用方**。
-   留着是因为它就是「这个应用有哪些状态」的权威清单 + 一份现成的序列化 ——
-   手机端接本地存储（localStorage / SQLite）时直接用它们，不用再数一遍。
+   这是「这个应用有哪些状态」的权威清单 + 一份现成的序列化。
+   本机存储和导出文件都直接吃它，不用再数一遍。
    DATA_VARS = 真正的数据；SCALAR_VARS = 界面状态（停在哪一页、速记选了哪个模式）。
    两者分开，是因为将来做同步时只该同步前者。 */
 var DATA_VARS=['ITEMS','HABIT_LOGS','INBOX','NOTES','NOTE_PROMPTS','LOGS','DOMAINS',
@@ -4757,8 +4772,118 @@ function restore(raw){
   DATA_VARS.forEach(function(k){if(s.v&&s.v[k]!==undefined)window[k]=s.v[k];});
   SCALAR_VARS.forEach(function(k){if(s.s&&s.s[k]!==undefined)window[k]=s.s[k];});
 }
+/* ================= 本机存储 =================
+   页面在浏览器里打开、以后打进手机壳，走的都是这一条。
+   只存本机、不联服务器 —— 换设备靠设置页那个「导出 / 导入」。 */
+var LS_KEY='spine.state.v1';
+/* 先探一下能不能用：隐私模式、被策略禁掉时会直接抛。
+   探在开头上，而不是等第一次存数据才发现。 */
+var LS_OK=(function(){
+  try{localStorage.setItem(LS_KEY+'.probe','1');localStorage.removeItem(LS_KEY+'.probe');return true;}
+  catch(e){return false;}
+})();
+var LAST_SAVED='';
+var STORE_WARNED=false;
+
+function loadState(){
+  if(!LS_OK){return false;}
+  try{
+    var raw=localStorage.getItem(LS_KEY);
+    if(raw){restore(raw);return true;}
+  }catch(e){}
+  return false;
+}
+function saveState(force){
+  if(!LS_OK){storeBad('这台设备存不了','这个浏览器不让存，记得导出');return;}
+  var snap=snapshot();
+  /* 没变化就不写。这个函数每 2 秒被叫一次，次次都写会把存储写爆 */
+  if(!force&&snap===LAST_SAVED){return;}
+  try{
+    localStorage.setItem(LS_KEY,snap);
+    LAST_SAVED=snap;
+  }catch(e){
+    /* 配额满 / 被拒。绝不能静默 —— 用户以为存住了、其实没存，是最糟的一种错 */
+    storeBad('存满了','本机存满了，先导出一份');
+  }
+}
+function storeBad(short,tip){
+  var n=document.getElementById('storeState');
+  if(n){n.textContent=short;}
+  if(!STORE_WARNED){STORE_WARNED=true;toast(tip);}
+}
+
+/* ================= 导出 / 导入 =================
+   导出**只带数据，不带界面状态**（现在停在哪一页、速记选了哪个模式）。
+   那些是这台设备自己的事，跟着数据跑到另一台设备上只会让人莫名其妙。 */
+function stamp(){
+  var d=new Date(),p=function(n){return (n<10?'0':'')+n;};
+  return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+'-'+p(d.getHours())+p(d.getMinutes());
+}
+function exportPayload(){
+  var pack=JSON.parse(snapshot());
+  return JSON.stringify({app:'spine',ver:1,at:new Date().toISOString(),v:pack.v},null,2);
+}
+function downloadFile(name,text,mime){
+  var a=document.createElement('a'),url='';
+  try{url=URL.createObjectURL(new Blob([text],{type:mime}));}catch(e){}
+  if(!url){url='data:'+mime+';charset=utf-8,'+encodeURIComponent(text);}
+  a.href=url;a.download=name;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  if(url.indexOf('blob:')===0){setTimeout(function(){URL.revokeObjectURL(url);},2000);}
+}
+function exportState(){
+  try{
+    downloadFile('spine-'+stamp()+'.json',exportPayload(),'application/json');
+    toast('已导出');
+  }catch(e){
+    toast('导出失败');
+  }
+}
+/* 返回空串 = 成功；否则返回一句人话，给 toast 用 */
+function importState(raw){
+  var s;
+  try{s=JSON.parse(raw);}catch(e){return '这个文件不是 JSON';}
+  if(!s||typeof s!=='object'||!s.v||typeof s.v!=='object'){return '不是这个应用导出的文件';}
+  /* 导入的是「数据」，不该顺手把人从当前这一页踢走 */
+  var back='today',on=document.querySelector('.page.is-on');
+  if(on){var n=on.getAttribute('data-page');if(n&&n!=='domain'){back=n;}}
+  try{
+    restore(raw);
+    renderEverything();
+    go(back);
+  }catch(e){return '文件内容读不出来';}
+  saveState(true);
+  return '';
+}
+
 /* 浏览器打开、以后打进手机壳，走的都是这一条 */
-__boot();
+(function(){
+  var loaded=loadState();
+  __boot();
+  LAST_SAVED=snapshot();
+  if(!loaded){saveState(true);}   /* 头一次跑先落一份，确认存储链路是通的 */
+  /* 定时兜底，而不是「每个改数据的地方都记得存一次」——
+     后者迟早会漏一处，而漏掉的那一处永远是用户刚记的那一笔。 */
+  setInterval(function(){saveState();},2000);
+  addEventListener('pagehide',function(){saveState();});
+  document.addEventListener('visibilitychange',function(){if(document.hidden){saveState();}});
+})();
+
+/* 「从文件导入」背后是个隐藏的 file input —— 浏览器里只能这样唤起选文件 */
+(function(){
+  var f=document.getElementById('importFile');
+  if(!f){return;}
+  f.addEventListener('change',function(){
+    var file=f.files&&f.files[0];
+    if(!file){return;}
+    var r=new FileReader();
+    r.onload=function(){toast(importState(String(r.result))||'已导入');};
+    r.onerror=function(){toast('读不了这个文件');};
+    r.readAsText(file);
+  });
+})();
 
 </script>
 
