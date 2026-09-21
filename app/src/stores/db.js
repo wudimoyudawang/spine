@@ -319,6 +319,37 @@ export function addInbox(text) {
   return rec
 }
 
+/* 往某个记录项上记一条（体重 71.4、热量 1800、力量训练那一句…）。
+   RECORD_TYPES[].logs[].d 是**展示用的中文串**，不是可算的 ISO ——
+   这里跟原型保持一致，别自作聪明换成 ISO：换了以后复盘页按区间筛记录项
+   就得再加一层解析，而那段代码现在还不存在。 */
+export function addRecord(rtId, value) {
+  const rt = db.RECORD_TYPES.filter(function (t) { return t.id === rtId })[0]
+  if (!rt) return null
+  const p = TODAY.split('-').map(Number)
+  const rec = { id: newId('k'), d: p[1] + '月' + p[2] + '日', v: value }
+  if (!rt.logs) rt.logs = []
+  rt.logs.unshift(rec)
+  return rec
+}
+
+/* 空间里所有能记的东西。
+   **记录项排在前面**：上面那排胶囊已经把常用类目摆出来了，
+   点「自定义」的人想看的是「空间里还有什么能记」。
+   「记一笔支出」不在列表里 —— 支出走「记账」那条路，这里再放一个就重复了。 */
+export function allCaptureOptions() {
+  const out = []
+  for (const rt of db.RECORD_TYPES) {
+    const d = domainById(rt.domain)
+    out.push({ k: 'rt:' + rt.id, t: rt.name, group: d ? d.name : '记录项', unit: rt.unit, builtin: false })
+  }
+  for (const m of db.CAPTURE_MODES) {
+    if (m.on === false || m.k === 'money') continue
+    out.push({ k: m.k, t: m.t, group: '内置类目', builtin: true })
+  }
+  return out
+}
+
 /* ---------------- 空间 ---------------- */
 export function summaryOf(d, rtCount) {
   let s = d.todos.length + ' 项待办 · ' + d.habits.length + ' 个习惯 · ' + d.goals.length + ' 个目标'

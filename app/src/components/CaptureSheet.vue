@@ -48,15 +48,30 @@
           confirm-type="done"
           @confirm="submit"
         />
-        <scroll-view class="modes" scroll-x :show-scrollbar="false">
-          <view
-            v-for="m in modes"
-            :key="m.k"
-            class="mchip"
-            :class="{ 'is-on': mode === m.k }"
-            @click="mode = m.k"
-          >
-            <text class="mchip-t">{{ m.t }}</text>
+        <view class="moderow">
+          <scroll-view class="modes" scroll-x :show-scrollbar="false">
+            <view
+              v-for="m in modes"
+              :key="m.k"
+              class="mchip"
+              :class="{ 'is-on': mode === m.k }"
+              @click="mode = m.k"
+            >
+              <text class="mchip-t">{{ m.t }}</text>
+            </view>
+          </scroll-view>
+          <!-- 固定在右侧：不跟着上面那排横滑滚走，永远在同一个位置 -->
+          <view class="morebtn" :class="{ 'is-on': showAll }" @click="showAll = !showAll">
+            <text class="morebtn-t">自定义</text>
+          </view>
+        </view>
+
+        <!-- 展开的是「空间里所有能记的东西」：各领域的记录项，加上内置类目。
+             常用的那几个已经在上面那排里了，这里是给「不常用但这次要用」的。 -->
+        <scroll-view v-if="showAll" class="allbox" scroll-y>
+          <view v-for="o in allOptions" :key="o.k" class="allrow" @click="pickOption(o)">
+            <text class="allrow-t" :class="{ 'is-on': mode === o.k }">{{ o.t }}</text>
+            <text class="allrow-s">{{ o.builtin ? o.group : (o.group + (o.unit ? ' · ' + o.unit : '')) }}</text>
           </view>
         </scroll-view>
       </template>
@@ -79,7 +94,8 @@
 <script setup>
 import { computed, nextTick, ref, watch } from 'vue'
 import {
-  db, money, catList, guessCategory, addMoney, addTodo, closeCapture
+  db, TODAY, money, catList, guessCategory, closeCapture,
+  addMoney, addTodo, addInbox, addRecord, allCaptureOptions
 } from '../stores/db'
 
 const draft = ref('')
@@ -92,13 +108,31 @@ const kind = computed(function () { return db.CAPTURE_KIND })
 
 const cats = computed(function () { return catList() })
 
-/* 「记一笔支出」这个模式不在这儿了 —— 支出走「记账」那条路。
-   两边都留着，等于两个入口做同一件事，用一阵子就分不清该点哪个。 */
+const showAll = ref(false)
+
+/* 上面那排横滑的 = 常用的那几个。两个排除要注意：
+   「记一笔支出」不在这儿（支出走「记账」那条路，两边都留着等于两个入口做同一件事）；
+   记录项里标了 quick 的算常用 —— 这是照原型的 captureCandidates() 分的。 */
 const modes = computed(function () {
-  return (db.CAPTURE_MODES || []).filter(function (m) {
-    return m.on !== false && m.k !== 'money'
-  })
+  const out = []
+  for (const m of (db.CAPTURE_MODES || [])) {
+    if (m.on === false || m.k === 'money') continue
+    out.push({ k: m.k, t: m.t })
+  }
+  for (const rt of (db.RECORD_TYPES || [])) {
+    if (rt.quick) out.push({ k: 'rt:' + rt.id, t: rt.name })
+  }
+  return out
 })
+
+/* 「自定义」里展开的全部：空间里所有能记的东西 */
+const allOptions = computed(function () { return allCaptureOptions() })
+
+function pickOption(o) {
+  mode.value = o.k
+  showAll.value = false
+  refocus()
+}
 
 /* 打开就聚焦。先放掉再拿起：不做出 false → true 的跳变，
    面板第二次打开时光标不会进来（focus 一直是 true）。 */
@@ -157,7 +191,27 @@ function submitMoney() {
 function submitQuick() {
   const t = draft.value.trim()
   if (!t) return
-  /* 这一轮仍是最简规则：数字在开头 → 支出，否则 → 待办。
+  const mv = mode.value
+
+  /* 手动点名了某个记录项：这一行里的数字（或者整句）记到它上面。
+     体重、热量、力量训练那些就是靠这条路记进去的。 */
+  if (mv.indexOf('rt:') === 0) {
+    const num = /-?\d+(?:\.\d+)?/.exec(t)
+    addRecord(mv.slice(3), num ? Number(num[0]) : t)
+    done('记下了')
+    draft.value = ''
+    return
+  }
+  if (mv === 'todo') { addTodo(t, ''); done('记成待办'); draft.value = ''; return }
+  if (mv === 'inbox') { addInbox(t); done('丢进收件箱了'); draft.value = ''; return }
+  if (mv === 'note') {
+    db.NOTES.unshift({ id: 'nt' + Date.now().toString(36), d: TODAY, text: t })
+    done('记进随心记了')
+    draft.value = ''
+    return
+  }
+
+  /* 自动判断。这一轮仍是最简规则：数字在开头 → 支出，否则 → 待办。
      完整的规则表（关键词 / 正则 / 你自己写的那几条）下一轮搬。 */
   const m = /^\s*[¥￥]?\s*(\d+(?:\.\d+)?)/.exec(t)
   if (m) {
@@ -196,18 +250,24 @@ function done(msg) {
   top: 0; left: 0; right: 0; bottom: 0;
   background: var(--mask);
 }
+/* 面板居中，不贴底。贴底那版在手机上不好用：
+   手要够到屏幕最下面，而输入法一起来，面板又被顶得只剩一半。 */
 .capbox {
   position: absolute;
-  left: 0; right: 0; bottom: 0;
-  padding: 10px 14px calc(14px + env(safe-area-inset-bottom));
+  left: 16px;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 12px 14px 14px;
   background: var(--card);
-  border-radius: 16px 16px 0 0;
-  box-shadow: 0 -6px 24px rgba(31, 36, 48, .18);
-  animation: capup .18s ease-out;
+  border-radius: 16px;
+  box-shadow: 0 10px 40px rgba(31, 36, 48, .22);
+  max-height: 86vh;
+  animation: capin .18s ease-out;
 }
-@keyframes capup {
-  from { transform: translateY(100%); }
-  to { transform: translateY(0); }
+@keyframes capin {
+  from { opacity: 0; transform: translateY(-50%) scale(.96); }
+  to { opacity: 1; transform: translateY(-50%) scale(1); }
 }
 
 .caphead {
@@ -252,11 +312,49 @@ function done(msg) {
 }
 .capin-first { margin-top: 2px; }
 
-.modes {
-  width: 100%;
+.moderow {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
   margin-top: 10px;
+}
+.modes {
+  flex: 1 1 auto;
+  min-width: 0;
   white-space: nowrap;
 }
+.morebtn {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 30px;
+  padding: 0 12px;
+  margin-left: 8px;
+  border: 1px solid var(--line2);
+  border-radius: 15px;
+}
+.morebtn-t { font-size: 12px; color: var(--sub); }
+.morebtn.is-on { border-color: var(--accent); }
+.morebtn.is-on .morebtn-t { color: var(--accent); }
+
+.allbox {
+  max-height: 250px;
+  margin-top: 10px;
+  padding: 2px 0;
+  background: var(--bg);
+  border-radius: 10px;
+}
+.allrow {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 12px;
+}
+.allrow-t { font-size: 13px; color: var(--text); }
+.allrow-t.is-on { color: var(--accent); }
+.allrow-s { font-size: 11px; color: var(--muted); }
 
 .cats {
   display: flex;
