@@ -78,7 +78,17 @@ export const db = reactive({
   DOMAIN_ID: '',
   CAPTURE_MODE: 'auto',
   CAPTURE_CAT: '',
-  CLOSED_NODES: {}
+  CLOSED_NODES: {},
+  /* 提交完面板自己收不收。默认收（宇定的）——
+     连着记几笔的时候，把面板右上角那个开关打开就不必每次重新点加号。
+     它同时是设置页里的一条，两处改的是同一个值。 */
+  CAP_AUTO_CLOSE: true,
+  /* 面板开着没有、现在是哪个模式。
+     瞬时状态，**不进 UI_KEYS** —— 重开 App 时不该一进来就弹着个面板。
+     放在 db 里而不是组件内部，是因为底栏和面板是两个组件，
+     挂在任意一边另一边都得转发事件。 */
+  CAP_OPEN: false,
+  CAPTURE_KIND: 'quick'
 })
 
 /* 进快照、进导出文件的就是这 13 项 —— 和原型的 DATA_VARS 一字不差。
@@ -87,7 +97,7 @@ export const DATA_KEYS = ['ITEMS', 'HABIT_LOGS', 'INBOX', 'NOTES', 'NOTE_PROMPTS
   'DOMAINS', 'RECORD_TYPES', 'CAPTURE_MODES', 'AUTO_RULES', 'TODAY_LOGS', 'CAT_WORDS', 'CATS']
 
 /* 界面状态：跟着设备走，不进导出文件 */
-export const UI_KEYS = ['CURRENT', 'DOMAIN_ID', 'CAPTURE_MODE']
+export const UI_KEYS = ['CURRENT', 'DOMAIN_ID', 'CAPTURE_MODE', 'CAP_AUTO_CLOSE']
 
 export function loadSeed() {
   const d = deepCopy(SEED_DATA)
@@ -99,9 +109,11 @@ export function loadSeed() {
   d.RECORD_TYPES.forEach(t => (t.logs || []).forEach(l => { l.d = shiftCN(l.d) }))
   DATA_KEYS.forEach(k => { db[k] = d[k] })
   db.CURRENT = 'today'
+  db.DOMAIN_ID = ''
   db.CAPTURE_MODE = 'auto'
   db.CAPTURE_CAT = ''
   db.CLOSED_NODES = deepCopy(SEED_UI.CLOSED_NODES) || {}
+  db.CAP_AUTO_CLOSE = true
 }
 
 /* ---------------- 快照 · 本机存储 ----------------
@@ -341,8 +353,13 @@ export function newDomain(name) {
 export const MONEY_SPACE = { id: 'money', name: '记账', fixed: true }
 export function isMoneySpace(id) { return id === MONEY_SPACE.id }
 
-/* 速记的聚焦请求。「记一笔」现在长在底部栏里，而速记框在今日页 ——
-   点它的意思是「切回今日页，并且把光标放进输入框」。
-   用自增的计数当信号，不用布尔量：在今日页上连点两次，也得每次都重新聚焦。 */
-export const captureAsk = ref(0)
-export function askCapture() { captureAsk.value++ }
+/* 面板开合。
+   kind 是面板里的模式：'quick' = 记一笔（写什么都行，规则自己判），
+   'money' = 记账（先挑品类再填金额）。不传就保持当前那个。 */
+export function openCapture(kind) {
+  if (kind) db.CAPTURE_KIND = kind
+  db.CAP_OPEN = true
+}
+export function closeCapture() {
+  db.CAP_OPEN = false
+}

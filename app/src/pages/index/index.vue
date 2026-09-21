@@ -13,6 +13,7 @@
       <Domain v-if="seen.domain" v-show="db.CURRENT === 'domain'" />
     </view>
 
+    <CaptureSheet />
     <GearBtn />
     <TabBar />
   </view>
@@ -25,6 +26,7 @@ import { db, saveState } from '../../stores/db'
 
 import TabBar from '../../components/TabBar.vue'
 import GearBtn from '../../components/GearBtn.vue'
+import CaptureSheet from '../../components/CaptureSheet.vue'
 import Today from '../../views/today.vue'
 import Inbox from '../../views/inbox.vue'
 import Notes from '../../views/notes.vue'

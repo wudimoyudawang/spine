@@ -5,20 +5,8 @@
       <text class="ph-d">{{ headDate }}</text>
     </view>
 
-    <!-- 记一笔 / 写一件事。
-         这一轮先做最简单的判断：数字在开头 → 记成支出，否则 → 待办。
-         原型那套完整规则（关键词、正则、你自己写的规则、品类胶囊）下一轮搬。 -->
-    <view class="capture">
-      <input
-        v-model="draft"
-        class="cap-in"
-        :focus="capFocus"
-        placeholder="32 午餐 / 交房租 / 想学 GraphRAG"
-        confirm-type="done"
-        @confirm="submit"
-      />
-      <view class="cap-go" @click="submit"><text class="cap-go-t">记下</text></view>
-    </view>
+    <!-- 记东西的入口不在这儿了：底栏中间那颗加号打开面板。
+         这一页从此只负责「看今天」，不负责「记」。 -->
 
     <!-- 已过期。排在最前面 —— 这一天的第一眼该看见最欠着的那些事。 -->
     <view v-if="today.overdue.length" class="block">
@@ -84,24 +72,11 @@
 </template>
 
 <script setup>
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed } from 'vue'
 import {
-  db, TODAY, money, pickToday, weekdayCN, captureAsk,
-  habitDoneOn, habitStreakDays, habitTotalDays, toggleHabitLog,
-  addMoney, addTodo, guessCategory
+  db, TODAY, money, pickToday, weekdayCN,
+  habitDoneOn, habitStreakDays, habitTotalDays, toggleHabitLog
 } from '../stores/db'
-
-const draft = ref('')
-const capFocus = ref(false)
-
-/* 底部栏那颗「记一笔」是这么接上的：它把 captureAsk 加一，这里收到就把光标送进输入框。
-   用自增计数当信号而不是布尔量 —— 人在今日页上连点两次，也得两次都有反应。
-   赋值前先放掉（false），下个 tick 再拿起（true）：不做出这个跳变，
-   第二次点的时候 focus 一直是 true，不会重新聚焦。 */
-watch(captureAsk, function () {
-  capFocus.value = false
-  nextTick(function () { capFocus.value = true })
-})
 
 const headDate = computed(function () {
   const p = TODAY.split('-').map(Number)
@@ -132,22 +107,6 @@ function finish(it) {
   it.status = 'done'
   uni.showToast({ title: '完成了', icon: 'none' })
 }
-
-function submit() {
-  const t = draft.value.trim()
-  if (!t) return
-  /* 「数字在开头」才当金额 —— 写成「交房租 2000」不该被记成 2000 元的一笔，
-     那是待办。完整的判断规则（原型的规则表）下一轮搬过来。 */
-  const m = /^\s*[¥￥]?\s*(\d+(?:\.\d+)?)/.exec(t)
-  if (m) {
-    const rec = addMoney(Number(m[1]), t, guessCategory(t))
-    uni.showToast({ title: rec ? ('记下 ' + money(rec.value)) : '金额不对', icon: 'none' })
-  } else {
-    addTodo(t, '')
-    uni.showToast({ title: '记成待办', icon: 'none' })
-  }
-  draft.value = ''
-}
 </script>
 
 <style scoped>
@@ -166,28 +125,6 @@ function submit() {
 }
 .ph-t { font-size: 22px; font-weight: 500; color: var(--text); }
 .ph-d { font-size: 13px; color: var(--sub); }
-
-.capture {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  padding: 6px 6px 6px 12px;
-  margin-bottom: 14px;
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: var(--r);
-}
-.cap-in { flex: 1 1 auto; min-width: 0; height: 34px; }
-.cap-go {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 34px;
-  padding: 0 14px;
-  background: var(--accent);
-  border-radius: 8px;
-}
-.cap-go-t { color: #fff; font-size: 13px; }
 
 .block {
   margin-bottom: 14px;

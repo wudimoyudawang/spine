@@ -48,6 +48,14 @@
         <text class="srow-k">{{ m.t }}</text>
         <text class="srow-v">{{ m.on ? (m.lock ? '常开' : '开') : '关' }}</text>
       </view>
+      <!-- 和面板右上角那个是同一个值：面板上那份是「记的时候就近改」，
+           这里才是它的正式位置。 -->
+      <view class="srow">
+        <text class="srow-k">记完自动关</text>
+        <view class="sw" :class="{ 'is-on': db.CAP_AUTO_CLOSE }" @click="db.CAP_AUTO_CLOSE = !db.CAP_AUTO_CLOSE">
+          <view class="sw-dot"></view>
+        </view>
+      </view>
       <view class="note"><text class="note-t">自动判断的规则表下一轮搬过来。</text></view>
     </view>
 
@@ -238,6 +246,25 @@ function exportData() {
 }
 .srow-k { font-size: 14px; color: var(--text); }
 .srow-v { font-size: 12px; color: var(--muted); }
+
+.sw {
+  position: relative;
+  width: 36px;
+  height: 21px;
+  border-radius: 11px;
+  background: var(--line2);
+}
+.sw.is-on { background: var(--accent); }
+.sw-dot {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: #fff;
+}
+.sw.is-on .sw-dot { left: 18px; }
 
 .pills { display: flex; flex-direction: row; flex-wrap: wrap; padding: 2px 0 4px; }
 .pill {

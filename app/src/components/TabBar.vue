@@ -10,9 +10,15 @@
       <text class="navi-t">{{ t.t }}</text>
     </view>
 
-    <!-- 记一笔居中。它不切页 —— 按下去把今日页的速记框叫出来，光标直接落进输入框。 -->
-    <view class="navi navi-cap" @click="pickCapture">
-      <text class="navi-t navi-cap-t">记一笔</text>
+    <!-- 中间那颗加号：点开「记东西」的面板。
+         面板里自带一个切换器，在「记一笔」和「记账」之间切 ——
+         不在这儿摆两个按钮，是因为底栏这一格只有 60px 宽，
+         塞两个入口会把四个 Tab 挤成配角。 -->
+    <view class="navi navi-plus" @click="openCapture()">
+      <view class="plus">
+        <view class="plus-h"></view>
+        <view class="plus-v"></view>
+      </view>
     </view>
 
     <view
@@ -28,7 +34,7 @@
 </template>
 
 <script setup>
-import { db, go, askCapture } from '../stores/db'
+import { db, go, openCapture } from '../stores/db'
 
 /* 四个 Tab 分列「记一笔」两侧，它正好落在正中间。
    空间和设置不在这儿 —— 它们是右上角那颗齿轮（GearBtn）。 */
@@ -42,11 +48,6 @@ const RIGHT = [
 ]
 
 function pick(k) { go(k) }
-
-function pickCapture() {
-  go('today')
-  askCapture()
-}
 </script>
 
 <style scoped>
@@ -79,14 +80,26 @@ function pickCapture() {
 .navi:active { background: var(--bg); }
 .navi-t { font-size: 11px; }
 
-/* 主操作：实心胶囊，跟旁边几个纯文字项分开。
-   光靠颜色区分不行 —— 当前选中的那个 Tab 也是蓝的。 */
-.navi-cap-t {
-  padding: 7px 16px;
-  border-radius: 999px;
+/* 中间那颗加号：实心圆钮，跟旁边几个纯文字项分开。
+   光靠颜色区分不行 —— 当前选中的那个 Tab 也是蓝的。
+   加号用两条线画，不用「＋」字符：字符的字形和基线各机型不一致，会看着歪。 */
+.plus {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
   background: var(--accent);
-  color: #fff;
-  font-weight: 500;
+  box-shadow: 0 2px 8px rgba(47, 111, 235, .28);
 }
-.navi-cap:active .navi-cap-t { background: #2A63D2; }
+.plus-h,
+.plus-v {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  background: #fff;
+  border-radius: 1px;
+}
+.plus-h { width: 18px; height: 2px; margin: -1px 0 0 -9px; }
+.plus-v { width: 2px; height: 18px; margin: -9px 0 0 -1px; }
+.navi-plus:active .plus { background: #2A63D2; }
 </style>
