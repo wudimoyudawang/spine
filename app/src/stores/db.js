@@ -118,7 +118,7 @@ export function loadSeed() {
   d.LOGS.forEach(x => { x.date = shiftDays(x.date, SHIFT) })
   d.RECORD_TYPES.forEach(t => (t.logs || []).forEach(l => { l.d = shiftCN(l.d) }))
   DATA_KEYS.forEach(k => { db[k] = d[k] })
-  ensureLogIds()
+  ensureIds()
   db.CURRENT = 'today'
   db.DOMAIN_ID = ''
   db.CAPTURE_MODE = 'auto'
@@ -148,7 +148,40 @@ export function restore(raw) {
   const s = JSON.parse(raw)
   if (s && s.v) DATA_KEYS.forEach(k => { if (s.v[k] !== undefined) db[k] = s.v[k] })
   if (s && s.s) UI_KEYS.forEach(k => { if (s.s[k] !== undefined) db[k] = s.s[k] })
+  ensureIds()
+}
+
+/* 导入 = 用文件里那份**整体换掉**本机这份。所以先把文本验一遍再换：
+   换到一半才报错是最坏的一种失败 —— 屏幕上看着是新数据，存储里却是旧的。
+   返回空串 = 成功；否则返回一句人话，给界面直接显示。 */
+export function importSnapshot(raw) {
+  let s = null
+  try { s = JSON.parse(String(raw || '')) } catch (e) { return '这不是 JSON' }
+  if (!s || typeof s !== 'object' || !s.v || typeof s.v !== 'object') return '不是这个应用导出的文件'
+  /* 至少要有一样是数组，否则是个空对象，换过去等于把数据清空了还一声不吭 */
+  const has = DATA_KEYS.some(function (k) { return Array.isArray(s.v[k]) })
+  if (!has) return '这个文件里没有任何数据'
+  /* 导入的是数据，不该顺手把人从当前这一页踢走（领域页除外：那个领域可能不在了） */
+  const back = db.CURRENT === 'domain' ? 'spaces' : db.CURRENT
+  try {
+    restore(JSON.stringify(s))
+  } catch (e) { return '文件内容读不出来' }
+  db.CURRENT = back
+  saveState(true)
+  return ''
+}
+
+/* 老档案缺 id 的要补上：流水行的 id 是后加的，记录项的日志 id 也是。
+   少一个入口是一回事，整份数据打不开是另一回事。 */
+function ensureIds() {
   ensureLogIds()
+  for (const rt of db.RECORD_TYPES || []) {
+    for (const l of (rt.logs || [])) { if (!l.id) l.id = newId('k') }
+  }
+  for (const l of db.LOGS || []) { if (!l.id) l.id = newId('lg') }
+  for (const it of db.ITEMS || []) { if (!it.id) it.id = newId('it') }
+  for (const n of db.NOTES || []) { if (!n.id) n.id = newId('nt') }
+  for (const n of db.INBOX || []) { if (!n.id) n.id = newId('in') }
 }
 
 /* 流水行的 id 是后加的（「移除这一行」要用它，数组下标不行）。
@@ -335,6 +368,58 @@ export function guessCategory(text) {
   return ''
 }
 
+/* 某个品类被记过多少笔。删之前要看得见下面挂着几条 ——
+   「删掉不影响已记的」不是空话，得有个地方能核对。 */
+export function catUsed(name) {
+  let n = 0
+  for (const l of db.LOGS) { if (l.category === name) n++ }
+  return n
+}
+
+function catClash(name, except) {
+  return db.CATS.indexOf(name) >= 0 && name !== except
+}
+
+export function addCat(name) {
+  const v = String(name || '').trim()
+  if (!v) return { error: '先写个名字' }
+  if (catClash(v)) return { error: '已经有「' + v + '」了' }
+  db.CATS.push(v)
+  return { name: v }
+}
+
+/* 改名要把已记的那几笔一起改过来，否则分类柱状图会裂成两根
+   （旧名一根、新名一根），看着像数据坏了。
+   顺手把「自动猜」那张表也换名：不换的话旧名字再也不会出现在清单里，
+   猜出来的分类没人认得出。 */
+export function renameCat(from, name) {
+  const v = String(name || '').trim()
+  const i = db.CATS.indexOf(from)
+  if (i < 0) return { error: '这个品类已经不在了' }
+  if (!v) return { error: '先写个名字' }
+  if (catClash(v, from)) return { error: '已经有「' + v + '」了' }
+  if (v === from) return { name: v, moved: 0 }
+  db.CATS[i] = v
+  let moved = 0
+  for (const l of db.LOGS) { if (l.category === from) { l.category = v; moved++ } }
+  if (db.CAT_WORDS[from]) {
+    db.CAT_WORDS[v] = db.CAT_WORDS[from]
+    delete db.CAT_WORDS[from]
+  }
+  return { name: v, moved: moved }
+}
+
+/* 删一个品类只把它从清单里拿走。已记的那几笔一个字不改 ——
+   它们还带着旧分类，所以 catList() 会把它补回候选末尾，
+   老记录照样能改回这个类。（分类可以错，数据不该丢。） */
+export function delCat(name) {
+  const i = db.CATS.indexOf(name)
+  if (i < 0) return { error: '这个品类已经不在了' }
+  const used = catUsed(name)
+  db.CATS.splice(i, 1)
+  return { name: name, used: used }
+}
+
 /* ---------------- 导航 ----------------
    切页只走这一处。原型的 go() 还要同时管三件事：页头标题、导航高亮、区块可见性 ——
    在 Vue 里那三样都是 CURRENT 的自然结果，所以这里只剩下「改 CURRENT」这一件事。
@@ -458,6 +543,7 @@ export function allCaptureOptions() {
     out.push({ k: m.k, t: m.t, group: '内置类目', builtin: true, lock: !!m.lock })
   }
   for (const rt of db.RECORD_TYPES) {
+    if (rt.retired) continue   /* 已经从界面收起的不再出现在这一排 */
     const d = domainById(rt.domain)
     out.push({
       k: 'rt:' + rt.id, t: rt.name, group: d ? d.name : '记录项',
@@ -720,7 +806,7 @@ export function ruleTargetOptions() {
     { v: 'note', t: '随心记' },
     { v: 'inbox', t: '只丢进收件箱' }
   ]
-  for (const rt of db.RECORD_TYPES) out.push({ v: rt.id, t: '记录项 · ' + rt.name })
+  for (const rt of db.RECORD_TYPES) { if (!rt.retired) out.push({ v: rt.id, t: '记录项 · ' + rt.name }) }
   return out
 }
 
@@ -791,7 +877,52 @@ export function summaryOf(d, rtCount) {
   return s
 }
 export function recordTypesOf(list, domainId) {
-  return (list || []).filter(t => t.domain === domainId)
+  /* retired = 已经从界面收起的那几条，不再列出来（它们记过的还在库里） */
+  return (list || []).filter(t => t.domain === domainId && !t.retired)
+}
+
+/* 记录项的三字段：名称 / 方式 / 单位。方式只有两种（text 纯文字、number 数值），
+   不让用户自己设计表单字段 —— 字段一多录入就慢，录入一慢功能就死。
+   quick 决定它出不出现在首页速记那一排。 */
+export function saveRecordType(rec) {
+  const name = String((rec && rec.name) || '').trim()
+  if (!name) return { error: '先起个名字' }
+  const mode = rec.mode === 'number' ? 'number' : 'text'
+  const unit = mode === 'number' ? String(rec.unit || '').trim() : ''
+  /* 领域 id 认不出来就是它已经不在了（比如刚被删掉），不能悄悄塞进第一个领域 ——
+     那等于把用户的记录放进了一个他没选的地方。 */
+  let domain = rec.domain
+  if (domain && !domainById(domain)) return { error: '这个领域已经不在了' }
+  if (!domain) domain = (db.DOMAINS[0] || {}).id
+  if (!domain) return { error: '还没有领域' }
+  const dup = recordTypesOf(db.RECORD_TYPES, domain).filter(function (t) {
+    return t.name === name && t.id !== rec.id
+  })[0]
+  if (dup) return { error: '这个领域里已经有「' + name + '」了' }
+
+  const old = rec.id ? rtById(rec.id) : null
+  if (old) {
+    const from = old.name
+    old.name = name
+    old.mode = mode
+    old.unit = unit
+    old.quick = rec.quick !== false
+    pushTodayLog('改名', from, '记录项', '记录项改名 · ' + from + ' → ' + name)
+    return { rt: old, was: 'edit' }
+  }
+  const rt = { id: newId('rt'), domain: domain, name: name, mode: mode, unit: unit, quick: rec.quick !== false, logs: [] }
+  db.RECORD_TYPES.push(rt)
+  return { rt: rt, was: 'new' }
+}
+
+/* 移除记录项只从界面收起，**不删它记过的东西** ——
+   那些数值还留在库里和导出文件里，将来想恢复或另作他用都还在。
+   （真删掉的话，用户手滑点一下就少了一年的体重记录，这种错没法原谅。） */
+export function retireRecordType(id) {
+  const rt = rtById(id)
+  if (!rt) return null
+  rt.retired = true
+  return rt
 }
 export function togglePin(id) {
   const d = domainById(id)
@@ -799,14 +930,77 @@ export function togglePin(id) {
   d.pinned = !d.pinned
   return d.pinned
 }
+/* 重名不拒绝，自动加个序号：「健身」已经有了就叫「健身 2」。
+   拒绝会让人以为按钮没反应，而改名这一步在领域页随时能做。 */
+export function nextDomainName(base) {
+  const has = function (n) { return db.DOMAINS.some(d => d.name === n) }
+  if (!has(base)) return base
+  let i = 2
+  while (has(base + ' ' + i)) i++
+  return base + ' ' + i
+}
+
 export function newDomain(name) {
+  const v = String(name || '').trim()
+  if (!v) return { error: '先写个名字' }
   const d = {
     id: 'd' + Date.now().toString(36),
-    name: String(name || '').trim() || ('领域 ' + (db.DOMAINS.length + 1)),
+    name: nextDomainName(v),
     pinned: false, habits: [], goals: []
   }
   db.DOMAINS.push(d)
-  return d
+  return { domain: d, name: d.name }
+}
+
+export function renameDomain(id, name) {
+  const d = domainById(id)
+  if (!d) return { error: '这个领域已经不在了' }
+  const v = String(name || '').trim()
+  if (!v) return { error: '名字不能空' }
+  for (const o of db.DOMAINS) {
+    if (o.id !== d.id && o.name === v) return { error: '已经有同名领域了' }
+  }
+  const old = d.name
+  d.name = v
+  pushTodayLog('改名', old, '领域', '领域改名 · ' + old + ' → ' + v)
+  return { name: v, old: old }
+}
+
+/* 领域下面一共有多少条内容 —— 删之前要把它说出来，
+   不然「删除领域」四个字看着像只删一张卡。
+   habits / goals 是**平铺**的（子项靠 parent 指回来），所以数条数就对了。 */
+export function domainContentCount(d) {
+  if (!d) return 0
+  return todosOf(d.id).length + (d.habits || []).length + (d.goals || []).length
+}
+
+/* 删掉一个领域 = 拆掉那个入口，不是倒掉里面的东西。
+   「分类可以错，数据不该丢」—— 否则人以后就不敢删、也不敢新建。
+   所以每一条内容都变成收件箱里的一条等着重新归类（收件箱就是「还没有去处」的那个地方），
+   它的记录项则从界面收起（见 retireRecordType），已记的那些留在库和导出文件里。
+   打卡历史跟着习惯一起清，和删单条习惯同一套规矩：那串日期已经没有人认得它了。 */
+function delDomain(id) {
+  const d = domainById(id)
+  if (!d) return { error: '这个领域已经不在了' }
+  if (db.DOMAINS.length <= 1) return { error: '至少留一个领域' }
+  const moved = domainContentCount(d)
+  for (const it of todosOf(id)) {
+    addInbox(it.title)
+    db.ITEMS.splice(db.ITEMS.indexOf(it), 1)
+  }
+  const release = function (list) {
+    for (const x of (list || [])) {
+      addInbox(x.t || x.title || '')
+      dropHabitLogs(x.id)
+      delete db.CLOSED_NODES[x.id]
+    }
+  }
+  release(d.habits)
+  release(d.goals)
+  for (const rt of recordTypesOf(db.RECORD_TYPES, id)) retireRecordType(rt.id)
+  db.DOMAINS.splice(db.DOMAINS.indexOf(d), 1)
+  if (db.DOMAIN_ID === id) db.DOMAIN_ID = ''
+  return { name: d.name, moved: moved }
 }
 
 /* 记账是一个**特殊空间**：占「空间」列表里的一个位置，但它是内置的 ——
@@ -1534,6 +1728,25 @@ export function deleteNode(spec) {
       done = { what: '规则', label: ruleName(r) }
       db.AUTO_RULES.splice(db.AUTO_RULES.indexOf(r), 1)
     }
+  } else if (kind === 'domain') {
+    const r = delDomain(key)
+    if (r && r.error) return r
+    done = {
+      what: '领域', label: r.name,
+      /* 收件箱是「还没有去处」的那个地方，删领域不该让任何东西消失 */
+      detail: r.moved + ' 条内容已回到收件箱'
+    }
+  } else if (kind === 'rt') {
+    const rt = retireRecordType(key)
+    if (!rt) return { error: '这个记录项已经不在了' }
+    done = {
+      what: '记录项', label: rt.name,
+      detail: '已记的 ' + (rt.logs || []).length + ' 条仍留在数据里'
+    }
+  } else if (kind === 'cat') {
+    const r = delCat(key)
+    if (r.error) return r
+    done = { what: '品类', label: r.name, detail: '已记的 ' + r.used + ' 笔不改' }
   } else {
     const hit = resolveNode(s)
     if (hit) {
@@ -1551,8 +1764,11 @@ export function deleteNode(spec) {
     }
   }
   if (!done) return { error: '这条已经不在了' }
-  pushTodayLog('删除', done.label, (done.where ? done.where + ' · ' : '') + done.what,
-    '删除' + done.what + ' · ' + done.label)
+  /* 删领域 / 删记录项 / 删品类这三样，最要紧的那句是「别的东西没丢」，
+     所以把结果一起写进流水，事后能查。 */
+  let dt = (done.where ? done.where + ' · ' : '') + done.what
+  if (done.detail) dt += ' · ' + done.detail
+  pushTodayLog('删除', done.label, dt, '删除' + done.what + ' · ' + done.label)
   return done
 }
 

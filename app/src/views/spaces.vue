@@ -24,9 +24,19 @@
         <text class="card-s">{{ moneySummary }}</text>
       </view>
 
-      <view class="card card-add" @click="add">
+      <view v-if="!adding" class="card card-add" @click="startAdd">
         <text class="card-t card-add-t">+ 新建领域</text>
         <text class="card-s">考证 / 育儿 / 副业 …</text>
+      </view>
+      <!-- 就地起个名字。不给个框的话，建出来的领域全叫「领域 5」，
+           还得点进去改名 —— 两步能并成一步。 -->
+      <view v-else class="card card-adding">
+        <text class="card-t">这个领域叫什么</text>
+        <input v-model="newName" class="tin tin-in" placeholder="比如「考证」" placeholder-class="tph" />
+        <view class="chips">
+          <view class="btn btn-main" @click="createDomain"><text class="btn-t btn-main-t">创建</text></view>
+          <view class="btn" @click="adding = false"><text class="btn-t">取消</text></view>
+        </view>
       </view>
     </view>
 
@@ -147,12 +157,45 @@
     <view class="block">
       <view class="block-h">
         <text class="tag">记账品类</text>
-        <text class="block-note">{{ db.CATS.length }} 个</text>
+        <view class="block-acts">
+          <text class="block-note">{{ db.CATS.length }} 个</text>
+          <view class="addbtn" @click="newCat">
+            <text class="addbtn-t">{{ catOn === 'new' ? '收起' : '新增' }}</text>
+          </view>
+        </view>
       </view>
-      <view class="pills">
-        <text v-for="c in db.CATS" :key="c" class="pill">{{ c }}</text>
+      <view v-if="!db.CATS.length && catOn !== 'new'" class="note">
+        <text class="note-t">还没有品类。点上面的「新增」加一个。</text>
       </view>
-      <view class="note"><text class="note-t">删掉一个品类只去掉选项，已记的流水一个字不改。</text></view>
+      <view v-for="c in db.CATS" :key="c" class="srow">
+        <view class="cat-n">
+          <text class="srow-k">{{ c }}</text>
+          <text v-if="usedOf(c)" class="cat-used">记过 {{ usedOf(c) }} 笔</text>
+        </view>
+        <view class="cat-ops">
+          <view class="mini" @click="renameCatStart(c)"><text class="mini-t">{{ catOn === c ? '收起' : '改名' }}</text></view>
+          <view class="mini mini-del" @click="delCatGo(c)">
+            <text class="mini-t">{{ armed === 'cat:' + c ? '确认删' : '删' }}</text>
+          </view>
+        </view>
+      </view>
+      <!-- 新建和改名共用这一块：一句话的事，不值得开弹窗 -->
+      <view v-if="catOn" class="rt-in">
+        <input
+          v-model="catDraft"
+          class="tin tin-in"
+          :placeholder="catOn === 'new' ? '新品类叫什么，比如「宠物」' : '改成叫什么'"
+          placeholder-class="tph"
+        />
+        <view class="chips">
+          <view class="btn btn-main" @click="commitCat"><text class="btn-t btn-main-t">{{ catOn === 'new' ? '创建' : '改名' }}</text></view>
+          <view class="btn" @click="catOn = ''"><text class="btn-t">取消</text></view>
+        </view>
+      </view>
+      <view class="note">
+        <text class="note-t">删掉一个品类只去掉选项，已记的流水一个字不改。</text>
+        <text class="note-t">改名会把已记的那几笔一起改过来。</text>
+      </view>
     </view>
 
     <view class="block">
@@ -166,8 +209,25 @@
       </view>
       <view class="chips">
         <view class="btn btn-main" @click="exportData"><text class="btn-t btn-main-t">复制全部数据</text></view>
+        <view class="btn" @click="toggleImport"><text class="btn-t">导入</text></view>
       </view>
-      <view class="note"><text class="note-t">导出一份 JSON，换手机或备份都用它。</text></view>
+      <template v-if="showIn">
+        <textarea
+          v-model="importRaw"
+          class="tin tin-ta"
+          placeholder="把刚才那份 JSON 粘到这里"
+          placeholder-class="tph"
+        />
+        <view class="chips">
+          <view class="btn" @click="readClip"><text class="btn-t">读剪贴板</text></view>
+          <view class="btn btn-main" @click="doImport"><text class="btn-t btn-main-t">确认导入</text></view>
+        </view>
+        <view class="note">
+          <text class="note-t">导入会覆盖本机全部数据。</text>
+          <text class="note-t">先「复制全部数据」存一份，再导。</text>
+        </view>
+      </template>
+      <view v-else class="note"><text class="note-t">导出一份 JSON，换手机或备份都用它。</text></view>
     </view>
 
     <view class="block">
@@ -191,9 +251,10 @@
 import { computed, ref } from 'vue'
 import {
   db, go, money, TODAY, summaryOf, recordTypesOf, togglePin, newDomain,
-  snapshot, storeFailed,
+  snapshot, storeFailed, importSnapshot, saveState,
   ruleName, ruleTargetLabel, ruleMatchLabel, ruleStats, ruleMatches, whyNot,
-  toggleRule, moveRule, saveRule, armDelete, delArmed,
+  toggleRule, moveRule, saveRule, armDelete, delArmed, disarmDelete,
+  addCat, renameCat, catUsed,
   resolveCapture, describeCapture
 } from '../stores/db'
 import RuleForm from '../components/RuleForm.vue'
@@ -225,9 +286,94 @@ function openMoney() {
   go('ledger')
 }
 
-function add() {
-  const d = newDomain()
-  uni.showToast({ title: '新建了「' + d.name + '」', icon: 'none' })
+/* ---------------- 新建领域 ---------------- */
+const adding = ref(false)
+const newName = ref('')
+
+function startAdd() {
+  adding.value = true
+  newName.value = ''
+}
+function createDomain() {
+  const r = newDomain(newName.value)
+  if (r.error) { uni.showToast({ title: r.error, icon: 'none' }); return }
+  adding.value = false
+  saveState(true)
+  /* 建完直接进那个领域：空领域里下一步就是加东西，
+     把人留在卡片列表里等于让他再点一次自己刚建的那张。 */
+  db.DOMAIN_ID = r.domain.id
+  go('domain')
+  uni.showToast({ title: '已创建「' + r.name + '」', icon: 'none' })
+}
+
+/* ---------------- 记账品类 ---------------- */
+const catOn = ref('')      /* 'new' = 正在新建；否则是正在改名的那个品类名 */
+const catDraft = ref('')
+const armed = delArmed
+
+function usedOf(c) { return catUsed(c) }
+
+function newCat() {
+  if (catOn.value === 'new') { catOn.value = ''; return }
+  catOn.value = 'new'
+  catDraft.value = ''
+}
+function renameCatStart(c) {
+  if (catOn.value === c) { catOn.value = ''; return }
+  catOn.value = c
+  catDraft.value = c
+}
+function commitCat() {
+  const v = catDraft.value.trim()
+  if (!v) { uni.showToast({ title: '先写个名字', icon: 'none' }); return }
+  const r = catOn.value === 'new' ? addCat(v) : renameCat(catOn.value, v)
+  if (r.error) { uni.showToast({ title: r.error, icon: 'none' }); return }
+  catOn.value = ''
+  saveState(true)
+  uni.showToast({
+    title: r.moved === undefined ? '已加「' + r.name + '」' : '已改名，' + r.moved + ' 笔也跟着改过来了'
+  , icon: 'none' })
+}
+/* 这几颗按钮的名字刻意和 stores/db 里那几个错开（Start / Go 后缀）：
+   同名会把 import 的那个遮掉，commitCat 里就再也叫不动真正的改名了。 */
+function delCatGo(c) {
+  const r = armDelete('cat:' + c)
+  if (!r) return
+  if (r.error) { uni.showToast({ title: r.error, icon: 'none' }); return }
+  if (catOn.value === c) catOn.value = ''
+  saveState(true)
+  uni.showToast({ title: '已去掉「' + r.name + '」· 已记的没改', icon: 'none' })
+}
+
+/* ---------------- 导入 ---------------- */
+const showIn = ref(false)
+const importRaw = ref('')
+
+function toggleImport() {
+  showIn.value = !showIn.value
+  if (!showIn.value) importRaw.value = ''
+}
+/* 手机上「把文件里的内容弄进一个输入框」这一步，粘比选文件省事得多：
+   导出那半边本来就是复制到剪贴板，来回走同一条路。 */
+function readClip() {
+  uni.getClipboardData({
+    success: function (res) {
+      const v = String(res.data || '').trim()
+      if (!v) { uni.showToast({ title: '剪贴板里是空的', icon: 'none' }); return }
+      importRaw.value = v
+      uni.showToast({ title: '已粘进来，检查一下再确认', icon: 'none' })
+    },
+    fail: function () { uni.showToast({ title: '读不到剪贴板，手动粘一下', icon: 'none' }) }
+  })
+}
+function doImport() {
+  const err = importSnapshot(importRaw.value)
+  if (err) { uni.showToast({ title: err, icon: 'none' }); return }
+  showIn.value = false
+  importRaw.value = ''
+  /* 导入换掉了全部数据：正在编辑的那张草稿表、武装待删的那颗按钮都不该留着 */
+  disarmDelete()
+  uni.showToast({ title: '已导入，本机数据已换成这份', icon: 'none' })
 }
 
 /* 存储状态如实显示。存不下还一声不吭是最坑的一种错 —— 用户以为记下了，其实没有。 */
@@ -355,6 +501,10 @@ const test = computed(function () {
 
 .card-add { border-style: dashed; }
 .card-add-t { color: var(--sub); }
+/* 就地起名字那张卡 */
+.card-adding { grid-column: 1 / -1; }
+.tin-in { margin-top: 8px; background: var(--bg); }
+.tin-ta { width: 100%; height: 88px; margin-top: 10px; padding: 8px 10px; background: var(--bg); border: 1px solid var(--line); border-radius: 10px; font-size: 12px; color: var(--text); box-sizing: border-box; }
 
 .note { padding: 14px 2px 0; }
 .note-t {
@@ -415,17 +565,31 @@ const test = computed(function () {
 }
 .sw.is-on .sw-dot { left: 18px; }
 
-.pills { display: flex; flex-direction: row; flex-wrap: wrap; padding: 2px 0 4px; }
-.pill {
-  margin: 4px 6px 0 0;
-  padding: 5px 12px;
-  background: var(--bg);
-  border-radius: 999px;
-  font-size: 13px;
-  color: var(--sub);
+.block-acts { display: flex; flex-direction: row; align-items: center; }
+.addbtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 30px;
+  margin-left: 10px;
+  padding: 0 11px;
+  border: 1px solid var(--line2);
+  border-radius: 15px;
 }
+.addbtn-t { font-size: 12px; color: var(--accent); }
+.addbtn:active { background: var(--accent-bg); }
+
+/* 品类那一行：名字 + 「记过 N 笔」，右边两颗按钮 */
+.cat-n { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: row; align-items: baseline; }
+.cat-used { margin-left: 8px; font-size: 11px; color: var(--muted); }
+.cat-ops { flex: 0 0 auto; display: flex; flex-direction: row; align-items: center; }
+.rt-in { margin-top: 8px; }
 
 .chips { display: flex; flex-direction: row; padding-top: 10px; }
+/* 一个块里的两颗按钮平分宽度：让「取消」比「创建」窄一半，
+   看着像它不重要 */
+.chips .btn { flex: 1 1 0; }
+.chips .btn + .btn { margin-left: 8px; }
 .btn {
   display: flex;
   align-items: center;
