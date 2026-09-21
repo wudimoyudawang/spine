@@ -16,7 +16,7 @@
           <text class="tag">习惯</text>
           <view class="block-acts">
             <text class="block-note">{{ topLevel(habRows) }} 个</text>
-            <view class="addbtn" @click="addTop('habit')"><text class="addbtn-t">新增</text></view>
+            <view class="addbtn" @click="addTop('habit')"><PlusIcon :size="14" /><text class="addbtn-t">新增</text></view>
           </view>
         </view>
         <view v-if="!habRows.length" class="empty">
@@ -54,7 +54,7 @@
           <text class="tag">待办</text>
           <view class="block-acts">
             <text class="block-note">{{ topLevel(todoRows) }} 条</text>
-            <view class="addbtn" @click="addTop('todo')"><text class="addbtn-t">新增</text></view>
+            <view class="addbtn" @click="addTop('todo')"><PlusIcon :size="14" /><text class="addbtn-t">新增</text></view>
           </view>
         </view>
         <view v-if="!todoRows.length" class="empty">
@@ -87,7 +87,7 @@
           <text class="tag">长期目标</text>
           <view class="block-acts">
             <text class="block-note">{{ topLevel(goalRows) }} 个</text>
-            <view class="addbtn" @click="addTop('goal')"><text class="addbtn-t">新增</text></view>
+            <view class="addbtn" @click="addTop('goal')"><PlusIcon :size="14" /><text class="addbtn-t">新增</text></view>
           </view>
         </view>
         <view v-if="!goalRows.length" class="empty">
@@ -145,7 +145,9 @@
           <text class="tag">记录项</text>
           <view class="block-acts">
             <text class="block-note">{{ rts.length }} 个</text>
-            <view class="addbtn" @click="newRt"><text class="addbtn-t">{{ rtOn === 'new' ? '收起' : '新增' }}</text></view>
+            <view class="addbtn" @click="newRt">
+        <PlusIcon v-if="rtOn !== 'new'" :size="14" /><text class="addbtn-t">{{ rtOn === 'new' ? '收起' : '新增' }}</text>
+      </view>
           </view>
         </view>
         <view v-if="!rts.length && rtOn !== 'new'" class="empty">
@@ -230,6 +232,7 @@ import {
   progressOf, setGoalP, bumpGoal, GOAL_STEPS, recordTypesOf, saveState,
   saveRecordType, addRecord, renameDomain, domainContentCount
 } from '../stores/db'
+import PlusIcon from '../components/PlusIcon.vue'
 import TreeRow from '../components/TreeRow.vue'
 import RtForm from '../components/RtForm.vue'
 
@@ -459,18 +462,7 @@ function tick(id) {
 .block-note { font-size: 12px; color: var(--muted); }
 .block-acts { display: flex; flex-direction: row; align-items: center; }
 
-.addbtn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 30px;
-  margin-left: 10px;
-  padding: 0 11px;
-  border: 1px solid var(--line2);
-  border-radius: 15px;
-}
-.addbtn-t { font-size: 12px; color: var(--accent); }
-.addbtn:active { background: var(--accent-bg); }
+/* .addbtn 那三行搬到 styles/base.scss 了 —— 今日 / 领域 / 空间三页共用一份。 */
 
 .row {
   display: flex;

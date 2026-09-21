@@ -15,10 +15,7 @@
          不在这儿摆两个按钮，是因为底栏这一格只有 60px 宽，
          塞两个入口会把四个 Tab 挤成配角。 -->
     <view class="navi navi-plus" @click="openCapture()">
-      <view class="plus">
-        <view class="plus-h"></view>
-        <view class="plus-v"></view>
-      </view>
+      <view class="plus"><PlusIcon :size="16" /></view>
     </view>
 
     <view
@@ -35,6 +32,7 @@
 
 <script setup>
 import { db, go, openCapture } from '../stores/db'
+import PlusIcon from './PlusIcon.vue'
 
 /* 四个 Tab 分列「记一笔」两侧，它正好落在正中间。
    空间和设置不在这儿 —— 它们是右上角那颗齿轮（GearBtn）。 */
@@ -84,26 +82,26 @@ function pick(k) { go(k) }
 .navi:active { background: var(--bg); }
 .navi-t { font-size: 11px; }
 
-/* 中间那颗加号：实心圆钮，跟旁边几个纯文字项分开。
-   光靠颜色区分不行 —— 当前选中的那个 Tab 也是蓝的。
-   加号用两条线画，不用「＋」字符：字符的字形和基线各机型不一致，会看着歪。 */
+/* 中间那颗加号：实心圆钮，跟旁边几个纯文字项分开 ——
+   光靠颜色区分不行，当前选中的那个 Tab 也是蓝的。
+
+   38px 而不是 44px：底栏 53.8px 高，44px 的圆上下各只剩 5px 余量，
+   整栏看着很满；38px 各留 8px，才像这一栏本来就长这样。
+   （两种都是严格居中，量过像素 —— 不是位置问题，是尺寸问题。
+     这两张对照图在 spine-analysis/shots/zb-70.png 和 zb-70b.png。）
+
+   加号本身走 PlusIcon，全项目一份代码。 */
 .plus {
-  position: relative;
-  width: 44px;
-  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
   background: var(--accent);
+  /* 白十字靠这个继承过去 —— PlusIcon 里用的是 currentColor */
+  color: #fff;
   box-shadow: 0 2px 8px rgba(47, 111, 235, .28);
 }
-.plus-h,
-.plus-v {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  background: #fff;
-  border-radius: 1px;
-}
-.plus-h { width: 18px; height: 2px; margin: -1px 0 0 -9px; }
-.plus-v { width: 2px; height: 18px; margin: -9px 0 0 -1px; }
 .navi-plus:active .plus { background: #2A63D2; }
 </style>

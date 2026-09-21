@@ -18,8 +18,7 @@
       <slot name="tail" />
 
       <view class="nodebtn" @click.stop="$emit('add')">
-        <view class="plus-h"></view>
-        <view class="plus-v"></view>
+        <PlusIcon :size="14" />
       </view>
 
       <view class="delbtn" :class="{ 'is-armed': armed }" @click.stop="$emit('del')">
@@ -47,6 +46,7 @@
 
 <script setup>
 import { ref, watch } from 'vue'
+import PlusIcon from './PlusIcon.vue'
 
 const props = defineProps({
   depth: { type: Number, default: 0 },
@@ -129,21 +129,22 @@ function loseFocus() {
   color: var(--muted);
 }
 
-/* 加子项那颗 +：虚线框 + 自绘十字。
-   不用文字「+」—— 它旁边就是计划行的 +1/+2/+5，两个文字加号挨着会长得一样 */
+/* 加子项那颗 +：虚线框 + PlusIcon。
+   虚线框留着 —— 它表示「这里能加」，和旁边那个实心的删除按钮区分开。
+   不用文字「+」：它旁边就是计划行的 +1/+2/+5，两个文字加号挨着会长得一样 */
 .nodebtn {
-  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex: none;
   width: 30px;
   height: 30px;
   margin-left: 6px;
   border: 1px dashed var(--line2);
   border-radius: 8px;
+  /* PlusIcon 用 currentColor，颜色从这儿继承 */
+  color: var(--sub);
 }
-.plus-h,
-.plus-v { position: absolute; background: var(--sub); border-radius: 1px; }
-.plus-h { top: 14px; left: 8px; width: 12px; height: 2px; }
-.plus-v { top: 8px; left: 14px; width: 2px; height: 12px; }
 .nodebtn:active { background: var(--bg); }
 
 .delbtn {

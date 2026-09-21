@@ -62,8 +62,9 @@
           <text class="mini-t">{{ armed === 'trend:' + r.key ? '确认删' : '删' }}</text>
         </view>
       </view>
-      <view class="addbtn" @click="pickOn = !pickOn">
-        <text class="addbtn-t">{{ pickOn ? '收起' : '+ 添加一项' }}</text>
+      <view class="addwide" @click="pickOn = !pickOn">
+        <PlusIcon v-if="!pickOn" :size="14" />
+        <text class="addwide-t">{{ pickOn ? '收起' : '添加一项' }}</text>
       </view>
       <view v-if="pickOn" class="chips chips-pick">
         <view v-for="c in cands" :key="metricKey(c)" class="mchip" @click="addRow(c)">
@@ -137,6 +138,7 @@ import {
   reviewData, metricLine, metricKey, trendRows, trendCandidates, addTrend,
   habitTree, streakText
 } from '../stores/db'
+import PlusIcon from '../components/PlusIcon.vue'
 
 const MODES = [{ k: 'week', n: '本周' }, { k: 'month', n: '本月' }, { k: 'custom', n: '自定义' }]
 
@@ -373,7 +375,7 @@ function exportText() {
 .btn-main-t { color: #fff; }
 .btn:active { background: var(--bg); }
 
-.addbtn {
+.addwide {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -382,7 +384,8 @@ function exportText() {
   border: 1px dashed var(--line2);
   border-radius: 10px;
 }
-.addbtn-t { font-size: 13px; color: var(--sub); }
+.addwide :deep(.pi) { margin-right: 5px; }
+.addwide-t { font-size: 13px; color: var(--sub); }
 .mini {
   display: flex;
   align-items: center;

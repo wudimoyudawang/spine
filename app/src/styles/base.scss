@@ -68,3 +68,22 @@ textarea {
   font-size: 16px;
   color: var(--text);
 }
+
+/* 「新增 XX」那颗胶囊。今日 / 领域 / 空间三页原本各抄了一份一模一样的，
+   于是「给它加个加号图标」这件事要改三遍 —— 收成一份。
+   （复盘页那颗不一样：整行宽、虚线框、灰字，留在自己的文件里。） */
+.addbtn {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  min-height: 30px;
+  margin-left: 10px;
+  padding: 0 11px;
+  border: 1px solid var(--line2);
+  border-radius: 15px;
+}
+.addbtn-t { font-size: 12px; color: var(--accent); }
+.addbtn:active { background: var(--accent-bg); }
+/* 图标和文字之间留一点。加号只在按钮里和文字并排，所以跟着 addbtn 放 */
+.addbtn .pi { margin-right: 5px; }

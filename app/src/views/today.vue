@@ -59,6 +59,7 @@
         <view class="block-acts">
           <text class="block-note">{{ topLevel(tt.due) }} 条待办</text>
           <view class="addbtn" @click="addTop('todo')">
+            <PlusIcon :size="14" />
             <text class="addbtn-t">新增待办</text>
           </view>
         </view>
@@ -101,7 +102,9 @@
         <text class="tag">习惯</text>
         <view class="block-acts">
           <text class="block-note">点右边打卡</text>
-          <view class="addbtn" @click="addTop('habit')"><text class="addbtn-t">新增习惯</text></view>
+          <view class="addbtn" @click="addTop('habit')">
+        <PlusIcon :size="14" /><text class="addbtn-t">新增习惯</text>
+      </view>
         </view>
       </view>
       <TreeRow
@@ -137,7 +140,9 @@
         <text class="tag">计划</text>
         <view class="block-acts">
           <text class="block-note">{{ gl.length }} 个</text>
-          <view class="addbtn" @click="addTop('goal')"><text class="addbtn-t">新增计划</text></view>
+          <view class="addbtn" @click="addTop('goal')">
+        <PlusIcon :size="14" /><text class="addbtn-t">新增计划</text>
+      </view>
         </view>
       </view>
       <TreeRow
@@ -195,6 +200,7 @@ import {
   openGoalAdd, openGoal, armDelete, delArmed, labelOf, todayTree, habitTree, goalTree,
   progressOf, domainName, topLevel, saveState
 } from '../stores/db'
+import PlusIcon from '../components/PlusIcon.vue'
 import TreeRow from '../components/TreeRow.vue'
 
 const headDate = computed(function () {
@@ -347,18 +353,8 @@ function toggleDone(it) {
 
 /* 区块标题右边的「新增」：文字钮，不抢标题的眼。
    它比行尾那颗加号大一点 —— 那是「加一整条」，加子项是次要动作。 */
-.addbtn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 30px;
-  margin-left: 10px;
-  padding: 0 11px;
-  border: 1px solid var(--line2);
-  border-radius: 15px;
-}
-.addbtn-t { font-size: 12px; color: var(--accent); }
-.addbtn:active { background: var(--accent-bg); }
+/* .addbtn 那三行搬到 styles/base.scss 了 —— 今日 / 领域 / 空间三页共用一份。
+   留在这里的话，「给按钮加个图标」这一件事要改三遍。 */
 
 .row {
   display: flex;

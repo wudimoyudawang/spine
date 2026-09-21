@@ -25,7 +25,10 @@
       </view>
 
       <view v-if="!adding" class="card card-add" @click="startAdd">
-        <text class="card-t card-add-t">+ 新建领域</text>
+        <view class="card-add-h">
+          <PlusIcon :size="13" />
+          <text class="card-t card-add-t">新建领域</text>
+        </view>
         <text class="card-s">考证 / 育儿 / 副业 …</text>
       </view>
       <!-- 就地起个名字。不给个框的话，建出来的领域全叫「领域 5」，
@@ -110,7 +113,8 @@
       </view>
 
       <view class="btn btn-add" @click="editRule('new')">
-        <text class="btn-t">{{ editing === 'new' ? '收起' : '+ 新增规则' }}</text>
+        <PlusIcon v-if="editing !== 'new'" :size="14" />
+        <text class="btn-t">{{ editing === 'new' ? '收起' : '新增规则' }}</text>
       </view>
       <RuleForm v-if="editing === 'new'" :key="'new'" @save="saveRuleFrom" @cancel="cancelRule" />
 
@@ -160,7 +164,7 @@
         <view class="block-acts">
           <text class="block-note">{{ db.CATS.length }} 个</text>
           <view class="addbtn" @click="newCat">
-            <text class="addbtn-t">{{ catOn === 'new' ? '收起' : '新增' }}</text>
+            <PlusIcon v-if="catOn !== 'new'" :size="14" /><text class="addbtn-t">{{ catOn === 'new' ? '收起' : '新增' }}</text>
           </view>
         </view>
       </view>
@@ -257,6 +261,7 @@ import {
   addCat, renameCat, catUsed,
   resolveCapture, describeCapture
 } from '../stores/db'
+import PlusIcon from '../components/PlusIcon.vue'
 import RuleForm from '../components/RuleForm.vue'
 
 function summary(d) {
@@ -501,6 +506,15 @@ const test = computed(function () {
 
 .card-add { border-style: dashed; }
 .card-add-t { color: var(--sub); }
+/* 虚线卡里那行「加号 + 新建领域」。卡片本身是竖排的两行字，这一行要横排，包一层。
+   间距用 :deep —— PlusIcon 是子组件，它的类名带的是**子组件**的 scope，
+   父组件的普通选择器选不中它（这个坑在 scoped 样式里很常见）。 */
+.card-add-h {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+.card-add-h :deep(.pi) { margin-right: 5px; color: var(--sub); }
 /* 就地起名字那张卡 */
 .card-adding { grid-column: 1 / -1; }
 .tin-in { margin-top: 8px; background: var(--bg); }
@@ -566,18 +580,7 @@ const test = computed(function () {
 .sw.is-on .sw-dot { left: 18px; }
 
 .block-acts { display: flex; flex-direction: row; align-items: center; }
-.addbtn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 30px;
-  margin-left: 10px;
-  padding: 0 11px;
-  border: 1px solid var(--line2);
-  border-radius: 15px;
-}
-.addbtn-t { font-size: 12px; color: var(--accent); }
-.addbtn:active { background: var(--accent-bg); }
+/* .addbtn 那三行搬到 styles/base.scss 了 —— 今日 / 领域 / 空间三页共用一份。 */
 
 /* 品类那一行：名字 + 「记过 N 笔」，右边两颗按钮 */
 .cat-n { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: row; align-items: baseline; }
@@ -599,6 +602,8 @@ const test = computed(function () {
   border: 1px solid var(--line2);
   border-radius: 10px;
 }
+/* 按钮里「图标 + 文字」之间的间距。只有带图标的那些按钮会命中 */
+.btn :deep(.pi) { margin-right: 6px; }
 .btn-t { font-size: 13px; color: var(--text); }
 .btn-main { background: var(--accent); border-color: var(--accent); }
 .btn-main-t { color: #fff; }
