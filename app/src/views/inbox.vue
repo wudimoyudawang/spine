@@ -21,13 +21,31 @@
       <view v-if="!db.INBOX.length" class="empty">
         <text class="empty-t">收件箱是空的。它只管「先记下来，别丢」。</text>
       </view>
-      <view v-for="it in db.INBOX" :key="it.id" class="row">
-        <view class="row-main">
-          <text class="row-t">{{ it.text }}</text>
-          <text class="row-m">记于 {{ fmtCN(it.at) }} · 没有领域</text>
+      <view v-for="it in db.INBOX" :key="it.id">
+        <view class="row">
+          <view class="row-main">
+            <text class="row-t">{{ it.text }}</text>
+            <text class="row-m">记于 {{ fmtCN(it.at) }} · 没有领域</text>
+          </view>
+          <view class="chip" :class="{ 'is-on': open === it.id }" @click="toggle(it.id)">
+            <text class="chip-t">{{ open === it.id ? '收起' : '归类' }}</text>
+          </view>
+          <view class="delbtn" :class="{ 'is-armed': armed === 'inbox:' + it.id }" @click="del(it)">
+            <text class="delbtn-t" :class="{ 'is-armed': armed === 'inbox:' + it.id }">{{ armed === 'inbox:' + it.id ? '确认删' : '×' }}</text>
+          </view>
         </view>
-        <view class="chip" @click="classify(it)"><text class="chip-t">归类</text></view>
-        <view class="del" @click="remove(it)"><text class="del-t">×</text></view>
+        <!-- 去处就摊在这一行下面：看完这句要挑的是哪一格，不用抬头找标题 -->
+        <view v-if="open === it.id" class="clsbox">
+          <text class="cls-k">归到：</text>
+          <view
+            v-for="o in places"
+            :key="o.v"
+            class="chip chip-sm"
+            @click="classify(it, o.v)"
+          >
+            <text class="chip-t">{{ o.t }}</text>
+          </view>
+        </view>
       </view>
       <view v-if="db.INBOX.length" class="note">
         <text class="note-t">归类就是把它变成别处的正经条目，然后从这里消失。</text>
@@ -37,43 +55,53 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { db, fmtCN, addInbox, addTodo } from '../stores/db'
+import { computed, ref } from 'vue'
+import { db, fmtCN, addInbox, classifyInbox, armDelete, delArmed, saveState } from '../stores/db'
 
 const draft = ref('')
+const open = ref('')
+const armed = delArmed
+
+/* 去处：两个固定的 + 每个领域一格。领域改名、加领域都跟着这份走。
+   「先留着」不算去处，它只是把这一排收起来 —— 所以单独一颗，不混在里面。 */
+const places = computed(function () {
+  const out = [{ v: 'todo', t: '今天待办' }, { v: 'note', t: '随心记' }]
+  for (const d of db.DOMAINS) out.push({ v: d.id, t: d.name })
+  out.push({ v: '', t: '先留着' })
+  return out
+})
 
 function save() {
   const t = draft.value.trim()
   if (!t) return
   addInbox(t)
   draft.value = ''
+  saveState(true)
   uni.showToast({ title: '存下了', icon: 'none' })
 }
 
-/* 归类 = 变成今天的待办，然后从收件箱消失。
-   原型里这一步是选去处（哪个领域 / 待办 / 随心记），这里先只做「变成待办」——
-   等速记那套规则引擎搬完，两条路合到一处再补其它去处。 */
-function classify(it) {
-  addTodo(it.text, '')
-  drop(it)
-  uni.showToast({ title: '已归到今天的待办', icon: 'none' })
+function toggle(id) {
+  open.value = open.value === id ? '' : id
 }
 
-function remove(it) {
-  uni.showModal({
-    title: '删掉这条？',
-    content: it.text,
-    success: function (r) {
-      if (!r.confirm) return
-      drop(it)
-      uni.showToast({ title: '已删除', icon: 'none' })
-    }
-  })
+function classify(it, to) {
+  if (!to) { open.value = ''; return }
+  const r = classifyInbox(it.id, to)
+  open.value = ''
+  if (r.error) { uni.showToast({ title: r.error, icon: 'none' }); return }
+  saveState(true)
+  uni.showToast({ title: '已归到 ' + r.where, icon: 'none' })
 }
 
-function drop(it) {
-  const i = db.INBOX.indexOf(it)
-  if (i >= 0) db.INBOX.splice(i, 1)
+/* 删和别处同一套两段确认。以前这里弹一个系统对话框 —— 两种删除手势混在一个应用里，
+   人会以为自己点错了地方。 */
+function del(it) {
+  const r = armDelete('inbox:' + it.id)
+  if (!r) { uni.showToast({ title: '再点一次「确认删」', icon: 'none' }); return }
+  if (r.error) { uni.showToast({ title: r.error, icon: 'none' }); return }
+  if (open.value === it.id) open.value = ''
+  saveState(true)
+  uni.showToast({ title: '已删除', icon: 'none' })
 }
 </script>
 
@@ -146,18 +174,37 @@ function drop(it) {
 }
 .chip-t { font-size: 12px; color: var(--sub); }
 .chip:active { background: var(--bg); }
+/* 面板开着的时候那颗要看得出来是它开的，不然那一排去处像凭空冒出来的 */
+.chip.is-on { background: var(--accent-bg); border-color: var(--accent); }
+.chip.is-on .chip-t { color: var(--accent); }
 
-.del {
+/* 去处那一排：紧跟在这条下面，小一号 —— 它是一次选择，不是行上的主钮 */
+.clsbox {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  padding: 2px 0 10px;
+  border-top: 1px solid var(--line);
+}
+.cls-k { font-size: 12px; color: var(--muted); }
+.clsbox .chip { margin: 6px 0 0 6px; min-height: 26px; padding: 4px 10px; }
+
+.delbtn {
+  flex: none;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  min-width: 32px;
+  min-height: 32px;
   margin-left: 4px;
+  padding: 0 6px;
   border-radius: 8px;
 }
-.del-t { font-size: 17px; color: var(--muted); }
-.del:active { background: var(--bg); }
+.delbtn-t { font-size: 15px; color: var(--muted); }
+.delbtn.is-armed { background: var(--danger-bg); }
+.delbtn-t.is-armed { font-size: 12px; color: var(--danger); }
+.delbtn:active { background: var(--bg); }
 
 .note { padding-top: 10px; }
 .note-t { font-size: 12px; line-height: 1.5; color: var(--muted); }

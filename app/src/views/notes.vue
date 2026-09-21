@@ -26,7 +26,9 @@
       <view v-for="n in rows" :key="n.id" class="noteitem">
         <view class="noteitem-d">
           <text class="noteitem-day">{{ fmtCN(n.d) }}</text>
-          <view class="del" @click="remove(n)"><text class="del-t">×</text></view>
+          <view class="delbtn" :class="{ 'is-armed': armed === 'note:' + n.id }" @click="del(n)">
+            <text class="delbtn-t" :class="{ 'is-armed': armed === 'note:' + n.id }">{{ armed === 'note:' + n.id ? '确认删' : '×' }}</text>
+          </view>
         </view>
         <text class="noteitem-c">{{ n.text }}</text>
       </view>
@@ -36,9 +38,10 @@
 
 <script setup>
 import { computed, ref } from 'vue'
-import { db, TODAY, fmtCN } from '../stores/db'
+import { db, fmtCN, addNote, armDelete, delArmed, saveState } from '../stores/db'
 
 const draft = ref('')
+const armed = delArmed
 const prompt = ref((db.NOTE_PROMPTS || [])[0] || '')
 
 const rows = computed(function () {
@@ -57,22 +60,19 @@ function nextPrompt() {
 function save() {
   const t = draft.value.trim()
   if (!t) return
-  db.NOTES.unshift({ id: 'nt' + Date.now().toString(36), d: TODAY, text: t })
+  addNote(t)
   draft.value = ''
+  saveState(true)
   uni.showToast({ title: '存下了', icon: 'none' })
 }
 
-function remove(n) {
-  uni.showModal({
-    title: '删掉这条？',
-    content: String(n.text).slice(0, 30),
-    success: function (r) {
-      if (!r.confirm) return
-      const i = db.NOTES.indexOf(n)
-      if (i >= 0) db.NOTES.splice(i, 1)
-      uni.showToast({ title: '已删除', icon: 'none' })
-    }
-  })
+/* 删和别处同一套两段确认，不再弹系统对话框。 */
+function del(n) {
+  const r = armDelete('note:' + n.id)
+  if (!r) { uni.showToast({ title: '再点一次「确认删」', icon: 'none' }); return }
+  if (r.error) { uni.showToast({ title: r.error, icon: 'none' }); return }
+  saveState(true)
+  uni.showToast({ title: '已删除', icon: 'none' })
 }
 </script>
 
@@ -145,16 +145,20 @@ function remove(n) {
   color: var(--text);
 }
 
-.del {
+.delbtn {
+  flex: none;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  min-width: 32px;
+  min-height: 32px;
+  padding: 0 6px;
   border-radius: 8px;
 }
-.del-t { font-size: 17px; color: var(--muted); }
-.del:active { background: var(--bg); }
+.delbtn-t { font-size: 15px; color: var(--muted); }
+.delbtn.is-armed { background: var(--danger-bg); }
+.delbtn-t.is-armed { font-size: 12px; color: var(--danger); }
+.delbtn:active { background: var(--bg); }
 
 .empty { padding: 12px 0 4px; }
 .empty-t { font-size: 13px; line-height: 1.5; color: var(--muted); }

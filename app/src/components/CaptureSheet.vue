@@ -121,8 +121,8 @@
 <script setup>
 import { computed, nextTick, ref, watch } from 'vue'
 import {
-  db, TODAY, money, catList, closeCapture,
-  addMoney, addTodo, addInbox, addRecord,
+  db, money, catList, closeCapture,
+  addMoney, addTodo, addInbox, addNote, addRecord,
   resolveCapture, describeCapture, ruleName,
   allCaptureOptions, commonCaptureOptions, moveCaptureOption, toggleCaptureCommon,
   resetCaptureConfig, saveState
@@ -290,7 +290,7 @@ function submitQuick() {
   if (r.kind === 'todo') { addTodo(t, ''); done('记成待办'); draft.value = ''; return }
   if (r.kind === 'inbox') { addInbox(t); done('丢进收件箱了'); draft.value = ''; return }
   if (r.kind === 'note') {
-    db.NOTES.unshift({ id: 'nt' + Date.now().toString(36), d: TODAY, text: t })
+    addNote(t)
     done('记进随心记了')
     draft.value = ''
     return

@@ -118,6 +118,7 @@ export function loadSeed() {
   d.LOGS.forEach(x => { x.date = shiftDays(x.date, SHIFT) })
   d.RECORD_TYPES.forEach(t => (t.logs || []).forEach(l => { l.d = shiftCN(l.d) }))
   DATA_KEYS.forEach(k => { db[k] = d[k] })
+  ensureLogIds()
   db.CURRENT = 'today'
   db.DOMAIN_ID = ''
   db.CAPTURE_MODE = 'auto'
@@ -147,6 +148,14 @@ export function restore(raw) {
   const s = JSON.parse(raw)
   if (s && s.v) DATA_KEYS.forEach(k => { if (s.v[k] !== undefined) db[k] = s.v[k] })
   if (s && s.s) UI_KEYS.forEach(k => { if (s.s[k] !== undefined) db[k] = s.s[k] })
+  ensureLogIds()
+}
+
+/* 流水行的 id 是后加的（「移除这一行」要用它，数组下标不行）。
+   老档案里没有的那些就地补上 —— 少一个入口是一回事，整份数据打不开是另一回事。 */
+function ensureLogIds() {
+  const L = db.TODAY_LOGS || []
+  for (const e of L) { if (!e.id) e.id = newId('tl') }
 }
 
 let LAST_SAVED = ''
@@ -306,6 +315,15 @@ export function catList() {
   }
   return out
 }
+/* 分类候选。'未分类' 永远给选 —— 存的时候它是空串，
+   但打开老记录时显示的就是它，选不到等于改不动。 */
+function catOpts() {
+  const list = catList().filter(function (c) { return c !== '未分类' })
+  const out = list.map(function (c) { return [c, c] })
+  out.push(['未分类', '未分类'])
+  return out
+}
+
 export function guessCategory(text) {
   const t = String(text == null ? '' : text)
   for (const k in db.CAT_WORDS) {
@@ -338,9 +356,13 @@ export function addMoney(value, text, category) {
   if (!num || num <= 0) return null
   const rec = {
     id: newId('lg'), kind: 'money', date: TODAY,
-    category: category || guessCategory(text) || '', value: num
+    category: category || guessCategory(text) || '', value: Math.round(num * 100) / 100
   }
   db.LOGS.unshift(rec)
+  /* 「记下这笔」和「今天流水里有它」是同一个动作的两半，所以写在同一个入口里。
+     记支出的有两个入口（速记面板、记账页那个框），散在两处写流水迟早漏一个。 */
+  pushTodayLog('', '', '', describeCapture({ kind: 'money', value: rec.value, category: rec.category }),
+    { k: 'money', id: rec.id })
   return rec
 }
 
@@ -365,18 +387,57 @@ export function addInbox(text) {
   return rec
 }
 
+/* 随心记：只写日期和正文，没有领域、没有分类、不进复盘。
+   三个地方要写它（随心记页、速记面板、收件箱归类），所以入口只有一个。 */
+export function addNote(text) {
+  const t = String(text || '').trim()
+  if (!t) return null
+  const rec = { id: newId('nt'), d: TODAY, text: t }
+  db.NOTES.unshift(rec)
+  return rec
+}
+
 /* 往某个记录项上记一条（体重 71.4、热量 1800、力量训练那一句…）。
    RECORD_TYPES[].logs[].d 是**展示用的中文串**，不是可算的 ISO ——
    这里跟原型保持一致，别自作聪明换成 ISO：换了以后复盘页按区间筛记录项
    就得再加一层解析，而那段代码现在还不存在。 */
 export function addRecord(rtId, value) {
-  const rt = db.RECORD_TYPES.filter(function (t) { return t.id === rtId })[0]
+  const rt = rtById(rtId)
   if (!rt) return null
   const p = TODAY.split('-').map(Number)
   const rec = { id: newId('k'), d: p[1] + '月' + p[2] + '日', v: value }
   if (!rt.logs) rt.logs = []
   rt.logs.unshift(rec)
+  /* 和记支出同一规矩：流水里那一行连着这条真实记录，点得开、改得动。
+     措辞直接借「会记成」那句 —— 记之前看到什么，记完在流水里就看到什么。 */
+  pushTodayLog('', '', '', describeCapture({
+    kind: 'rt', rt: rt,
+    value: rt.mode === 'number' ? Number(value) : null,
+    text: rt.mode === 'number' ? '' : String(value == null ? '' : value)
+  }), { k: 'rt', rtId: rt.id, logId: rec.id })
   return rec
+}
+
+/* 收件箱里那一条的去处。四个去处都是「变成别处的正经条目」，然后从这儿消失 ——
+   收件箱只管先记下来，不留存。
+   「今天的待办」钉在今天；给某个领域的**不带日期**（原型那句 m:'没有日期'）——
+   扔进领域清单等着排期，比硬塞一个今天诚实。 */
+export function classifyInbox(id, to) {
+  const it = db.INBOX.filter(function (x) { return x.id === id })[0]
+  if (!it) return { error: '这条已经不在了' }
+  let where = ''
+  if (to === 'todo') { addTodo(it.text, '', TODAY); where = '今天 · 待办' }
+  else if (to === 'note') { addNote(it.text); where = '随心记' }
+  else {
+    const d = domainById(to)
+    if (!d) return { error: '这个领域已经不在了' }
+    addTodo(it.text, d.id, null)
+    where = d.name + ' · 待办'
+  }
+  const text = it.text
+  db.INBOX.splice(db.INBOX.indexOf(it), 1)
+  pushTodayLog('归类', text, where, '归类 · ' + text)
+  return { where: where, text: text }
 }
 
 /* 空间里所有能记的东西 —— 也就是「自定义」列出来的那份全集。
@@ -642,7 +703,9 @@ export function describeCapture(r) {
     }
     return rt.name + (r.text ? ' · ' + r.text : '')
   }
-  if (r.kind === 'money') return '支出 ' + (r.value === null ? '' : '¥' + r.value) + ' · ' + (r.category || '分类待定')
+  /* 「没选分类」这件事只有一种说法：未分类。预览、流水、记账列表说的是同一个事实，
+     换个词（'分类待定'）就等于多出一处措辞，将来两处会各说一套。 */
+  if (r.kind === 'money') return '支出 ' + (r.value === null ? '' : '¥' + r.value) + ' · ' + (r.category || '未分类')
   if (r.kind === 'todo') return '待办 · 进今天'
   if (r.kind === 'note') return '随心记 · 不进统计'
   return '收件箱 · 先存着，以后再归类'
@@ -944,13 +1007,77 @@ export function todayTree(today) {
 
 /* ---------------- 今天记下的（操作流水） ----------------
  * 只有这一处写。改了但没改出差别的（见 commitEdit 里那句「没有改动」）不要记 ——
- * 流水里塞一堆空记录，等于把真正那条冲掉了。 */
-export function pushTodayLog(op, target, detail, label) {
+ * 流水里塞一堆空记录，等于把真正那条冲掉了。
+ *
+ * 两种行：有 op 的是「某条东西被新建 / 改动 / 删掉了」，没有 op 的只有 label
+ * （记下的那一笔、那一条记录）。后一种多数还带着 link —— 那一行连着一条真实数据，
+ * 点开就是改它；连着的那条已经不在了，就直说，不假装改得了。
+ *
+ * id 是给「移除这一行」用的。按数组下标删不行：这一堆是新记录插在头上的，
+ * 弹窗开着的时候又记了一笔，下标就指向另一行了。 */
+export function pushTodayLog(op, target, detail, label, link) {
   const now = new Date()
-  db.TODAY_LOGS.unshift({
+  const e = {
+    id: newId('tl'),
     time: pad2(now.getHours()) + ':' + pad2(now.getMinutes()),
     op, target, detail, label
-  })
+  }
+  if (link) e.ref = link
+  db.TODAY_LOGS.unshift(e)
+  return e
+}
+
+/* ---------------- 流水行 ↔ 真实数据 ---------------- */
+export function logById(id) {
+  return db.LOGS.filter(function (x) { return x.kind === 'money' && x.id === id })[0] || null
+}
+
+/* 记录项下面那条（体重 71.4 / 热量 1800 / 今天练了什么）。
+   它不在 LOGS 里，住在 RECORD_TYPES[].logs 里 —— 两处是两套 id 空间。 */
+export function rtLogById(rtId, logId) {
+  const rt = rtById(rtId)
+  if (!rt) return null
+  const entry = (rt.logs || []).filter(function (l) { return l.id === logId })[0]
+  return entry ? { rt: rt, entry: entry } : null
+}
+
+/* 这一行连着什么：'money:xx' / 'rt:xx|yy'。没连着真实数据的返回 null。 */
+export function logRowSpec(e) {
+  const r = e && e.ref
+  if (!r) return ''
+  if (r.k === 'money') return logById(r.id) ? 'money:' + r.id : ''
+  if (r.k === 'rt') return rtLogById(r.rtId, r.logId) ? 'rt:' + r.rtId + '|' + r.logId : ''
+  return ''
+}
+
+/* 今日页那一行被点开。三种落点：连着真实数据（去改它）、
+   连着但那条没了（说清楚，别静默）、只是一行流水（只能移除）。 */
+export function openLogEdit(e) {
+  if (!e) return { error: '这条已经不在了' }
+  const spec = logRowSpec(e)
+  if (e.ref) {
+    if (!spec) return { error: '这条已经不在了' }
+    return openEdit(spec)
+  }
+  return openEdit('tlog:' + e.id)
+}
+
+/* 记录项的日期是展示串（'9月18日'），串里没有年份。
+   补年份按「不会是未来的日子」来补：今年这个日期还在明天之后，那就是去年记的。 */
+export function isoOfCnDate(label, around) {
+  const m = /^(\d+)月(\d+)日/.exec(String(label || ''))
+  if (!m) return ''
+  const base = String(around || TODAY)
+  let iso = base.slice(0, 4) + '-' + pad2(Number(m[1])) + '-' + pad2(Number(m[2]))
+  if (iso > base) iso = (Number(base.slice(0, 4)) - 1) + iso.slice(4)
+  return iso
+}
+/* 写回去的时候不带星期：新增记录那条路写的就是 '9月18日'，
+   改一次日期多出一个星期，等于同一份数据两种格式。 */
+export function cnDateOf(iso) {
+  const p = String(iso || '').split('-').map(Number)
+  if (p.length < 3) return ''
+  return p[1] + '月' + p[2] + '日'
 }
 
 /* ---------------- 新增 ---------------- */
@@ -1071,7 +1198,12 @@ export function addSub(spec, text) {
 }
 
 /* ---------------- 编辑 ---------------- */
-export const ED = reactive({ on: false, spec: '', kind: '', title: '', where: '', draft: {} })
+/* meta 只在弹窗里说「这个字段是什么形态」用（记录项是数值还是文字、带什么单位），
+   不是草稿的一部分 —— 提交时不写回任何数据。 */
+export const ED = reactive({
+  on: false, spec: '', kind: '', title: '', where: '', hint: '', btn: '保存',
+  meta: {}, draft: {}
+})
 
 /* 字段按类型生成，不是每种条目各写一个弹窗。
    这里**没有任何「上级」字段**：子项关系建完就锁死，不给改。 */
@@ -1090,6 +1222,26 @@ export function editFields() {
       { k: 'm', label: '频率，选填', type: 'text' }
     ]
   }
+  if (ED.kind === 'money') {
+    return [
+      { k: 'value', label: '金额（必填）', type: 'num' },
+      { k: 'category', label: '分类', type: 'chips', opts: catOpts() },
+      { k: 'date', label: '日期', type: 'date', clearable: false }
+    ]
+  }
+  if (ED.kind === 'rt') {
+    const num = ED.meta.mode === 'number'
+    return [
+      {
+        k: 'value',
+        label: num ? (ED.meta.name + '，填数字' + (ED.meta.unit ? '（' + ED.meta.unit + '）' : '')) : (ED.meta.name + '（必填）'),
+        type: num ? 'num' : 'text'
+      },
+      { k: 'date', label: '日期', type: 'date', clearable: false }
+    ]
+  }
+  /* 一行流水没有可改的字段：它是「已经发生过什么」，不是「现在是什么」。
+     弹窗里那一行只给人看，按钮是移除。 */
   return []
 }
 /* 领域的候选按 **id** 取值、按名字显示。用名字当值的话，
@@ -1101,7 +1253,21 @@ export function domainOpts() {
 }
 
 export function openEdit(spec) {
-  const hit = resolveNode(spec)
+  const s = String(spec || '')
+  const cut = s.indexOf(':')
+  const kind = cut < 0 ? s : s.slice(0, cut)
+  const key = cut < 0 ? '' : s.slice(cut + 1)
+  ED.hint = ''
+  ED.btn = '保存'
+  ED.meta = {}
+  if (kind === 'money') return openMoneyEdit(key)
+  if (kind === 'rt') {
+    const p = key.split('|')
+    return openRtEdit(p[0], p[1])
+  }
+  if (kind === 'tlog') return openLogRow(key)
+
+  const hit = resolveNode(s)
   if (!hit) return { error: '这条已经不在了' }
   /* 计划行走它自己的弹窗（进度滑杆在下一轮搬），先不开这个 ——
      开一个少了进度字段的编辑弹窗，比不开更容易让人以为进度就在里面 */
@@ -1117,13 +1283,83 @@ export function openEdit(spec) {
   ED.on = true
   return { ok: true }
 }
+
+/* 一笔支出能改的就三样：多少钱、算哪类、哪一天。
+   没有「备注」—— 记的时候那句原话（'32 午餐'）存进的是分类判断，
+   数据里没有备注这个字段，弹窗里凭空多一个框就是骗人。 */
+function openMoneyEdit(id) {
+  const lg = logById(id)
+  if (!lg) return { error: '这笔已经不在了' }
+  ED.spec = 'money:' + lg.id
+  ED.kind = 'money'
+  ED.draft = { value: String(lg.value), category: lg.category || '未分类', date: lg.date }
+  ED.title = '修改这笔支出'
+  ED.where = fmtCN(lg.date)
+  ED.on = true
+  return { ok: true }
+}
+
+/* 记录项下面那一条。日期存的是 '9月18日' 这种展示串，
+   所以进来时换成 ISO 给日期选择器，出去时再换回去。 */
+function openRtEdit(rtId, logId) {
+  const hit = rtLogById(rtId, logId)
+  if (!hit) return { error: '这条已经不在了' }
+  ED.spec = 'rt:' + hit.rt.id + '|' + hit.entry.id
+  ED.kind = 'rt'
+  ED.meta = { mode: hit.rt.mode, unit: hit.rt.unit || '', name: hit.rt.name }
+  ED.draft = {
+    value: String(hit.entry.v == null ? '' : hit.entry.v),
+    date: isoOfCnDate(hit.entry.d, TODAY)
+  }
+  ED.title = '修改这条记录'
+  ED.where = hit.rt.name
+  ED.hint = '这是「' + hit.rt.name + '」记下的一条'
+  ED.on = true
+  return { ok: true }
+}
+
+/* 纯流水的那一行：内容只读，按钮是「移除」。
+   假装能改一条历史记录，比不让改更糟 —— 那句 hint 就是这件事的说明。 */
+function openLogRow(id) {
+  const e = db.TODAY_LOGS.filter(function (x) { return x.id === id })[0]
+  if (!e) return { error: '这条已经不在了' }
+  ED.spec = 'tlog:' + e.id
+  ED.kind = 'log'
+  ED.draft = { label: rowText(e) }
+  ED.title = '这一条'
+  ED.where = e.time || ''
+  ED.hint = '当天的流水，改不了，只能移除'
+  ED.btn = '移除'
+  ED.on = true
+  return { ok: true }
+}
+
+/* 一行流水显示成什么。有 op 的那三种 = 操作对象 + 具体变更；
+   记下来的那两种只有 label。措辞只有这一处，今日页和弹窗都读它。 */
+export function rowBody(e) {
+  if (!e) return ''
+  if (e.op) return String(e.target || '') + (e.detail ? ' · ' + e.detail : '')
+  return String(e.label || '')
+}
+export function rowText(e) {
+  if (!e) return ''
+  return e.op ? e.op + ' ' + rowBody(e) : rowBody(e)
+}
+
 export function closeEdit() {
   ED.on = false
   ED.spec = ''
   ED.draft = {}
+  ED.meta = {}
+  ED.hint = ''
+  ED.btn = '保存'
 }
 
 export function commitEdit() {
+  if (ED.kind === 'money') return commitMoneyEdit()
+  if (ED.kind === 'rt') return commitRtEdit()
+  if (ED.kind === 'log') return commitLogRemove()
+
   const hit = resolveNode(ED.spec)
   if (!hit) { closeEdit(); return { error: '这条已经不在了' } }
   const dr = ED.draft
@@ -1154,9 +1390,78 @@ export function commitEdit() {
   /* parent 一律不动：这个弹窗里没有、也不该有改上级的入口 */
   const kindName = ED.kind === 'habit' ? '习惯' : '待办'
   const where = hit.domain ? hit.domain.name : (ED.kind === 'item' ? domainName(hit.node) : '')
-  pushTodayLog('修改', target, where + ' · ' + kindName, '修改' + kindName + ' · ' + target)
+  pushTodayLog('修改', target, ch.join('；'), '修改' + kindName + ' · ' + where + ' · ' + target)
   closeEdit()
   return { changed: ch }
+}
+
+/* 流水里那句「改了什么」= 逐字段的差异。四种种条目（待办 / 习惯 / 支出 / 记录）
+   都用这一种写法，所以比对完直接 ch.join('；') 就行，不用每种再解释一遍。 */
+function commitMoneyEdit() {
+  const lg = logById(specKey(ED.spec))
+  if (!lg) { closeEdit(); return { error: '这笔已经不在了' } }
+  const dr = ED.draft
+  const val = Number(dr.value)
+  if (!(val > 0)) return { error: '金额要大于 0' }
+  const nextCat = String(dr.category || '').trim() || '未分类'
+  const date = dr.date || lg.date
+  const ch = []
+  if (Number(lg.value) !== Math.round(val * 100) / 100) ch.push('金额 ' + money(lg.value) + ' → ' + money(val))
+  if ((lg.category || '未分类') !== nextCat) ch.push('分类「' + (lg.category || '未分类') + '」→「' + nextCat + '」')
+  if (lg.date !== date) ch.push('日期 ' + fmtCN(lg.date) + ' → ' + fmtCN(date))
+  if (!ch.length) { closeEdit(); return { unchanged: true } }
+  lg.value = Math.round(val * 100) / 100
+  /* '未分类' 不落库，落的是空串：显示层本来就把空读成它，存两个字反而多一种表示 */
+  lg.category = nextCat === '未分类' ? '' : nextCat
+  lg.date = date
+  pushTodayLog('修改', '支出 ' + money(lg.value) + ' · ' + (lg.category || '未分类'), ch.join('；'),
+    '修改一笔支出')
+  closeEdit()
+  return { changed: ch }
+}
+
+function commitRtEdit() {
+  const key = String(ED.spec || '').slice(3)
+  const parts = key.split('|')
+  const hit = rtLogById(parts[0], parts[1])
+  if (!hit) { closeEdit(); return { error: '这条已经不在了' } }
+  const dr = ED.draft
+  const ch = []
+  let vv
+  if (hit.rt.mode === 'number') {
+    const nv = Number(dr.value)
+    if (String(dr.value).trim() === '' || isNaN(nv)) return { error: '这是数值记录，要填个数字' }
+    if (Number(hit.entry.v) !== nv) ch.push(hit.rt.name + ' ' + hit.entry.v + ' → ' + nv)
+    vv = nv
+  } else {
+    vv = String(dr.value || '').trim()
+    if (!vv) return { error: '内容不能空' }
+    if (String(hit.entry.v) !== vv) ch.push(hit.rt.name + '「' + hit.entry.v + '」→「' + vv + '」')
+  }
+  const oldIso = isoOfCnDate(hit.entry.d, TODAY)
+  const date = dr.date || oldIso
+  if (date && oldIso && date !== oldIso) ch.push('日期 ' + fmtCN(oldIso) + ' → ' + fmtCN(date))
+  if (!ch.length) { closeEdit(); return { unchanged: true } }
+  hit.entry.v = vv
+  if (date && date !== oldIso) hit.entry.d = cnDateOf(date)
+  pushTodayLog('修改', describeCapture({
+    kind: 'rt', rt: hit.rt,
+    value: hit.rt.mode === 'number' ? Number(hit.entry.v) : null,
+    text: hit.rt.mode === 'number' ? '' : String(hit.entry.v)
+  }), ch.join('；'), '修改一条记录')
+  closeEdit()
+  return { changed: ch }
+}
+
+/* 移除的是这一行流水本身，不动它当初描述的那条数据。
+   所以这里不再往流水里记「移除了一行」—— 那会自己追自己。 */
+function commitLogRemove() {
+  const id = specKey(ED.spec)
+  const e = db.TODAY_LOGS.filter(function (x) { return x.id === id })[0]
+  closeEdit()
+  if (!e) return { error: '这条已经不在了' }
+  db.TODAY_LOGS.splice(db.TODAY_LOGS.indexOf(e), 1)
+  return { removed: true }
 }
 
 /* ---------------- 删除：两段确认 ----------------

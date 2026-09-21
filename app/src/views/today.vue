@@ -154,18 +154,23 @@
       </TreeRow>
     </view>
 
+    <!-- 今天记下的 = 操作流水。连着真实数据的那几条点得开（改的就是那条支出、
+         那条记录）；只有一行字的点开只能移除 —— 不假装能改历史。 -->
     <view class="block">
       <view class="block-h">
         <text class="tag">今天记下的</text>
-        <text class="block-note">{{ money(todaySum) }}</text>
+        <text class="block-note">刚记的都在这儿</text>
       </view>
-      <view v-if="!todayLogs.length" class="empty"><text class="empty-t">今天还没记账</text></view>
-      <view v-for="l in todayLogs" :key="l.id" class="row">
+      <view v-if="!flow.length" class="empty">
+        <text class="empty-t">今天还没记什么</text>
+        <text class="empty-t">底栏中间那颗加号，写一句就行</text>
+      </view>
+      <view v-for="e in flow" :key="e.id" class="row" @click="openLog(e)">
+        <text class="log-d">{{ e.time }}</text>
         <view class="row-main">
-          <text class="row-t">{{ l.category || '未分类' }}</text>
-          <text class="row-m">支出</text>
+          <text class="row-t"><text v-if="e.op" class="log-op">{{ e.op }}</text>{{ rowBody(e) }}</text>
         </view>
-        <text class="row-v">{{ money(l.value) }}</text>
+        <text v-if="e.ref" class="log-go">改</text>
       </view>
     </view>
   </view>
@@ -176,7 +181,7 @@ import { computed, ref } from 'vue'
 import {
   db, TODAY, money, go, weekdayCN,
   habitDoneOn, streakText, toggleHabitLog,
-  moneyTotalOf, toggleFold, openAdd, addSub, openEdit,
+  moneyTotalOf, toggleFold, openAdd, addSub, openEdit, openLogEdit, rowBody,
   openGoalAdd, openGoal, armDelete, delArmed, labelOf, todayTree, habitTree, goalTree,
   progressOf, domainName, topLevel, saveState
 } from '../stores/db'
@@ -193,8 +198,12 @@ const tt = computed(() => todayTree(TODAY))
 const hb = computed(() => habitTree())
 const gl = computed(() => goalTree())
 
-const todayLogs = computed(() => db.LOGS.filter(l => l.date === TODAY))
+const todayLogs = computed(() => db.LOGS.filter(l => l.date === TODAY && l.kind === 'money'))
 const todaySum = computed(() => todayLogs.value.reduce((s, l) => s + Number(l.value || 0), 0))
+
+/* 操作流水就在数据层那一堆里，新的在头上 —— 这里不重排，
+   因为「刚记的那条在最上面」这件事在写的时候就定了（见 pushTodayLog）。 */
+const flow = computed(() => db.TODAY_LOGS)
 
 /* 本月合计。按日期前缀算，不是「过去 30 天」——
    月初打开时该看到这个月花了多少，不是上个月那三十天。 */
@@ -248,6 +257,12 @@ function addTop(kind) {
 /* ---- 编辑：整行点开 ---- */
 function edit(spec) {
   const r = openEdit(spec)
+  if (r && r.error) uni.showToast({ title: r.error, icon: 'none' })
+}
+/* 流水那一行点开去哪，由数据层判断（连着真实数据的去改它，没连着的只能移除）。
+   页面上不知道也不该知道 ref 长什么样。 */
+function openLog(e) {
+  const r = openLogEdit(e)
   if (r && r.error) uni.showToast({ title: r.error, icon: 'none' })
 }
 function editGoal(spec) {
@@ -342,6 +357,26 @@ function finish(it) {
 .row-t { display: block; font-size: 14px; color: var(--text); }
 .row-m { display: block; font-size: 12px; color: var(--muted); margin-top: 1px; }
 .row-v { font-size: 14px; color: var(--text); }
+
+/* ---- 操作流水那几行 ---- */
+/* 时间钉在左边固定宽度，几行的正文才对得齐；
+   右边那颗「改」只给连着真实数据的那几条 —— 只能移除的行不给这个期待。 */
+.log-d {
+  flex: none;
+  width: 42px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.log-op {
+  margin-right: 5px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--accent-bg);
+  font-size: 11px;
+  color: var(--accent);
+}
+.log-go { flex: none; margin-left: 8px; font-size: 12px; color: var(--accent); }
+.row:active { background: var(--bg); }
 
 /* ---- 记账行 ---- */
 .moneyline {

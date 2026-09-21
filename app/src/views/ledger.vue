@@ -31,14 +31,23 @@
     </view>
 
     <view class="block">
-      <view class="block-h"><text class="tag">最近流水</text></view>
-      <view v-if="!flow.length" class="empty"><text class="empty-t">还没有记录</text></view>
+      <view class="block-h">
+        <text class="tag">最近流水</text>
+        <text class="block-note">{{ flow.length }} 笔 · 点一行改</text>
+      </view>
+      <view v-if="!flow.length" class="empty">
+        <text class="empty-t">还没有记过支出</text>
+        <text class="empty-t">上面那个框写「32 午餐」就行</text>
+      </view>
       <view v-for="l in flow" :key="l.id" class="row">
-        <view class="row-main">
+        <view class="row-main" @click="edit(l)">
           <text class="row-t">{{ l.category || '未分类' }}</text>
           <text class="row-m">{{ dayLabel(l.date) }}</text>
         </view>
         <text class="row-v">{{ money(l.value) }}</text>
+        <view class="delbtn" :class="{ 'is-armed': armed === 'money:' + l.id }" @click.stop="del(l)">
+          <text class="delbtn-t" :class="{ 'is-armed': armed === 'money:' + l.id }">{{ armed === 'money:' + l.id ? '确认删' : '×' }}</text>
+        </view>
       </view>
     </view>
   </view>
@@ -47,11 +56,13 @@
 <script setup>
 import { computed, ref } from 'vue'
 import {
-  db, TODAY, money, weekdayCN, sumByCategory, addMoney, guessCategory
+  db, TODAY, money, weekdayCN, sumByCategory, addMoney,
+  resolveCapture, openEdit, armDelete, delArmed, saveState
 } from '../stores/db'
 
 const draft = ref('')
 const month = TODAY.slice(0, 7)
+const armed = delArmed
 
 const monthLogs = computed(function () {
   return db.LOGS.filter(l => String(l.date).slice(0, 7) === month)
@@ -84,18 +95,37 @@ function dayLabel(iso) {
   return p[1] + '月' + p[2] + '日 周' + weekdayCN(iso)
 }
 
+/* 这个框只收支出，所以判完还要看判成了什么 —— 不是一律记成钱。
+   走速记那一套判断而不是在这儿再写一遍「取开头的数字 + 猜分类」：
+   同一句话在两处解成两个金额，是这台设备上最难查的那种错。 */
 function submit() {
   const t = draft.value.trim()
   if (!t) return
-  const m = /^\s*[¥￥]?\s*(\d+(?:\.\d+)?)/.exec(t)
-  if (!m) {
-    uni.showToast({ title: '开头先写金额', icon: 'none' })
+  const r = resolveCapture(t, 'auto')
+  if (r.kind !== 'money' || r.value === null) {
+    uni.showToast({ title: '这里只记支出，金额写在开头', icon: 'none' })
     return
   }
-  const rec = addMoney(Number(m[1]), t, guessCategory(t))
+  const rec = addMoney(r.value, r.text, r.category)
   if (!rec) { uni.showToast({ title: '金额不对', icon: 'none' }); return }
   draft.value = ''
+  saveState(true)
   uni.showToast({ title: '记下 ' + money(rec.value), icon: 'none' })
+}
+
+function edit(l) {
+  const r = openEdit('money:' + l.id)
+  if (r.error) uni.showToast({ title: r.error, icon: 'none' })
+}
+
+/* 删除：两段确认，和今日页、领域页那一套是同一个闸门（全局同时只有一处武装）。 */
+function del(l) {
+  const spec = 'money:' + l.id
+  const r = armDelete(spec)
+  if (!r) { uni.showToast({ title: '再点一次「确认删」', icon: 'none' }); return }
+  if (r.error) { uni.showToast({ title: r.error, icon: 'none' }); return }
+  saveState(true)
+  uni.showToast({ title: '已删除', icon: 'none' })
 }
 </script>
 
@@ -179,6 +209,23 @@ function submit() {
 .row-t { display: block; font-size: 14px; color: var(--text); }
 .row-m { display: block; margin-top: 1px; font-size: 12px; color: var(--muted); }
 .row-v { font-size: 14px; color: var(--text); }
+
+/* × 那颗和 TreeRow 里那颗同一尺寸：同一页面上不同地方的删除钮，
+   不该长得像两种东西（一个是一行流水的删除，一个是条目的删除）。 */
+.delbtn {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  min-height: 32px;
+  margin-left: 4px;
+  padding: 0 6px;
+  border-radius: 8px;
+}
+.delbtn-t { font-size: 15px; color: var(--muted); }
+.delbtn.is-armed { background: var(--danger-bg); }
+.delbtn-t.is-armed { font-size: 12px; color: var(--danger); }
 
 .empty { padding: 12px 0 16px; }
 .empty-t { font-size: 13px; color: var(--muted); }
