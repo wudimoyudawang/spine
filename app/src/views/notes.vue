@@ -15,7 +15,7 @@
      不是照着自己的印象重画一遍 —— 那边的交互是定稿的验收口径。 -->
 
 <style scoped>
-.page { padding: 14px 14px calc(130px + env(safe-area-inset-bottom)); }
+.page { padding: 14px 14px calc(76px + env(safe-area-inset-bottom)); }
 .pagehead { padding: 4px 2px 12px; }
 .ph-t { font-size: 22px; font-weight: 500; color: var(--text); }
 .block { padding: 10px 14px; background: var(--card); border: 1px solid var(--line); border-radius: var(--r); }

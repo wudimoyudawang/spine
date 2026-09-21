@@ -287,3 +287,43 @@ export function addInbox(text) {
   db.INBOX.unshift(rec)
   return rec
 }
+
+/* ---------------- 空间 ---------------- */
+export function summaryOf(d, rtCount) {
+  let s = d.todos.length + ' 项待办 · ' + d.habits.length + ' 个习惯 · ' + d.goals.length + ' 个目标'
+  if (rtCount > 0) s += ' · ' + rtCount + ' 个记录项'
+  return s
+}
+export function recordTypesOf(list, domainId) {
+  return (list || []).filter(t => t.domain === domainId)
+}
+export function togglePin(id) {
+  const d = domainById(id)
+  if (!d) return false
+  d.pinned = !d.pinned
+  return d.pinned
+}
+export function newDomain(name) {
+  const d = {
+    id: 'd' + Date.now().toString(36),
+    name: String(name || '').trim() || ('领域 ' + (db.DOMAINS.length + 1)),
+    pinned: false, habits: [], todos: [], goals: []
+  }
+  db.DOMAINS.push(d)
+  return d
+}
+
+/* 记账是一个**特殊空间**：占「空间」列表里的一个位置，但它是内置的 ——
+   不能改名、不能删、也不能置顶，所以卡片上不给任何操作入口。
+
+   它**不进 DOMAINS**，只是渲染时多出来的一张卡。这样做是因为数据层不必为它开特例：
+   记账的数据（LOGS / CATS / RECORD_TYPES 里的钱那部分）本来就不是领域的那套结构，
+   硬塞进 DOMAINS 得处处判空。 */
+export const MONEY_SPACE = { id: 'money', name: '记账', fixed: true }
+export function isMoneySpace(id) { return id === MONEY_SPACE.id }
+
+/* 速记的聚焦请求。「记一笔」现在长在底部栏里，而速记框在今日页 ——
+   点它的意思是「切回今日页，并且把光标放进输入框」。
+   用自增的计数当信号，不用布尔量：在今日页上连点两次，也得每次都重新聚焦。 */
+export const captureAsk = ref(0)
+export function askCapture() { captureAsk.value++ }

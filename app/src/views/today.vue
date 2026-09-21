@@ -12,6 +12,7 @@
       <input
         v-model="draft"
         class="cap-in"
+        :focus="capFocus"
         placeholder="32 午餐 / 交房租 / 想学 GraphRAG"
         confirm-type="done"
         @confirm="submit"
@@ -83,14 +84,24 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import {
-  db, TODAY, money, pickToday, weekdayCN,
+  db, TODAY, money, pickToday, weekdayCN, captureAsk,
   habitDoneOn, habitStreakDays, habitTotalDays, toggleHabitLog,
   addMoney, addTodo, guessCategory
 } from '../stores/db'
 
 const draft = ref('')
+const capFocus = ref(false)
+
+/* 底部栏那颗「记一笔」是这么接上的：它把 captureAsk 加一，这里收到就把光标送进输入框。
+   用自增计数当信号而不是布尔量 —— 人在今日页上连点两次，也得两次都有反应。
+   赋值前先放掉（false），下个 tick 再拿起（true）：不做出这个跳变，
+   第二次点的时候 focus 一直是 true，不会重新聚焦。 */
+watch(captureAsk, function () {
+  capFocus.value = false
+  nextTick(function () { capFocus.value = true })
+})
 
 const headDate = computed(function () {
   const p = TODAY.split('-').map(Number)
@@ -141,9 +152,9 @@ function submit() {
 
 <style scoped>
 .page {
-  /* 底部留白要同时让开底部栏（55px）和浮在它上面的「记一笔」（46px + 间距），
-     不然列表最后几条会被那颗按钮盖住。 */
-  padding: 14px 14px calc(130px + env(safe-area-inset-bottom));
+  /* 底部留白只要让开底部栏。「记一笔」已经进了栏里，
+     不再有浮在栏上方的那颗按钮，所以不用再多留那 46px。 */
+  padding: 14px 14px calc(76px + env(safe-area-inset-bottom));
 }
 
 .pagehead {
