@@ -171,7 +171,7 @@
           <RtForm v-if="rtOn === rt.id" :key="rt.id" :rt="rt" :domain="d.id" @save="saveRt" @cancel="rtOn = ''" />
           <!-- 记一条就在行里填，不值得为它开一层弹窗 -->
           <view v-if="entryOn === rt.id" class="rt-in">
-            <input
+            <input :maxlength="-1"
               v-if="rt.mode === 'number'"
               v-model="entryVal"
               class="rin"
@@ -179,7 +179,7 @@
               :placeholder="'数值（' + (rt.unit || '不带单位') + '）'"
               placeholder-class="rph"
             />
-            <textarea
+            <textarea :maxlength="-1"
               v-else
               v-model="entryVal"
               class="rin rin-ta"
@@ -206,7 +206,7 @@
           <text class="block-note">改名、删除</text>
         </view>
         <view class="rt-in">
-          <input v-model="nameDraft" class="rin" placeholder="这个领域叫什么" placeholder-class="rph" />
+          <input :maxlength="-1" v-model="nameDraft" class="rin" placeholder="这个领域叫什么" placeholder-class="rph" />
           <view class="rt-in-btns">
             <view class="mini mini-go" @click="rename"><text class="mini-t">改名</text></view>
           </view>

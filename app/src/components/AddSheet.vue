@@ -10,7 +10,7 @@
 
       <view class="field">
         <text class="field-k">{{ cfg.nameK }}</text>
-        <input
+        <input :maxlength="-1"
           v-model="name"
           class="inline-in"
           :focus="focused"
@@ -42,7 +42,7 @@
 
       <view v-else class="field">
         <text class="field-k">{{ metaK }}</text>
-        <input v-model="meta" class="inline-in" :placeholder="cfg.metaPh" confirm-type="done" @confirm="submit" />
+        <input :maxlength="-1" v-model="meta" class="inline-in" :placeholder="cfg.metaPh" confirm-type="done" @confirm="submit" />
       </view>
 
       <view class="field">

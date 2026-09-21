@@ -3,7 +3,7 @@
     <view class="pagehead"><text class="ph-t">收集</text></view>
 
     <view class="quick">
-      <input
+      <input :maxlength="-1"
         v-model="draft"
         class="quick-in"
         placeholder="想到什么就写下来，先扔进收件箱"

@@ -159,6 +159,66 @@ export function snapshot() {
   return JSON.stringify(s)
 }
 
+/* 导出文件的正文 = 快照 + 一层元信息（什么时候导的、什么格式）。
+   **故意不把 at 塞进 snapshot()**：那个每 2 秒跑一次给落盘做去重
+   （`snap === LAST_SAVED`），时间戳每次都不同，去重立刻失效、存储被反复写爆。 */
+export function exportText() {
+  const s = JSON.parse(snapshot())
+  return JSON.stringify({ app: 'spine', fmt: 2, at: Date.now(), v: s.v, s: s.s })
+}
+
+/* 文件名带日期。同一天导两次会盖掉，但那两次内容本来就一样；隔天导不会混。 */
+export function exportFileName() {
+  const d = new Date()
+  const p = n => (n < 10 ? '0' + n : '' + n)
+  return '书脊-' + d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + '.json'
+}
+
+/* 「这份档案能不能读」只在这一处判断。
+   导入和「导入前的预览」共用它 —— 各写一遍迟早分叉，
+   出现「预览说可以、真导又说不行」那种自相矛盾。 */
+function checkArchive(s) {
+  if (!s || typeof s !== 'object') return '不是这个应用导出的文件'
+  if (!s.v || typeof s.v !== 'object') return '不是这个应用导出的文件'
+  /* 至少要有一样是数组，否则是个空对象，换过去等于把数据清空了还一声不吭 */
+  const has = DATA_KEYS.some(function (k) { return Array.isArray(s.v[k]) })
+  if (!has) return '这个文件里没有任何数据'
+  return ''
+}
+
+/* 数一份数据里有多少东西。领域页的习惯 / 计划、记录项下面的日志都藏在里面，
+   要一起数进来 —— 不然摘要会少报一大截，让人以为导进来的是个空壳。 */
+function countsOf(v) {
+  const arr = x => (Array.isArray(x) ? x : [])
+  let habits = 0, goals = 0, records = 0
+  for (const d of arr(v.DOMAINS)) { habits += arr(d.habits).length; goals += arr(d.goals).length }
+  for (const rt of arr(v.RECORD_TYPES)) records += arr(rt.logs).length
+  return {
+    domains: arr(v.DOMAINS).length,
+    items: arr(v.ITEMS).length,
+    logs: arr(v.LOGS).length,
+    notes: arr(v.NOTES).length,
+    inbox: arr(v.INBOX).length,
+    cats: arr(v.CATS).length,
+    habits: habits,
+    goals: goals,
+    records: records
+  }
+}
+
+/* 只看不换。导入前给人一份人话摘要 ——
+   一坨 8KB 的 JSON 摆在眼前，谁也看不出这份档案里到底有多少东西。 */
+export function peekArchive(raw) {
+  let s = null
+  try { s = JSON.parse(String(raw || '')) } catch (e) { return { error: '这不是 JSON' } }
+  const bad = checkArchive(s)
+  if (bad) return { error: bad }
+  return { error: '', at: Number(s.at) || 0, counts: countsOf(s.v) }
+}
+
+/* 本机现在有多少东西。和上面对照，人才看得出「导进去是变多还是变少」。 */
+export function localCounts() { return countsOf(db) }
+
 export function restore(raw) {
   const s = JSON.parse(raw)
   if (s && s.v) DATA_KEYS.forEach(k => { if (s.v[k] !== undefined) db[k] = s.v[k] })
@@ -172,10 +232,8 @@ export function restore(raw) {
 export function importSnapshot(raw) {
   let s = null
   try { s = JSON.parse(String(raw || '')) } catch (e) { return '这不是 JSON' }
-  if (!s || typeof s !== 'object' || !s.v || typeof s.v !== 'object') return '不是这个应用导出的文件'
-  /* 至少要有一样是数组，否则是个空对象，换过去等于把数据清空了还一声不吭 */
-  const has = DATA_KEYS.some(function (k) { return Array.isArray(s.v[k]) })
-  if (!has) return '这个文件里没有任何数据'
+  const bad = checkArchive(s)
+  if (bad) return bad
   /* 导入的是数据，不该顺手把人从当前这一页踢走（领域页除外：那个领域可能不在了） */
   const back = db.CURRENT === 'domain' ? 'spaces' : db.CURRENT
   try {

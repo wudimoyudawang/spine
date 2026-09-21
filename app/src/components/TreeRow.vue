@@ -29,7 +29,7 @@
     <!-- 就地一行输入框，不弹窗。一条子项就是一句话，弹窗会逼人填不该填的字段。
          它插在**这一行的正下面**，所以看得出来要给谁加子项。 -->
     <view v-if="addOn" class="subin">
-      <input
+      <input :maxlength="-1"
         v-model="text"
         class="subin-in"
         :focus="true"

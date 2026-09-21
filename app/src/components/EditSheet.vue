@@ -18,7 +18,7 @@
       <view v-for="f in fields" :key="f.k" class="field">
         <text class="field-k">{{ f.label }}</text>
 
-        <input
+        <input :maxlength="-1"
           v-if="f.type === 'text'"
           v-model="ED.draft[f.k]"
           class="inline-in"
@@ -29,7 +29,7 @@
 
         <!-- 金额和数值记录用数字键盘。type 是 uni 的写法（digit = 带小数点那个），
              别换成 HTML 的 number —— 移动端上那个会带出一堆用不上的键。 -->
-        <input
+        <input :maxlength="-1"
           v-else-if="f.type === 'num'"
           v-model="ED.draft[f.k]"
           class="inline-in"

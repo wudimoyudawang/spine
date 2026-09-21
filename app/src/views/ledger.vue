@@ -20,7 +20,7 @@
     </view>
 
     <view class="quick">
-      <input
+      <input :maxlength="-1"
         v-model="draft"
         class="quick-in"
         placeholder="比如 32 午餐，分类可以留空"

@@ -1,6 +1,6 @@
 <template>
   <view class="rform">
-    <input v-model="name" class="rin" placeholder="记录项名称，比如「模拟考试分数」" placeholder-class="rph" />
+    <input :maxlength="-1" v-model="name" class="rin" placeholder="记录项名称，比如「模拟考试分数」" placeholder-class="rph" />
 
     <view class="rrow">
       <view class="segsm">
@@ -11,7 +11,7 @@
           <text class="segsm-t">数值</text>
         </view>
       </view>
-      <input
+      <input :maxlength="-1"
         v-if="mode === 'number'"
         v-model="unit"
         class="rin rin-unit"

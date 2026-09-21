@@ -1,6 +1,6 @@
 <template>
   <view class="rform">
-    <input v-model="name" class="rin" placeholder="规则名，比如「咖啡 → 餐饮」" placeholder-class="rph" />
+    <input :maxlength="-1" v-model="name" class="rin" placeholder="规则名，比如「咖啡 → 餐饮」" placeholder-class="rph" />
 
     <view class="rrow">
       <view class="segsm">
@@ -21,13 +21,13 @@
       </picker>
     </view>
 
-    <input
+    <input :maxlength="-1"
       v-model="condText"
       class="rin"
       :placeholder="cond === 'kw' ? '关键词，逗号分隔：拿铁,美式' : '正则，比如 早餐|午饭|晚饭'"
       placeholder-class="rph"
     />
-    <input v-model="exText" class="rin" placeholder="排除条件，可留空" placeholder-class="rph" />
+    <input :maxlength="-1" v-model="exText" class="rin" placeholder="排除条件，可留空" placeholder-class="rph" />
 
     <view class="rbtns">
       <view class="rbtn rbtn-main" @click="save"><text class="rbtn-t rbtn-main-t">{{ isNew ? '创建' : '保存' }}</text></view>

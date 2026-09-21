@@ -110,7 +110,7 @@
         <text class="tag">下一步</text>
         <text class="block-note">结论可以变成待办</text>
       </view>
-      <input
+      <input :maxlength="-1"
         v-model="conclusion"
         class="inline-in"
         placeholder="这一期想留下的一句话"

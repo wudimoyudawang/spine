@@ -3,7 +3,7 @@
     <view class="pagehead"><text class="ph-t">随心记</text></view>
 
     <view class="block">
-      <textarea
+      <textarea :maxlength="-1"
         v-model="draft"
         class="ta"
         placeholder="随便写。没有标题、没有分类、没有必填项。"

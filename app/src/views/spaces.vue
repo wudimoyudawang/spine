@@ -35,7 +35,7 @@
            还得点进去改名 —— 两步能并成一步。 -->
       <view v-else class="card card-adding">
         <text class="card-t">这个领域叫什么</text>
-        <input v-model="newName" class="tin tin-in" placeholder="比如「考证」" placeholder-class="tph" />
+        <input :maxlength="-1" v-model="newName" class="tin tin-in" placeholder="比如「考证」" placeholder-class="tph" />
         <view class="chips">
           <view class="btn btn-main" @click="createDomain"><text class="btn-t btn-main-t">创建</text></view>
           <view class="btn" @click="adding = false"><text class="btn-t">取消</text></view>
@@ -132,7 +132,7 @@
         <text class="tag">试一句</text>
         <text class="block-note">不会真的记下来</text>
       </view>
-      <input
+      <input :maxlength="-1"
         v-model="testText"
         class="tin"
         placeholder="1800 kcal ／ 深蹲 80kg × 5 × 5 ／ 32 午餐"
@@ -185,7 +185,7 @@
       </view>
       <!-- 新建和改名共用这一块：一句话的事，不值得开弹窗 -->
       <view v-if="catOn" class="rt-in">
-        <input
+        <input :maxlength="-1"
           v-model="catDraft"
           class="tin tin-in"
           :placeholder="catOn === 'new' ? '新品类叫什么，比如「宠物」' : '改成叫什么'"
@@ -212,26 +212,32 @@
         <text class="srow-v">{{ storeText }}</text>
       </view>
       <view class="chips">
-        <view class="btn btn-main" @click="exportData"><text class="btn-t btn-main-t">复制全部数据</text></view>
-        <view class="btn" @click="toggleImport"><text class="btn-t">导入</text></view>
+        <view class="btn btn-main" @click="saveFile"><text class="btn-t btn-main-t">存成文件</text></view>
+        <view class="btn" @click="copyAll"><text class="btn-t">复制到剪贴板</text></view>
       </view>
-      <template v-if="showIn">
-        <textarea
-          v-model="importRaw"
-          class="tin tin-ta"
-          placeholder="把刚才那份 JSON 粘到这里"
-          placeholder-class="tph"
-        />
+      <view class="chips chips-io">
+        <view class="btn" @click="pickFile"><text class="btn-t">从文件导入</text></view>
+        <view class="btn" @click="readClip"><text class="btn-t">读剪贴板</text></view>
+      </view>
+
+      <!-- 待导入那份的摘要。一坨 8KB 的 JSON 摆在眼前，
+           谁也看不出这份档案里到底有多少东西 —— 换成数得清的几行。 -->
+      <view v-if="pending" class="imp">
+        <view class="imp-h">
+          <text class="imp-t">这份档案</text>
+          <text class="imp-at">{{ pending.when }}</text>
+        </view>
+        <text class="imp-row">{{ pending.line }}</text>
+        <text class="imp-row imp-row2">本机现在是：{{ localLine }}</text>
+        <text class="imp-warn">导入会把本机换成这一份。</text>
         <view class="chips">
-          <view class="btn" @click="readClip"><text class="btn-t">读剪贴板</text></view>
-          <view class="btn btn-main" @click="doImport"><text class="btn-t btn-main-t">确认导入</text></view>
+          <view class="btn" @click="cancelImport"><text class="btn-t">取消</text></view>
+          <view class="btn btn-main" @click="doImport"><text class="btn-t btn-main-t">覆盖导入</text></view>
         </view>
-        <view class="note">
-          <text class="note-t">导入会覆盖本机全部数据。</text>
-          <text class="note-t">先「复制全部数据」存一份，再导。</text>
-        </view>
-      </template>
-      <view v-else class="note"><text class="note-t">导出一份 JSON，换手机或备份都用它。</text></view>
+      </view>
+      <view v-else class="note">
+        <text class="note-t">存成文件带走，换手机用它还原。</text>
+      </view>
     </view>
 
     <view class="block">
@@ -255,7 +261,8 @@
 import { computed, ref } from 'vue'
 import {
   db, go, money, TODAY, summaryOf, recordTypesOf, togglePin, newDomain,
-  snapshot, storeFailed, importSnapshot, saveState,
+  storeFailed, importSnapshot, saveState,
+  exportText, exportFileName, peekArchive, localCounts,
   ruleName, ruleTargetLabel, ruleMatchLabel, ruleStats, ruleMatches, whyNot,
   toggleRule, moveRule, saveRule, armDelete, delArmed, disarmDelete,
   addCat, renameCat, catUsed,
@@ -350,32 +357,109 @@ function delCatGo(c) {
   uni.showToast({ title: '已去掉「' + r.name + '」· 已记的没改', icon: 'none' })
 }
 
-/* ---------------- 导入 ---------------- */
-const showIn = ref(false)
-const importRaw = ref('')
+/* ---------------- 导入 / 导出 ----------------
+   两条通道都留着，但分工清楚：
+   **文件**是主路（不占字符数、能长期存、换手机靠它），
+   **剪贴板**是辅路（在微信里复制来一段、或者没有文件管理器的时候用）。 */
 
-function toggleImport() {
-  showIn.value = !showIn.value
-  if (!showIn.value) importRaw.value = ''
+/* 摘下来的摘要，等人确认。null = 现在没有待导入的档案。 */
+const pending = ref(null)
+
+function countLine(c) {
+  return c.domains + ' 个领域 · ' + c.items + ' 条待办 · ' + c.logs + ' 笔流水 · '
+    + c.notes + ' 条随记 · ' + c.inbox + ' 条收件箱 · ' + c.records + ' 条记录'
 }
-/* 手机上「把文件里的内容弄进一个输入框」这一步，粘比选文件省事得多：
-   导出那半边本来就是复制到剪贴板，来回走同一条路。 */
+/* 本机现在有多少。和待导入那份并排放 —— 不然看不出「导进去是变多还是变少」。
+   它读的是 db 上的数组，导入换掉引用之后会自己重算。 */
+const localLine = computed(function () { return countLine(localCounts()) })
+
+function whenText(at) {
+  if (!at) return '没写导出时间'
+  const d = new Date(at)
+  const p = n => (n < 10 ? '0' + n : '' + n)
+  return '导出于 ' + (d.getMonth() + 1) + '月' + d.getDate() + '日 '
+    + p(d.getHours()) + ':' + p(d.getMinutes())
+}
+
+/* 两条通道最后都汇到这里：**先给摘要，不上来就换**。 */
+function takeArchive(raw, from) {
+  const p = peekArchive(raw)
+  if (p.error) { uni.showToast({ title: p.error, icon: 'none' }); return }
+  pending.value = { raw: raw, when: whenText(p.at), line: countLine(p.counts) }
+  uni.showToast({ title: from + '读进来了，往下看一眼', icon: 'none' })
+}
+
+function cancelImport() { pending.value = null }
+
+/* 存成文件。H5 走 Blob + a[download]。 */
+function saveFile() {
+  const name = exportFileName()
+  const text = exportText()
+  // #ifdef H5
+  try {
+    const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }))
+    const a = document.createElement('a')
+    a.href = url
+    a.download = name
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    /* 立刻 revoke 会把下载掐掉，等一拍再放 */
+    setTimeout(function () { URL.revokeObjectURL(url) }, 4000)
+    uni.showToast({ title: '已存成 ' + name, icon: 'none' })
+  } catch (e) {
+    uni.showToast({ title: '这个浏览器存不了文件，用剪贴板', icon: 'none' })
+  }
+  // #endif
+  /* #ifndef H5
+     App 端要接原生写文件（plus.io / uni.saveFile），等壳做出来再接。
+     现在如实说一句 —— 按下去什么都不发生是最难查的一种错。 */
+  uni.showToast({ title: 'App 端的存文件还没接，先用剪贴板', icon: 'none' })
+  // #endif
+}
+
+/* 从文件导入。H5 端 uni.chooseFile 就是原生 <input type="file">，没有体积上限。 */
+function pickFile() {
+  uni.chooseFile({
+    count: 1,
+    extension: ['json'],
+    success: function (res) {
+      const f = res.tempFiles && res.tempFiles[0]
+      if (!f) { uni.showToast({ title: '没选到文件', icon: 'none' }); return }
+      const rd = new FileReader()
+      rd.onload = function () { takeArchive(String(rd.result || ''), '文件') }
+      rd.onerror = function () { uni.showToast({ title: '这个文件读不出来', icon: 'none' }) }
+      rd.readAsText(f)
+    },
+    /* 用户自己点取消，不报错 */
+    fail: function () {}
+  })
+}
+
+function copyAll() {
+  uni.setClipboardData({
+    data: exportText(),
+    success: function () { uni.showToast({ title: '已复制，贴到备忘录或发给自己', icon: 'none' }) },
+    fail: function () { uni.showToast({ title: '复制失败，试试存成文件', icon: 'none' }) }
+  })
+}
+
 function readClip() {
   uni.getClipboardData({
     success: function (res) {
       const v = String(res.data || '').trim()
       if (!v) { uni.showToast({ title: '剪贴板里是空的', icon: 'none' }); return }
-      importRaw.value = v
-      uni.showToast({ title: '已粘进来，检查一下再确认', icon: 'none' })
+      takeArchive(v, '剪贴板')
     },
-    fail: function () { uni.showToast({ title: '读不到剪贴板，手动粘一下', icon: 'none' }) }
+    fail: function () { uni.showToast({ title: '读不到剪贴板，试试从文件导入', icon: 'none' }) }
   })
 }
+
 function doImport() {
-  const err = importSnapshot(importRaw.value)
+  if (!pending.value) return
+  const err = importSnapshot(pending.value.raw)
   if (err) { uni.showToast({ title: err, icon: 'none' }); return }
-  showIn.value = false
-  importRaw.value = ''
+  pending.value = null
   /* 导入换掉了全部数据：正在编辑的那张草稿表、武装待删的那颗按钮都不该留着 */
   disarmDelete()
   uni.showToast({ title: '已导入，本机数据已换成这份', icon: 'none' })
@@ -385,16 +469,6 @@ function doImport() {
 const storeText = computed(function () {
   return storeFailed.value ? '这台设备存不了' : '已自动保存'
 })
-
-/* 导出 = 复制到剪贴板。
-   手机上「导出」的去向通常是贴到别处（备忘录 / 发给自己 / 粘到电脑），
-   而下载文件在 App 的 WebView 里得单独接原生写入，那条路先不做。 */
-function exportData() {
-  uni.setClipboardData({
-    data: snapshot(),
-    success: function () { uni.showToast({ title: '已复制全部数据', icon: 'none' }) }
-  })
-}
 
 /* ---------------- 自动判断规则 ---------------- */
 const rstat = computed(ruleStats)
@@ -518,7 +592,41 @@ const test = computed(function () {
 /* 就地起名字那张卡 */
 .card-adding { grid-column: 1 / -1; }
 .tin-in { margin-top: 8px; background: var(--bg); }
-.tin-ta { width: 100%; height: 88px; margin-top: 10px; padding: 8px 10px; background: var(--bg); border: 1px solid var(--line); border-radius: 10px; font-size: 12px; color: var(--text); box-sizing: border-box; }
+
+/* 导入那两颗按钮。和上一行分开一点 —— 上面两颗是「把数据拿出来」，
+   这两颗是「把数据放进去」，方向相反，挤在一起容易点错。 */
+.chips-io { padding-top: 8px; }
+
+/* 待导入那份的摘要 */
+.imp {
+  margin-top: 12px;
+  padding: 10px 12px 12px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+.imp-h {
+  display: flex;
+  flex-direction: row;
+  align-items: baseline;
+  justify-content: space-between;
+}
+.imp-t { font-size: 13px; font-weight: 500; color: var(--text); }
+.imp-at { font-size: 11px; color: var(--muted); }
+.imp-row {
+  display: block;
+  margin-top: 5px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text);
+}
+.imp-row2 { color: var(--muted); }
+.imp-warn {
+  display: block;
+  margin-top: 7px;
+  font-size: 12px;
+  color: var(--warn);
+}
 
 .note { padding: 14px 2px 0; }
 .note-t {

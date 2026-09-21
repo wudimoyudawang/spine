@@ -10,12 +10,12 @@
 
       <view class="field">
         <text class="field-k">目标名称（必填）</text>
-        <input v-model="GOAL.draft.t" class="inline-in" :focus="focused" placeholder="比如「读完《置身事内》」" />
+        <input :maxlength="-1" v-model="GOAL.draft.t" class="inline-in" :focus="focused" placeholder="比如「读完《置身事内》」" />
       </view>
 
       <view class="field">
         <text class="field-k">说明，选填</text>
-        <input v-model="GOAL.draft.m" class="inline-in" placeholder="比如「每周 30 页 · 已读 210/350 页」" />
+        <input :maxlength="-1" v-model="GOAL.draft.m" class="inline-in" placeholder="比如「每周 30 页 · 已读 210/350 页」" />
       </view>
 
       <!-- 进度在弹窗里改的是草稿：拖过头了点取消就行，不用回去把杠挪回原位 -->

@@ -27,7 +27,7 @@
             <text class="mchip-t">{{ c }}</text>
           </view>
         </view>
-        <input
+        <input :maxlength="-1"
           v-model="amount"
           class="capin"
           type="digit"
@@ -40,7 +40,7 @@
 
       <!-- 记一笔：写什么都行，规则自己判 -->
       <template v-else>
-        <input
+        <input :maxlength="-1"
           v-model="draft"
           class="capin capin-first"
           :focus="focused"
