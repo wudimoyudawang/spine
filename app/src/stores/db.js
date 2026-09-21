@@ -481,3 +481,51 @@ export function openCapture(kind) {
 export function closeCapture() {
   db.CAP_OPEN = false
 }
+
+/* ---------------- 今日页要用的几项 ---------------- */
+
+/* 某个月的支出合计。传 '2026-09' 这样的前缀（原型的 sumByCategory 就是这个用法） */
+export function moneyTotalOf(prefix) {
+  let t = 0
+  for (const l of db.LOGS) {
+    if (l.kind !== 'money') continue
+    if (String(l.date).slice(0, 7) !== prefix) continue
+    t += Number(l.value || 0)
+  }
+  return Math.round(t * 100) / 100
+}
+
+/* 把一棵子项树展平成能直接 v-for 的数组。
+ *
+ * 为什么不写递归组件：Vue 里递归组件要额外处理 name 和 key，多一层要维护的东西；
+ * 而这份数据本来就不深（原型里最深三层），展平之后一个 v-for 就够了。
+ *
+ * 每项带 depth 和 kids：前者管缩进，后者决定要不要画折叠箭头 ——
+ * 没有子项的也要占住那个位置，否则同一列的名字会左右跳。
+ * 折叠状态存在 db.CLOSED_NODES 里，和原型是同一份。 */
+export function flattenTree(list, parentId, depth, out) {
+  out = out || []
+  const src = list || []
+  const level = src.filter(function (x) { return (x.parent || null) === (parentId || null) })
+  for (const node of level) {
+    const kids = src.filter(function (x) { return (x.parent || null) === node.id })
+    const closed = !!db.CLOSED_NODES[node.id]
+    out.push({ node: node, depth: depth, kids: kids.length, closed: closed })
+    if (kids.length && !closed) flattenTree(src, node.id, depth + 1, out)
+  }
+  return out
+}
+
+export function toggleFold(id) {
+  if (!db.CLOSED_NODES) db.CLOSED_NODES = {}
+  if (db.CLOSED_NODES[id]) delete db.CLOSED_NODES[id]
+  else db.CLOSED_NODES[id] = true
+  return !db.CLOSED_NODES[id]
+}
+
+/* 进度夹到 0~100。数据坏了（负数、超 100、不是数字）不能让进度条画到框外面 */
+export function clampP(p) {
+  const n = Number(p || 0)
+  if (!isFinite(n) || n < 0) return 0
+  return n > 100 ? 100 : Math.round(n)
+}
