@@ -162,7 +162,7 @@ function submit() {
   flex-direction: row;
   align-items: baseline;
   justify-content: space-between;
-  padding: 4px 2px 12px;
+  padding: 4px 46px 12px 2px;
 }
 .ph-t { font-size: 22px; font-weight: 500; color: var(--text); }
 .ph-d { font-size: 13px; color: var(--sub); }

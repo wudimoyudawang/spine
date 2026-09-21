@@ -10,9 +10,10 @@
       <Spaces v-if="seen.spaces" v-show="db.CURRENT === 'spaces'" />
       <Review v-if="seen.review" v-show="db.CURRENT === 'review'" />
       <Ledger v-if="seen.ledger" v-show="db.CURRENT === 'ledger'" />
-      <Settings v-if="seen.settings" v-show="db.CURRENT === 'settings'" />
+      <Domain v-if="seen.domain" v-show="db.CURRENT === 'domain'" />
     </view>
 
+    <GearBtn />
     <TabBar />
   </view>
 </template>
@@ -23,13 +24,14 @@ import { onHide, onShow } from '@dcloudio/uni-app'
 import { db, saveState } from '../../stores/db'
 
 import TabBar from '../../components/TabBar.vue'
+import GearBtn from '../../components/GearBtn.vue'
 import Today from '../../views/today.vue'
 import Inbox from '../../views/inbox.vue'
 import Notes from '../../views/notes.vue'
 import Spaces from '../../views/spaces.vue'
 import Review from '../../views/review.vue'
 import Ledger from '../../views/ledger.vue'
-import Settings from '../../views/settings.vue'
+import Domain from '../../views/domain.vue'
 
 /* 懒渲染：第一次进某个页面才把它挂起来，之后再切回来只是显隐。
    7 个视图全量挂载的话，启动时要把整个应用渲染一遍。

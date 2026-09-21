@@ -104,7 +104,7 @@ function submit() {
   padding: 14px 14px calc(76px + env(safe-area-inset-bottom));
 }
 
-.pagehead { padding: 4px 2px 12px; }
+.pagehead { padding: 4px 46px 12px 2px; }
 .ph-t { font-size: 22px; font-weight: 500; color: var(--text); }
 
 .block {

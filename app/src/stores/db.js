@@ -32,6 +32,19 @@ export function weekdayCN(iso) {
   const p = String(iso).split('-').map(Number)
   return WEEK[new Date(p[0], p[1] - 1, p[2]).getDay()]
 }
+/* 界面上到处在用的中文日期：'9月17日 周四'。原型里叫 fmtCN，名字保持不变 */
+export function fmtCN(iso) {
+  const p = String(iso).split('-').map(Number)
+  return p[1] + '月' + p[2] + '日 周' + weekdayCN(iso)
+}
+/* 一期从哪天算起。一周以**周一**为头（周日算上一周的末尾）——
+   以周日开头的话，「本周」在最常看的那两天里会显得短一截。 */
+export function startOfWeek(iso) {
+  const p = String(iso).split('-').map(Number)
+  const w = new Date(p[0], p[1] - 1, p[2]).getDay()
+  return shiftDays(iso, -(w === 0 ? 6 : w - 1))
+}
+export function startOfMonth(iso) { return String(iso).slice(0, 7) + '-01' }
 
 /* 今天。原型里 TODAY 是写死的 '2026-09-18'（演示用），真机上必须是真日子。 */
 export const TODAY = isoOf(new Date())
@@ -62,6 +75,7 @@ export const db = reactive({
   AUTO_RULES: [], TODAY_LOGS: [], CAT_WORDS: {}, CATS: [],
   /* 界面状态 */
   CURRENT: 'today',
+  DOMAIN_ID: '',
   CAPTURE_MODE: 'auto',
   CAPTURE_CAT: '',
   CLOSED_NODES: {}
@@ -73,7 +87,7 @@ export const DATA_KEYS = ['ITEMS', 'HABIT_LOGS', 'INBOX', 'NOTES', 'NOTE_PROMPTS
   'DOMAINS', 'RECORD_TYPES', 'CAPTURE_MODES', 'AUTO_RULES', 'TODAY_LOGS', 'CAT_WORDS', 'CATS']
 
 /* 界面状态：跟着设备走，不进导出文件 */
-export const UI_KEYS = ['CURRENT', 'CAPTURE_MODE']
+export const UI_KEYS = ['CURRENT', 'DOMAIN_ID', 'CAPTURE_MODE']
 
 export function loadSeed() {
   const d = deepCopy(SEED_DATA)
@@ -183,6 +197,11 @@ export function habitDoneOn(id, date) {
   return db.HABIT_LOGS.some(h => h.key === id && h.date === date)
 }
 export function habitTotalDays(id) { return habitDates(id).length }
+/* 某一个区间里打过几天卡。复盘那张表要的就是这个数 ——
+   它和「累计」不是一回事：累计是全时段，这个只看这一期。 */
+export function habitDaysInRange(id, from, to) {
+  return habitDates(id).filter(function (d) { return d >= from && d <= to }).length
+}
 
 /* 连续打卡天数：从今天往回数，遇到第一个没打卡的日子就停。
    今天还没打卡**不算断** —— 这一天还没过完，早上打开一眼就被判「断了」太伤人。
