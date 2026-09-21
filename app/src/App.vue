@@ -13,4 +13,5 @@ onHide(() => {
 
 <style lang="scss">
 @import './styles/base.scss';
+@import './styles/modal.scss';
 </style>

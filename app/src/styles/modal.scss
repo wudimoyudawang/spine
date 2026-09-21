@@ -1,0 +1,183 @@
+/* ================= 弹窗的共同外壳 =================
+ * 新增 / 编辑 / 调整计划 三个弹窗长得一样：遮罩、居中的盒子、标题行、字段、底部一行。
+ * 所以样式只写这一份，组件里 @import 进去。
+ *
+ * 为什么是全局样式（在 App.vue 里 import）而不是三个组件各自 scoped 一份：
+ * 这套类只有一份语义（.modal / .field / .btn…），组件里没有需要区分的同名类；
+ * scoped 反而会把同一份 CSS 编译三遍。各弹窗**独有**的那点东西
+ * （计划弹窗的进度滑杆、编辑弹窗的实时测试框）仍写在自己的 scoped style 里。
+ *
+ * 和 CaptureSheet 那类的区别：捕获面板贴的是「随手记」的手感（紧凑、一次一个输入），
+ * 弹窗要能滚动、字段能排到十几个，所以盒子高度给上限、内部滚。 */
+
+.modal {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 80;
+}
+.modal-mask {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: var(--mask);
+}
+/* 宽度守手机：在电脑浏览器里打开时不能被拉成一整条。
+   fixed 元素不跟着 .sp-root 的 max-width，所以这里自己算 ——
+   和底部栏、齿轮、捕获面板是同一个规矩，少一个就会在那儿露出边。 */
+.modal-box {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: calc(100% - 32px);
+  max-width: calc(var(--app-w, 430px) - 36px);
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+  transform: translate(-50%, -50%);
+  padding: 16px 18px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  box-shadow: 0 10px 40px rgba(31, 36, 48, .22);
+  animation: modalin .16s ease-out;
+}
+@keyframes modalin {
+  from { opacity: 0; transform: translate(-50%, -50%) scale(.97); }
+  to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+.modal-h {
+  display: flex;
+  flex-direction: row;
+  align-items: baseline;
+  margin-bottom: 12px;
+}
+.modal-t { font-size: 15px; font-weight: 500; color: var(--text); }
+.modal-note { margin-left: 10px; font-size: 12px; color: var(--muted); }
+
+/* 一个字段一行：小标签在上，输入框（或那排胶囊）在下 */
+.field {
+  display: flex;
+  flex-direction: column;
+  margin-top: 12px;
+}
+.field-k {
+  margin-bottom: 5px;
+  font-size: 12px;
+  color: var(--sub);
+}
+.field-k-b { color: var(--text); font-weight: 500; }
+
+.inline-in {
+  width: 100%;
+  height: 40px;
+  padding: 0 12px;
+  background: var(--bg);
+  border: 1px solid var(--line2);
+  border-radius: 9px;
+}
+
+/* 一组互斥选项：领域、状态、品类都是这个形状 */
+.chips {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+}
+.mchip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 30px;
+  padding: 4px 13px;
+  margin: 0 8px 6px 0;
+  border-radius: 15px;
+  background: var(--bg);
+}
+.mchip-t { font-size: 12px; color: var(--sub); }
+.mchip.is-on { background: var(--accent); }
+.mchip.is-on .mchip-t { color: #fff; }
+
+/* 底部那行：左边一句提示，右边两个钮。
+   提示位是留给「还差什么」的 —— 校验失败要就近说，别弹 toast。 */
+.modal-f {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+.modal-hint {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.modal-hint.is-err { color: var(--danger); }
+.btn {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  min-width: 62px;
+  margin-left: 8px;
+  padding: 0 16px;
+  border: 1px solid var(--line2);
+  border-radius: 9px;
+  background: var(--card);
+}
+.btn-t { font-size: 13px; color: var(--sub); }
+.btn:active { background: var(--bg); }
+.btn-main { background: var(--accent); border-color: var(--accent); }
+.btn-main .btn-t { color: #fff; }
+.btn-main:active { background: #2A63D2; }
+
+/* 危险动作的钮：删除那类，用同一套外壳、换个颜色 */
+.btn-danger { background: var(--danger-bg); border-color: var(--danger); }
+.btn-danger .btn-t { color: var(--danger); }
+
+/* ---- 进度 ---- */
+/* 滑杆 / 百分比 / 三个快捷钮这一排，弹窗和领域页的行上都在用 ——
+   同一处样式，两处行为一致。领域页那边它单独占一行（见 domain.vue）。 */
+.goal-prog {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+.gbar { flex: 1 1 auto; min-width: 84px; }
+.goal-val {
+  flex: none;
+  min-width: 40px;
+  margin-left: 6px;
+  text-align: right;
+  font-size: 12px;
+  color: var(--sub);
+  /* 等宽数字：不锁的话百分比一变整行就左右抖 */
+  font-variant-numeric: tabular-nums;
+}
+.goal-btns {
+  flex: none;
+  display: flex;
+  flex-direction: row;
+  margin-left: 8px;
+}
+.gbtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 28px;
+  margin-left: 4px;
+  padding: 0 9px;
+  border: 1px solid var(--line2);
+  border-radius: 14px;
+  background: var(--card);
+}
+.gbtn-t {
+  font-size: 11px;
+  color: var(--sub);
+  font-variant-numeric: tabular-nums;
+}
+.gbtn:active { background: var(--accent-bg); border-color: var(--accent); }
+.gbtn:active .gbtn-t { color: var(--accent); }
+

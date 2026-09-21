@@ -14,6 +14,9 @@
     </view>
 
     <CaptureSheet />
+    <AddSheet />
+    <EditSheet />
+    <GoalSheet />
     <GearBtn />
     <TabBar />
   </view>
@@ -27,6 +30,9 @@ import { db, saveState } from '../../stores/db'
 import TabBar from '../../components/TabBar.vue'
 import GearBtn from '../../components/GearBtn.vue'
 import CaptureSheet from '../../components/CaptureSheet.vue'
+import AddSheet from '../../components/AddSheet.vue'
+import EditSheet from '../../components/EditSheet.vue'
+import GoalSheet from '../../components/GoalSheet.vue'
 import Today from '../../views/today.vue'
 import Inbox from '../../views/inbox.vue'
 import Notes from '../../views/notes.vue'

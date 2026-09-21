@@ -20,18 +20,42 @@ export const CAT_WORDS={
   '服饰':['衣服','鞋','裤','外套','袜','帽子']
 };
 
+/* 待办只有这一份存储。
+ *
+ * 原型里待办存在两处：今日页读 ITEMS，领域页读 DOMAINS[].todos。
+ * 两边字段都不一样（这边 title/due/ISO 日期，那边 t/m/中文说明），
+ * 种子里因此出现了五条重复：交上月报销单、给张工回邮件、写周报、买跑鞋、交物业费
+ * 各存在两遍，两页各显示自己那一份。改一处另一处不动，那不是两个视图，是两个事实。
+ *
+ * 合并后一条待办长这样：
+ *   title   内容
+ *   dom     所属领域的 **id**（不是名字 —— 领域要能改名，用名字挂就会一改名就孤儿一片）
+ *   due     到期日，ISO；**null = 没有日期的清单条目**，不进今日页
+ *   status  'todo' | 'done'
+ *   parent  同一条待办树里的父项 id
+ *
+ * 「跨度是属性不是页面」：有日期和没日期的是同一类东西，差别在 due 上，不在存哪儿。
+ */
 export const ITEMS=[
-  {id:'it1',title:'交上月报销单',domain:'工作',due:'2026-09-16',status:'todo',parent:null},
-  {id:'it2',title:'给张工回邮件',domain:'工作',due:'2026-09-17',status:'todo',parent:null},
-  {id:'it3',title:'写周报',domain:'工作',due:'2026-09-18',status:'todo',parent:null},
-  {id:'it8',title:'整理本周产出',domain:'工作',due:'2026-09-18',status:'todo',parent:'it3'},
-  {id:'it9',title:'补上周遗留的两条',domain:'工作',due:'2026-09-18',status:'done',parent:'it3'},
-  {id:'it4',title:'买跑鞋',domain:'个人',due:'2026-09-18',status:'todo',parent:null},
-  {id:'it5',title:'交物业费',domain:'个人',due:'2026-09-21',status:'todo',parent:null},
-  {id:'it6',title:'整理周三的会议纪要',domain:'工作',due:'2026-09-16',status:'done',parent:null},
-  {id:'it7',title:'把体检报告拍照存档',domain:'个人',due:'2026-09-15',status:'done',parent:null},
-  {id:'it10',title:'做体测',domain:'健身',due:'2026-09-16',status:'done',parent:null},
-  {id:'it11',title:'预约牙医',domain:'个人',due:'2026-09-17',status:'done',parent:null}
+  {id:'it1',title:'交上月报销单',dom:'work',due:'2026-09-16',status:'todo',parent:null},
+  {id:'it2',title:'给张工回邮件',dom:'work',due:'2026-09-17',status:'todo',parent:null},
+  {id:'it3',title:'写周报',dom:'work',due:'2026-09-18',status:'todo',parent:null},
+  {id:'it8',title:'整理本周产出',dom:'work',due:'2026-09-18',status:'todo',parent:'it3'},
+  {id:'it9',title:'补上周遗留的两条',dom:'work',due:'2026-09-18',status:'done',parent:'it3'},
+  {id:'it4',title:'买跑鞋',dom:'life',due:'2026-09-18',status:'todo',parent:null},
+  {id:'it5',title:'交物业费',dom:'life',due:'2026-09-21',status:'todo',parent:null},
+  {id:'it6',title:'整理周三的会议纪要',dom:'work',due:'2026-09-16',status:'done',parent:null},
+  {id:'it7',title:'把体检报告拍照存档',dom:'life',due:'2026-09-15',status:'done',parent:null},
+  {id:'it10',title:'做体测',dom:'fitness',due:'2026-09-16',status:'done',parent:null},
+  {id:'it11',title:'预约牙医',dom:'life',due:'2026-09-17',status:'done',parent:null},
+  /* 下面这些原来只在领域页的 todos 里，今日页看不见 —— 合并进来才有的一份 */
+  {id:'it12',title:'知识库项目上线',dom:'work',due:'2026-09-18',status:'todo',parent:null},
+  {id:'it13',title:'整理接口文档',dom:'work',due:'2026-09-16',status:'todo',parent:'it12'},
+  {id:'it14',title:'跑一遍回归',dom:'work',due:'2026-09-17',status:'todo',parent:'it12'},
+  {id:'it15',title:'换瑜伽垫',dom:'fitness',due:'2026-09-21',status:'todo',parent:null},
+  {id:'it16',title:'约体测',dom:'fitness',due:null,status:'todo',parent:null},
+  {id:'it17',title:'整理读书笔记',dom:'study',due:null,status:'todo',parent:null},
+  {id:'it18',title:'把 SmartVoyage 的章节笔记归档',dom:'study',due:null,status:'todo',parent:null}
 ];
 
 export const HABIT_LOGS=[
@@ -94,8 +118,6 @@ export const DOMAINS=[
   {
     id:'fitness',name:'健身',pinned:true,
     habits:[{id:'h-fit-1',t:'训练日打卡',m:'每周 4 次',parent:null}],
-    todos:[{id:'t-fit-1',t:'换瑜伽垫',m:'9月21日 周一',parent:null},
-           {id:'t-fit-2',t:'约体测',m:'没有日期',parent:null}],
     goals:[
       {id:'g-fitness-1',t:'硬拉 100kg',m:'当前 80kg × 5 次',p:80,parent:null},
       {id:'g-fitness-1a',t:'周期一：85kg × 5',m:'两周内',p:100,parent:'g-fitness-1'},
@@ -106,8 +128,6 @@ export const DOMAINS=[
   {
     id:'study',name:'学习',pinned:false,
     habits:[{id:'h-study-1',t:'阅读 30 分钟',m:'每天',parent:null}],
-    todos:[{id:'t-study-1',t:'整理读书笔记',m:'没有日期',parent:null},
-           {id:'t-study-2',t:'把 SmartVoyage 的章节笔记归档',m:'没有日期',parent:null}],
     goals:[
       {id:'g-study-1',t:'读完《置身事内》',m:'每周 30 页 · 已读 210/350 页',p:60,parent:null},
       {id:'g-study-1a',t:'第 1–5 章',m:'讲财政',p:100,parent:'g-study-1'},
@@ -117,14 +137,6 @@ export const DOMAINS=[
   {
     id:'work',name:'工作',pinned:false,
     habits:[{id:'h-work-1',t:'下班前清空收件箱',m:'工作日',parent:null}],
-    todos:[
-      {id:'t-work-1',t:'知识库项目上线',m:'本周五',parent:null},
-      {id:'t-work-2',t:'整理接口文档',m:'周三前',parent:'t-work-1'},
-      {id:'t-work-3',t:'跑一遍回归',m:'周四',parent:'t-work-1'},
-      {id:'t-work-4',t:'交上月报销单',m:'逾期 9月16日 周三',parent:null},
-      {id:'t-work-5',t:'给张工回邮件',m:'逾期 9月17日 周四',parent:null},
-      {id:'t-work-6',t:'写周报',m:'今天',parent:null}
-    ],
     goals:[{id:'g-work-1',t:'知识库项目 v1 上线',m:'方案已定 · 待开工',p:45,parent:null}]
   },
   {
@@ -134,8 +146,6 @@ export const DOMAINS=[
       {id:'h-life-2',t:'饮水 2L',m:'每天',parent:'h-life-1'},
       {id:'h-life-3',t:'23:30 前睡',m:'工作日',parent:'h-life-1'}
     ],
-    todos:[{id:'t-life-1',t:'买跑鞋',m:'今天',parent:null},
-           {id:'t-life-2',t:'交物业费',m:'9月21日 周一',parent:null}],
     goals:[
       {id:'g-life-1',t:'家庭年度旅行成行',m:'还没定目的地',p:50,parent:null},
       {id:'g-life-1a',t:'定目的地和日期',m:'这个月内',p:100,parent:'g-life-1'},

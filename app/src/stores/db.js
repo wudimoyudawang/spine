@@ -131,7 +131,10 @@ export function loadSeed() {
    localStorage 换成了 uni.setStorageSync：同一份代码在浏览器里落到 localStorage，
    在 App 里落到原生存储。接口只有 snapshot / restore 两个函数，
    将来换 SQLite 或接后端，也只改这一层。 */
-const LS_KEY = 'spine.state.v1'
+/* v2：待办合成一份存储了（ITEMS[].dom 存领域 id，DOMAINS 不再有 todos）。
+   换 key 而不是加兼容读取 —— 旧档案里的待办有一半会长成没有内容的空行，
+   那种「读进来但显示不对」比让人重新看一遍种子难查得多。 */
+const LS_KEY = 'spine.state.v2'
 
 export function snapshot() {
   const s = { v: {}, s: {} }
@@ -177,6 +180,15 @@ export function saveState(force) {
 /* ---------------- 查询 ---------------- */
 export function domainById(id) { return db.DOMAINS.filter(d => d.id === id)[0] || null }
 export function itemById(id) { return db.ITEMS.filter(i => i.id === id)[0] || null }
+/* 待办只有一份存储（ITEMS）。某一领域的待办 = 那份存储里 dom 指向它的这些条。
+   按 **id** 归，不按领域名 —— 领域要能改名，用名字挂的话一改名就孤儿一片。 */
+export function todosOf(domId) {
+  return db.ITEMS.filter(function (i) { return (i.dom || '') === (domId || '') })
+}
+export function domainName(item) {
+  const d = item && item.dom ? domainById(item.dom) : null
+  return d ? d.name : '未归类'
+}
 export function habitById(id) {
   for (const d of db.DOMAINS) {
     const h = (d.habits || []).filter(x => x.id === id)[0]
@@ -237,6 +249,24 @@ export function habitStreakDays(id, today) {
   let n = 0
   while (has[day] && n < 3660) { n++; day = shiftDays(day, -1) }   /* 十年封顶，防数据坏了转不出来 */
   return n
+}
+
+/* 一次拿全：界面上「连续/累计」这两个数到处要，别让每处各算一遍。 */
+export function habitStat(id, today) {
+  return { cur: habitStreakDays(id, today), total: habitTotalDays(id) }
+}
+
+/* 「连续 N 天 · 累计 M 天」这句**只在这里说一次**。
+ * 两个容易说错的地方，都是原型判过的：
+ *   · 一次都没打过（total 0）→ 整句不显示。说「还没打卡」是错的：
+ *     一个累计四十天、这周断了的人，也被那句话描述成了「从没开始过」。
+ *   · 断了要说「连续 0 天」，不改词。换一句说法就等于换了一套算法。
+ * on 只管要不要加重（连着的那几天值得亮一下），不影响数字。
+ */
+export function streakText(id, today) {
+  const st = habitStat(id, today)
+  if (!st.total) return null
+  return { s: '连续 ' + st.cur + ' 天 · 累计 ' + st.total + ' 天', on: st.cur > 0 }
 }
 
 export function toggleHabitLog(id, date) {
@@ -314,10 +344,15 @@ export function addMoney(value, text, category) {
   return rec
 }
 
-export function addTodo(title, domainName) {
+export function addTodo(title, domId, due) {
   const t = String(title || '').trim()
   if (!t) return null
-  const rec = { id: newId('it'), title: t, domain: domainName || '', due: TODAY, status: 'todo', parent: null }
+  const rec = {
+    id: newId('it'), title: t,
+    dom: domainById(domId) ? domId : null,
+    due: due === undefined ? TODAY : (due || null),
+    status: 'todo', parent: null
+  }
   db.ITEMS.unshift(rec)
   return rec
 }
@@ -439,7 +474,7 @@ export function resetCaptureConfig() {
 
 /* ---------------- 空间 ---------------- */
 export function summaryOf(d, rtCount) {
-  let s = d.todos.length + ' 项待办 · ' + d.habits.length + ' 个习惯 · ' + d.goals.length + ' 个目标'
+  let s = todosOf(d.id).length + ' 项待办 · ' + d.habits.length + ' 个习惯 · ' + d.goals.length + ' 个目标'
   if (rtCount > 0) s += ' · ' + rtCount + ' 个记录项'
   return s
 }
@@ -456,7 +491,7 @@ export function newDomain(name) {
   const d = {
     id: 'd' + Date.now().toString(36),
     name: String(name || '').trim() || ('领域 ' + (db.DOMAINS.length + 1)),
-    pinned: false, habits: [], todos: [], goals: []
+    pinned: false, habits: [], goals: []
   }
   db.DOMAINS.push(d)
   return d
@@ -500,8 +535,9 @@ export function moneyTotalOf(prefix) {
  * 为什么不写递归组件：Vue 里递归组件要额外处理 name 和 key，多一层要维护的东西；
  * 而这份数据本来就不深（原型里最深三层），展平之后一个 v-for 就够了。
  *
- * 每项带 depth 和 kids：前者管缩进，后者决定要不要画折叠箭头 ——
- * 没有子项的也要占住那个位置，否则同一列的名字会左右跳。
+ * 每项带 depth / kids / path：前者管缩进，kids 决定要不要画折叠箭头 ——
+ * 没有子项的也要占住那个位置，否则同一列的名字会左右跳；
+ * path 是上级路径，今日页不铺整棵树，子项那行得知道它挂在谁下面。
  * 折叠状态存在 db.CLOSED_NODES 里，和原型是同一份。 */
 export function flattenTree(list, parentId, depth, out) {
   out = out || []
@@ -510,14 +546,22 @@ export function flattenTree(list, parentId, depth, out) {
   for (const node of level) {
     const kids = src.filter(function (x) { return (x.parent || null) === node.id })
     const closed = !!db.CLOSED_NODES[node.id]
-    out.push({ node: node, depth: depth, kids: kids.length, closed: closed })
+    out.push({ node: node, depth: depth, kids: kids.length, closed: closed, path: nodePath(src, node) })
     if (kids.length && !closed) flattenTree(src, node.id, depth + 1, out)
   }
   return out
 }
 
-export function toggleFold(id) {
-  if (!db.CLOSED_NODES) db.CLOSED_NODES = {}
+/* 展平后的行里数「几条」。只数顶层：子项是父项那件事的一部分，
+   把它单独算一条会让人以为今天有一堆事，其实只是同一件拆了几步。
+   今日页和领域页报的是同一个数，所以这个算法只在这里有一份。 */
+export function topLevel(rows) {
+  let n = 0
+  for (const r of (rows || [])) if (!r.depth) n++
+  return n
+}
+
+export function toggleFold(id) {  if (!db.CLOSED_NODES) db.CLOSED_NODES = {}
   if (db.CLOSED_NODES[id]) delete db.CLOSED_NODES[id]
   else db.CLOSED_NODES[id] = true
   return !db.CLOSED_NODES[id]
@@ -528,4 +572,564 @@ export function clampP(p) {
   const n = Number(p || 0)
   if (!isFinite(n) || n < 0) return 0
   return n > 100 ? 100 : Math.round(n)
+}
+
+/* ================= 行的可操作性：新增 / 编辑 / 删除 / 加子项 =================
+ *
+ * 每一行用同一个 spec 字符串认自己：`item:<id>` / `habit:<id>` / `goal:<id>`。
+ * 折叠、加子项、删除、点开编辑全读这一个串，
+ * 所以今日页和领域页能对同一份数据说同一套话，行组件也只有一份。
+ *
+ * 为什么不用数组下标：删掉中间一个，后面全部错位。
+ *
+ * 四条从原型抄下来的规矩，容易看漏：
+ *   ① 子项关系**只在创建那一刻定死**，之后没有任何改上级的入口（宇明确要求）。
+ *      所以编辑弹窗里没有「上级」字段、这边也没有改 parent 的函数；
+ *      「防环」因此天然成立 —— 新建时 parent 指向一条已存在的条目，而它还没有后代。
+ *   ② 删掉一条只把它自己拿掉，**子项上移一层接管它的位置**（分类可以错，数据不该丢）。
+ *   ③ 弹窗里的改动先落草稿，点「保存」才写回；取消＝整个丢弃。
+ *   ④ 有副作用的写入只能有一个入口。删除全走 deleteNode，新增全走 addEntry/addSub。
+ */
+
+export function specOf(kind, nodeOrId) {
+  const id = typeof nodeOrId === 'object' && nodeOrId ? nodeOrId.id : nodeOrId
+  return kind + ':' + id
+}
+
+/* 领域里那两棵树。待办不在这里 —— 它住在 ITEMS，用 todosOf(领域id) 取。 */
+export function domainBucket(d, k) {
+  if (!d) return []
+  if (k === 'habit') return d.habits || []
+  return d.goals || []
+}
+/* 今日页的待办用 title，领域里的习惯和目标用 t。一个函数吃掉这个差别，
+   免得每个显示的地方各判一次 —— 漏一处就是一片空白 */
+export function labelOf(node) {
+  return node ? String(node.title || node.t || '') : ''
+}
+function nodeOf(d, k, id) {
+  return domainBucket(d, k).filter(x => x.id === id)[0] || null
+}
+
+/* spec → { kind, node, list, domain }。找不到返回 null（可能刚被另一处删掉） */
+export function resolveNode(spec) {
+  const s = String(spec || '')
+  const cut = s.indexOf(':')
+  const kind = cut < 0 ? s : s.slice(0, cut)
+  const key = cut < 0 ? '' : s.slice(cut + 1)
+  if (kind === 'item') {
+    const node = itemById(key)
+    /* 待办的 domain 从它自己的 dom 字段来 —— 今日页要的是「这条属于哪个领域」，
+       而「在哪个页面上被删的」不相干。 */
+    if (node) return { kind, node, list: db.ITEMS, domain: node.dom ? domainById(node.dom) : null }
+    return null
+  }
+  if (kind === 'habit' || kind === 'goal') {
+    for (const d of db.DOMAINS) {
+      const node = nodeOf(d, kind, key)
+      if (node) return { kind, node, list: domainBucket(d, kind), domain: d }
+    }
+  }
+  return null
+}
+
+/* 一条的上级路径，如「知识库项目上线 / 周三前」。没有上级就是空串。
+ * 今日页不铺整棵树，所以子项那行必须写清它挂在谁下面 —— 这是只读展示，不是入口。 */
+export function nodePath(list, node) {
+  const byId = {}
+  for (const x of (list || [])) byId[x.id] = x
+  const names = []
+  let id = node && node.parent, guard = 0
+  while (id && guard++ < 12) {
+    const p = byId[id]
+    if (!p) break
+    names.unshift(labelOf(p))
+    id = p.parent
+  }
+  return names.join(' / ')
+}
+
+/* 跨领域的两棵树：今日页的习惯块和计划块。
+ * 一份构建处 —— 今日页和领域页读的是同一批行对象，只是这里多带一个 dom。 */
+function crossTree(k) {
+  const out = []
+  for (const d of db.DOMAINS) {
+    const list = domainBucket(d, k)
+    for (const r of flattenTree(list, null, 0)) {
+      out.push({ node: r.node, depth: r.depth, kids: r.kids, closed: r.closed, path: r.path, dom: d, list, spec: specOf(k, r.node.id) })
+    }
+  }
+  return out
+}
+export function habitTree() { return crossTree('habit') }
+export function goalTree() { return crossTree('goal') }
+
+/* 今日页的待办树（已过期 / 今天 两块）。两条规矩都是原型的：
+ *   ① 子项跟着父项走 —— 父项在今天的列表里，子项就挂在它下面，
+ *      **不看子项自己的到期日**（子项是「这件事的一部分」，不是另一个独立承诺）。
+ *   ② 只从顶层开始铺。从每一项开始铺，父项行和子项行会各出现一遍。 */
+export function todayTree(today) {
+  const t = today || TODAY
+  const r = pickToday(db.ITEMS, t)
+  const picked = {}
+  r.overdue.forEach(x => { picked[x.id] = 1 })
+  r.due.forEach(x => { picked[x.id] = 1 })
+  function emit(node, depth, over, out, seen) {
+    if (seen[node.id]) return
+    seen[node.id] = 1
+    const kids = kidsOf(db.ITEMS, node.id)
+    out.push({ node, depth, kids: kids.length, closed: !!db.CLOSED_NODES[node.id], over, path: nodePath(db.ITEMS, node), spec: specOf('item', node.id) })
+    if (db.CLOSED_NODES[node.id]) return
+    for (const k of kids) emit(k, depth + 1, over, out, seen)
+  }
+  function build(src, over) {
+    const out = [], seen = {}
+    for (const it of src) {
+      if (it.parent && picked[it.parent]) continue
+      emit(it, 0, over, out, seen)
+    }
+    return out
+  }
+  return { overdue: build(r.overdue, true), due: build(r.due, false) }
+}
+
+/* ---------------- 今天记下的（操作流水） ----------------
+ * 只有这一处写。改了但没改出差别的（见 commitEdit 里那句「没有改动」）不要记 ——
+ * 流水里塞一堆空记录，等于把真正那条冲掉了。 */
+export function pushTodayLog(op, target, detail, label) {
+  const now = new Date()
+  db.TODAY_LOGS.unshift({
+    time: pad2(now.getHours()) + ':' + pad2(now.getMinutes()),
+    op, target, detail, label
+  })
+}
+
+/* ---------------- 新增 ---------------- */
+/* 三个区块共用的配置。字段少是有意的：一次编辑只问「叫什么 + 一句说明」，
+   多一个必填就多一次犹豫。 */
+export const ADD_KINDS = {
+  todo: { title: '新增待办', note: '一次就完的事', nameK: '待办内容（必填）', namePh: '比如：周五前交周报' },
+  habit: { title: '新增习惯', note: '要重复做的事', nameK: '习惯内容（必填）', namePh: '比如：每天散步 30 分钟', metaPh: '比如：每天 / 工作日' },
+  goal: { title: '新增长期计划', note: '要长期推进的事', nameK: '目标名称（必填）', namePh: '比如：读完《置身事内》', metaPh: '比如：每周 30 页 · 已读 210/350 页' }
+}
+
+export const ADD = reactive({ on: false, kind: 'todo', space: '', parent: null, parentName: '' })
+
+/* 三类条目各有各的去处，但**不各有各的存储**：
+   待办全在 ITEMS（领域写在 dom 字段上），习惯和目标在所属领域的桶里。
+   这里不再为「从哪个页面点进来」分叉 —— 那个分叉曾经造成种子里五条待办存两遍。 */
+export function openAdd(kind, opts) {
+  const cfg = ADD_KINDS[kind]
+  if (!cfg) return false
+  const o = opts || {}
+  ADD.kind = kind
+  ADD.parent = o.parent || null
+  ADD.space = domainById(o.space) ? o.space
+    : (db.CURRENT && domainById(db.CURRENT) ? db.CURRENT : (db.DOMAINS[0] ? db.DOMAINS[0].id : ''))
+  /* 父项的名字在这里就取好。弹窗开着的时候那条可能被删掉 ——
+     到那时再去解析只会显示空，而「挂在下面」这句话必须说得出挂给谁。 */
+  ADD.parentName = ADD.parent ? labelOf(findAddParent()) : ''
+  ADD.on = true
+  return true
+}
+/* 父项在哪：待办在 ITEMS，习惯和目标在选定领域的桶里。 */
+function findAddParent() {
+  if (ADD.kind === 'todo') return itemById(ADD.parent)
+  const d = domainById(ADD.space)
+  return d ? nodeOf(d, ADD.kind, ADD.parent) : null
+}
+export function closeAdd() {
+  ADD.on = false
+  ADD.parent = null
+  ADD.parentName = ''
+}
+export function pickAddSpace(id) {
+  if (domainById(id)) ADD.space = id
+}
+
+function entryId(kind, d) {
+  SEQ += 1
+  if (kind === 'habit') return 'h-' + d.id + '-' + Date.now() + '-' + SEQ
+  return 'g-' + Date.now() + '-' + SEQ
+}
+function newNode(kind, text, meta) {
+  const m = String(meta || '').trim()
+  if (kind === 'habit') return { t: text, m: m || '每天' }
+  return { t: text, m, p: 0 }
+}
+
+export function commitAdd(text, meta) {
+  const t = String(text || '').trim()
+  if (!t) return { error: '先写点什么' }
+  const d = domainById(ADD.space)
+  if (!d) return { error: '先选一个空间' }
+  const kind = ADD.kind
+  const kindName = kind === 'todo' ? '待办' : kind === 'habit' ? '习惯' : '长期计划'
+  /* 上级要真的还在才挂上去 —— 防着「弹窗开着的时候那一条被删了」 */
+  const p = ADD.parent ? findAddParent() : null
+  const pid = p ? p.id : null
+  let node, detail
+  if (kind === 'todo') {
+    /* 待办的第二个字段是**到期日**，不是自由说明。
+       存储合并之后这边只剩一种待办，那个字段该问什么也就只有一个答案：
+       有日期就进今日页，没日期就是清单上的一条。 */
+    const due = p && p.due ? p.due : (meta === 'none' ? null : (meta || TODAY))
+    node = addTodo(t, d.id, due)
+    if (pid) node.parent = pid
+    detail = due ? (due === TODAY ? '今天' : due) : '没有日期'
+  } else {
+    node = newNode(kind, t, meta)
+    node.id = entryId(kind, d)
+    node.parent = pid
+    domainBucket(d, kind).push(node)
+    detail = node.m
+  }
+  if (pid) delete db.CLOSED_NODES[pid]
+  const where = d.name + (p ? ' / ' + labelOf(p) : '')
+  ADD.on = false
+  ADD.parent = null
+  ADD.parentName = ''
+  pushTodayLog('新增', t, where + ' · ' + kindName, '新增' + kindName + ' · ' + t)
+  return { node, domain: d, kind, kindName, where, detail }
+}
+
+/* 在某一条下面就地加一条**同类**的子项。
+ * 待办的子项继承父项的领域和日期 —— 否则它会因为自己的日期掉出今天的列表，
+ * 挂在一条今天到期的事下面、却看不见，那比没有子项更让人困惑。 */
+export function addSub(spec, text) {
+  const t = String(text || '').trim()
+  const hit = resolveNode(spec)
+  if (!hit) return { error: '这条已经不在了' }
+  if (!t) return { error: '' }
+  const p = hit.node
+  let node
+  if (hit.kind === 'item') {
+    node = { id: newId('it'), title: t, dom: p.dom || null, due: p.due || null, status: 'todo', parent: p.id }
+    db.ITEMS.push(node)
+  } else {
+    node = newNode(hit.kind, t, '')
+    node.id = entryId(hit.kind, hit.domain)
+    node.parent = p.id
+    /* 新加的排最前（和原型一致：同级没有排序控件，数组顺序就是看到的顺序） */
+    hit.list.unshift(node)
+  }
+  delete db.CLOSED_NODES[p.id]
+  const kindName = hit.kind === 'habit' ? '习惯' : hit.kind === 'goal' ? '长期计划' : '待办'
+  pushTodayLog('新增', t,
+    (hit.domain ? hit.domain.name + ' · ' : '') + '「' + labelOf(p) + '」的子项',
+    '新增子项 · ' + t)
+  return { node, parent: p, kindName }
+}
+
+/* ---------------- 编辑 ---------------- */
+export const ED = reactive({ on: false, spec: '', kind: '', title: '', where: '', draft: {} })
+
+/* 字段按类型生成，不是每种条目各写一个弹窗。
+   这里**没有任何「上级」字段**：子项关系建完就锁死，不给改。 */
+export function editFields() {
+  if (ED.kind === 'item') {
+    return [
+      { k: 'title', label: '内容（必填）', type: 'text' },
+      { k: 'due', label: '到期日', type: 'date' },
+      { k: 'status', label: '状态', type: 'chips', opts: [['todo', '待办'], ['done', '已完成']] },
+      { k: 'dom', label: '领域', type: 'chips', opts: domainOpts() }
+    ]
+  }
+  if (ED.kind === 'habit') {
+    return [
+      { k: 't', label: '习惯（必填）', type: 'text' },
+      { k: 'm', label: '频率，选填', type: 'text' }
+    ]
+  }
+  return []
+}
+/* 领域的候选按 **id** 取值、按名字显示。用名字当值的话，
+   一改名，所有挂在旧名字上的待办就全成了孤儿。 */
+export function domainOpts() {
+  const out = [['', '未归类']]
+  for (const d of db.DOMAINS) out.push([d.id, d.name])
+  return out
+}
+
+export function openEdit(spec) {
+  const hit = resolveNode(spec)
+  if (!hit) return { error: '这条已经不在了' }
+  /* 计划行走它自己的弹窗（进度滑杆在下一轮搬），先不开这个 ——
+     开一个少了进度字段的编辑弹窗，比不开更容易让人以为进度就在里面 */
+  if (hit.kind === 'goal') return { error: '' }
+  const d = hit.domain
+  ED.spec = spec
+  ED.kind = hit.kind
+  ED.draft = hit.kind === 'item'
+    ? { title: hit.node.title, due: hit.node.due || '', dom: hit.node.dom || '', status: hit.node.status || 'todo' }
+    : { t: labelOf(hit.node), m: hit.node.m || '' }
+  ED.title = hit.kind === 'habit' ? '修改习惯' : '修改待办'
+  ED.where = hit.kind === 'item' ? domainName(hit.node) : (d ? d.name : '')
+  ED.on = true
+  return { ok: true }
+}
+export function closeEdit() {
+  ED.on = false
+  ED.spec = ''
+  ED.draft = {}
+}
+
+export function commitEdit() {
+  const hit = resolveNode(ED.spec)
+  if (!hit) { closeEdit(); return { error: '这条已经不在了' } }
+  const dr = ED.draft
+  const ch = []
+  let target = ''
+  if (ED.kind === 'item') {
+    const it = hit.node
+    const t1 = String(dr.title || '').trim()
+    if (!t1) return { error: '内容不能空' }
+    const st0 = it.status || 'todo', st1 = dr.status || 'todo'
+    if (it.title !== t1) ch.push('内容「' + it.title + '」→「' + t1 + '」')
+    if ((it.due || '') !== (dr.due || '')) ch.push('到期日 ' + (it.due || '没有') + ' → ' + (dr.due || '没有'))
+    if ((it.dom || '') !== (dr.dom || '')) ch.push('领域「' + domainName(it) + '」→「'
+      + (dr.dom && domainById(dr.dom) ? domainById(dr.dom).name : '未归类') + '」')
+    if (st0 !== st1) ch.push('状态 ' + (st0 === 'done' ? '已完成' : '待办') + ' → ' + (st1 === 'done' ? '已完成' : '待办'))
+    if (ch.length) { it.title = t1; it.due = dr.due || null; it.dom = dr.dom || null; it.status = st1 }
+    target = t1
+  } else {
+    const nd = hit.node
+    const t2 = String(dr.t || '').trim()
+    if (!t2) return { error: ED.kind === 'habit' ? '习惯不能空' : '内容不能空' }
+    if (nd.t !== t2) ch.push('内容「' + nd.t + '」→「' + t2 + '」')
+    if ((nd.m || '') !== (dr.m || '')) ch.push((ED.kind === 'habit' ? '频率「' : '说明「') + (nd.m || '（空）') + '」→「' + (dr.m || '（空）') + '」')
+    if (ch.length) { nd.t = t2; nd.m = dr.m }
+    target = t2
+  }
+  if (!ch.length) { closeEdit(); return { unchanged: true } }
+  /* parent 一律不动：这个弹窗里没有、也不该有改上级的入口 */
+  const kindName = ED.kind === 'habit' ? '习惯' : '待办'
+  const where = hit.domain ? hit.domain.name : (ED.kind === 'item' ? domainName(hit.node) : '')
+  pushTodayLog('修改', target, where + ' · ' + kindName, '修改' + kindName + ' · ' + target)
+  closeEdit()
+  return { changed: ch }
+}
+
+/* ---------------- 删除：两段确认 ----------------
+ * 第一下只「武装」（变红、文案变「确认删」），第二下才真删；4 秒无操作自动回退，
+ * 换一处武装会先把上一处解除 —— 所以同一时刻全局只可能有一个待确认，
+ * 不会出现「两个红按钮不知道点哪个」。 */
+export const delArmed = ref('')
+let delTimer = null
+
+export function disarmDelete() {
+  delArmed.value = ''
+  if (delTimer) { clearTimeout(delTimer); delTimer = null }
+}
+
+/* 返回 null = 只是武装起来了；返回对象 = 真的删了 */
+export function armDelete(spec) {
+  if (delArmed.value === spec) {
+    disarmDelete()
+    return deleteNode(spec)
+  }
+  disarmDelete()
+  delArmed.value = spec
+  /* 比 3 秒长一点：手滑点歪了还能回来，但又不至于让人以为它在等一个决定 */
+  delTimer = setTimeout(disarmDelete, 4000)
+  return null
+}
+
+/* 删一条只把它自己拿掉，直接子项上移一层接管它的位置。
+   「分类可以错，数据不该丢」这条对子项同样成立。 */
+function releaseKids(list, node) {
+  if (!node) return
+  for (const k of (list || [])) {
+    if (k.parent === node.id) k.parent = node.parent || null
+  }
+}
+function dropHabitLogs(id) {
+  for (let i = db.HABIT_LOGS.length - 1; i >= 0; i--) {
+    if (db.HABIT_LOGS[i].key === id) db.HABIT_LOGS.splice(i, 1)
+  }
+}
+
+export function deleteNode(spec) {
+  const s = String(spec || '')
+  const cut = s.indexOf(':')
+  const kind = cut < 0 ? s : s.slice(0, cut)
+  const key = cut < 0 ? '' : s.slice(cut + 1)
+  let done = null
+  if (kind === 'money') {
+    const l = db.LOGS.filter(x => x.id === key)[0]
+    if (l) {
+      done = { what: '一笔支出', label: (l.category || '未分类') + ' ' + money(l.value) }
+      db.LOGS.splice(db.LOGS.indexOf(l), 1)
+    }
+  } else if (kind === 'note') {
+    const n = db.NOTES.filter(x => x.id === key)[0]
+    if (n) {
+      done = { what: '随心记', label: String(n.text || '').slice(0, 20) }
+      db.NOTES.splice(db.NOTES.indexOf(n), 1)
+    }
+  } else if (kind === 'inbox') {
+    const n = db.INBOX.filter(x => x.id === key)[0]
+    if (n) {
+      done = { what: '收件箱的一条', label: String(n.text || '').slice(0, 20) }
+      db.INBOX.splice(db.INBOX.indexOf(n), 1)
+    }
+  } else {
+    const hit = resolveNode(s)
+    if (hit) {
+      releaseKids(hit.list, hit.node)
+      hit.list.splice(hit.list.indexOf(hit.node), 1)
+      /* 打卡记录跟着习惯一起清，不留孤儿数据：
+         不然那个习惯早就不在了，HABIT_LOGS 里还有一串 key 指向它 */
+      if (hit.kind === 'habit') dropHabitLogs(hit.node.id)
+      delete db.CLOSED_NODES[hit.node.id]
+      done = {
+        what: hit.kind === 'habit' ? '习惯' : hit.kind === 'goal' ? '长期计划' : '待办',
+        label: labelOf(hit.node),
+        where: hit.domain ? hit.domain.name : ''
+      }
+    }
+  }
+  if (!done) return { error: '这条已经不在了' }
+  pushTodayLog('删除', done.label, (done.where ? done.where + ' · ' : '') + done.what,
+    '删除' + done.what + ' · ' + done.label)
+  return done
+}
+
+/* ================= 长期计划的进度 =================
+ * 计划行上有两个写入口：拖滑杆、点 +1/+2/+5。它们改的是同一个 p，
+ * 所以必须有一份仲裁 —— 某些端在程序把滑杆值改回去之后，还会补发一个旧的
+ * input 事件；不挡的话刚按 +5 就被那根杠拽回原位，点了像没点。
+ * （原型里是 GOAL_LOCK，规矩照抄。）
+ *
+ * 弹窗里改的是**草稿**，点「确认」才写回 —— 和编辑弹窗同一套。
+ */
+export const GOAL_STEPS = [1, 2, 5]
+
+/* 进度从哪儿读：弹窗开着就读草稿，否则读真实那条。
+   一个函数管这件事，页面上的百分比和弹窗里的滑杆才不会各说一套。 */
+/* 收三种写法：计划行对象、'goal:xx' 这种 spec、光秃秃的 id。
+   页面上拿到的是 spec，弹窗里拿到的是草稿，这里一处吃掉差别。 */
+export function progressOf(nodeOrSpec) {
+  const n = typeof nodeOrSpec === 'object' && nodeOrSpec ? nodeOrSpec : null
+  const id = n ? n.id : specKey(nodeOrSpec)
+  if (GOAL.on && GOAL.draft.id === id) return clampP(GOAL.draft.p)
+  if (n) return clampP(n.p)
+  const hit = resolveNode('goal:' + id)
+  return hit ? clampP(hit.node.p) : 0
+}
+
+const goalLock = {}
+
+/* via: 'slider' | 'button'。返回真正生效后的值；返回 null = 这次被仲裁挡掉了 */
+export function setGoalP(spec, next, via) {
+  const id = specKey(spec)
+  if (via === 'slider' && goalLock[id] && Date.now() < goalLock[id]) return null
+  const p = clampP(next)
+  if (GOAL.on && GOAL.draft.id === id) { GOAL.draft.p = p; return p }
+  const hit = resolveNode(spec)
+  if (!hit || hit.kind !== 'goal') return null
+  hit.node.p = p
+  if (via === 'button') goalLock[id] = Date.now() + 250
+  else delete goalLock[id]           /* 又动手拖了，说明仲裁窗口该结束了 */
+  return p
+}
+
+function specKey(spec) {
+  const s = String(spec || '')
+  const cut = s.indexOf(':')
+  return cut < 0 ? s : s.slice(cut + 1)
+}
+
+export function bumpGoal(spec, step) {
+  const cur = progressOf(spec)
+  return setGoalP(spec, cur + (Number(step) || 0), 'button')
+}
+
+/* 弹窗那份草稿。id 用一个固定的假 id —— 草稿不是数据，
+   不该和任何真条目共用 id 空间，setGoalP 靠这个串认它是草稿。 */
+export const GOAL_DRAFT_ID = '__goal_draft__'
+
+export const GOAL = reactive({
+  on: false, mode: 'edit', spec: '', domainId: '', title: '',
+  parent: null, parentName: '',
+  draft: { id: GOAL_DRAFT_ID, t: '', m: '', p: 0 },
+  orig: { t: '', m: '', p: 0 }
+})
+
+export function openGoal(spec) {
+  const hit = resolveNode(spec)
+  if (!hit || hit.kind !== 'goal') return { error: '这条已经不在了' }
+  GOAL.mode = 'edit'
+  GOAL.spec = spec
+  GOAL.domainId = hit.domain ? hit.domain.id : ''
+  GOAL.title = '调整长期计划'
+  GOAL.draft = { id: GOAL_DRAFT_ID, t: labelOf(hit.node), m: hit.node.m || '', p: clampP(hit.node.p) }
+  GOAL.orig = { t: labelOf(hit.node), m: hit.node.m || '', p: clampP(hit.node.p) }
+  GOAL.on = true
+  return { ok: true }
+}
+
+/* 从区块标题或某条计划下面新建。父项在建好之后就锁死了，所以这里问一次就够。 */
+export function openGoalAdd(domainId, parentId, parentName) {
+  const d = domainById(domainId) || (db.DOMAINS[0] ? domainById(db.DOMAINS[0].id) : null)
+  if (!d) return { error: '先建一个空间' }
+  GOAL.mode = 'new'
+  GOAL.spec = ''
+  GOAL.domainId = d.id
+  GOAL.title = '新增长期计划'
+  GOAL.parent = parentId || null
+  GOAL.parentName = parentId ? (parentName || '') : ''
+  GOAL.draft = { id: GOAL_DRAFT_ID, t: '', m: '', p: 0 }
+  GOAL.orig = { t: '', m: '', p: 0 }
+  GOAL.on = true
+  return { ok: true }
+}
+
+export function closeGoal() {
+  GOAL.on = false
+  GOAL.spec = ''
+  GOAL.parent = null
+  GOAL.parentName = ''
+  delete goalLock[GOAL_DRAFT_ID]
+}
+
+/* 逐字段比出「具体变更内容」。返回空数组 = 没有改动。
+   只比这三样：parent 创建后不给改，所以不在比对范围内。 */
+function goalDiff(orig, now) {
+  const out = []
+  if (orig.t !== now.t) out.push('名称「' + orig.t + '」→「' + now.t + '」')
+  if ((orig.m || '') !== (now.m || '')) out.push('说明「' + (orig.m || '（空）') + '」→「' + (now.m || '（空）') + '」')
+  if (orig.p !== now.p) out.push('进度 ' + orig.p + '% → ' + now.p + '%')
+  return out
+}
+
+export function commitGoal() {
+  const t = String(GOAL.draft.t || '').trim()
+  if (!t) return { error: '先写个目标名称' }
+  const m = String(GOAL.draft.m || '').trim()
+  const p = clampP(GOAL.draft.p)
+  const d = domainById(GOAL.domainId)
+  if (!d) { closeGoal(); return { error: '这个空间已经不在了' } }
+
+  if (GOAL.mode === 'new') {
+    const node = { id: entryId('goal', d), t: t, m: m, p: p, parent: GOAL.parent || null }
+    d.goals.push(node)
+    if (node.parent) delete db.CLOSED_NODES[node.parent]
+    const pth = node.parent ? ' / ' + (GOAL.parentName || '') : ''
+    pushTodayLog('新增', t, '新建于「' + d.name + pth + '」· 进度 ' + p + '%', '长期计划 · ' + t)
+    closeGoal()
+    return { node: node, created: true, p: p }
+  }
+
+  const hit = resolveNode(GOAL.spec)
+  if (!hit) { closeGoal(); return { error: '这条已经不在了' } }
+  const ch = goalDiff(GOAL.orig, { t: t, m: m, p: p })
+  if (!ch.length) { closeGoal(); return { unchanged: true } }
+  /* parent 一律不动：子项关系只在创建时定 */
+  hit.node.t = t
+  hit.node.m = m
+  hit.node.p = p
+  pushTodayLog('修改', t, ch.join('；'), '长期计划 · ' + t)
+  closeGoal()
+  return { changed: ch, node: hit.node, p: p }
 }

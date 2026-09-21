@@ -19,75 +19,139 @@
          这一页从此只负责「看今天」，不负责「记」。 -->
 
     <!-- 已过期。排在最前面 —— 这一天的第一眼该看见最欠着的那些事。 -->
-    <view v-if="today.overdue.length" class="block">
+    <view v-if="tt.overdue.length" class="block">
       <view class="block-h">
         <text class="tag tag-warn">已过期</text>
-        <text class="block-note">{{ today.overdue.length }} 条</text>
+        <text class="block-note">{{ topLevel(tt.overdue) }} 条</text>
       </view>
-      <view v-for="it in today.overdue" :key="it.id" class="row">
-        <view class="row-main">
-          <text class="row-t">{{ it.title }}</text>
-          <text class="row-m">{{ it.domain }} · {{ it.due.slice(5) }} 到期</text>
-        </view>
-        <view class="tick" @click="finish(it)"><text class="tick-t">完成</text></view>
-      </view>
+      <TreeRow
+        v-for="r in tt.overdue"
+        :key="r.node.id"
+        :depth="r.depth"
+        :kids="r.kids"
+        :closed="r.closed"
+        :add-on="subOn === r.spec"
+        :armed="armed === r.spec"
+        @fold="fold(r.node.id)"
+        @open="edit(r.spec)"
+        @add="armAdd(r.spec)"
+        @sub="(t) => commitSub(r.spec, t)"
+        @del="del(r.spec, r.node)"
+      >
+        <text class="row-t">{{ label(r.node) }}</text>
+        <text class="row-m">{{ pathPre(r) }}{{ domainName(r.node) }} · {{ r.node.due.slice(5) }} 到期</text>
+        <template #tail>
+          <view class="tick" @click.stop="finish(r.node)">
+            <text class="tick-t">完成</text>
+          </view>
+        </template>
+      </TreeRow>
     </view>
 
     <view class="block">
       <view class="block-h">
         <text class="tag">今天</text>
-        <text class="block-note">{{ today.due.length }} 条待办</text>
-      </view>
-      <view v-if="!today.due.length" class="empty"><text class="empty-t">今天没有到期的待办</text></view>
-      <view v-for="it in today.due" :key="it.id" class="row">
-        <view class="row-main">
-          <text class="row-t">{{ it.title }}</text>
-          <text class="row-m">{{ it.domain }}</text>
+        <view class="block-acts">
+          <text class="block-note">{{ topLevel(tt.due) }} 条待办</text>
+          <view class="addbtn" @click="addTop('todo')">
+            <text class="addbtn-t">新增待办</text>
+          </view>
         </view>
-        <view class="tick" @click="finish(it)"><text class="tick-t">完成</text></view>
       </view>
+      <view v-if="!tt.due.length" class="empty">
+        <text class="empty-t">今天没有到期的待办</text>
+        <text class="empty-t">点上面的「新增待办」加一条</text>
+      </view>
+      <TreeRow
+        v-for="r in tt.due"
+        :key="r.node.id"
+        :depth="r.depth"
+        :kids="r.kids"
+        :closed="r.closed"
+        :add-on="subOn === r.spec"
+        :armed="armed === r.spec"
+        @fold="fold(r.node.id)"
+        @open="edit(r.spec)"
+        @add="armAdd(r.spec)"
+        @sub="(t) => commitSub(r.spec, t)"
+        @del="del(r.spec, r.node)"
+      >
+        <text class="row-t">{{ label(r.node) }}</text>
+        <text class="row-m">{{ pathPre(r) }}{{ domainName(r.node) }}</text>
+        <template #tail>
+          <view class="tick" @click.stop="finish(r.node)">
+            <text class="tick-t">完成</text>
+          </view>
+        </template>
+      </TreeRow>
     </view>
 
     <view class="block">
       <view class="block-h">
         <text class="tag">习惯</text>
-        <text class="block-note">点右边打卡</text>
-      </view>
-      <view v-for="h in habits" :key="h.id" class="row">
-        <view class="row-main">
-          <text class="row-t">{{ h.t }}</text>
-          <text class="row-m">{{ h.m }} · 连续 {{ habitStreakDays(h.id, TODAY) }} 天 · 累计 {{ habitTotalDays(h.id) }} 天</text>
-        </view>
-        <view class="tick" :class="{ 'is-on': habitDoneOn(h.id, TODAY) }" @click="tick(h.id)">
-          <text class="tick-t">{{ habitDoneOn(h.id, TODAY) ? '已打卡' : '打卡' }}</text>
+        <view class="block-acts">
+          <text class="block-note">点右边打卡</text>
+          <view class="addbtn" @click="addTop('habit')"><text class="addbtn-t">新增习惯</text></view>
         </view>
       </view>
+      <TreeRow
+        v-for="r in hb"
+        :key="r.node.id"
+        :depth="r.depth"
+        :kids="r.kids"
+        :closed="r.closed"
+        :add-on="subOn === r.spec"
+        :armed="armed === r.spec"
+        @fold="fold(r.node.id)"
+        @open="edit(r.spec)"
+        @add="armAdd(r.spec)"
+        @sub="(t) => commitSub(r.spec, t)"
+        @del="del(r.spec, r.node)"
+      >
+        <text class="row-t">{{ label(r.node) }}</text>
+        <text class="row-m">{{ pathPre(r) }}{{ r.dom.name }} · {{ r.node.m }}</text>
+        <text v-if="streak(r.node.id)" class="row-st" :class="{ 'is-on': streak(r.node.id).on }">{{ streak(r.node.id).s }}</text>
+        <template #tail>
+          <view class="tick" :class="{ 'is-on': habitDoneOn(r.node.id, TODAY) }" @click.stop="tick(r.node.id)">
+            <text class="tick-t">{{ habitDoneOn(r.node.id, TODAY) ? '已打卡' : '打卡' }}</text>
+          </view>
+        </template>
+      </TreeRow>
     </view>
 
     <!-- 计划：带进度条的长期目标。所有领域的平铺在一起 ——
          今日页不按领域分组，因为「今天该推哪一件事」是跨领域的问题。
-         折叠状态走 db.CLOSED_NODES，和别处的树是同一份。 -->
-    <view v-if="goalRows.length" class="block">
+         今日页的进度只读：改进度是回到空间里干的事，那一页给滑杆。 -->
+    <view v-if="gl.length" class="block">
       <view class="block-h">
         <text class="tag">计划</text>
-        <text class="block-note">{{ goalRows.length }} 个</text>
+        <view class="block-acts">
+          <text class="block-note">{{ gl.length }} 个</text>
+          <view class="addbtn" @click="addTop('goal')"><text class="addbtn-t">新增计划</text></view>
+        </view>
       </view>
-      <view
-        v-for="r in goalRows"
+      <TreeRow
+        v-for="r in gl"
         :key="r.node.id"
-        class="row grow"
-        :class="{ 'is-sub': r.depth }"
+        :depth="r.depth"
+        :kids="r.kids"
+        :closed="r.closed"
+        :add-on="subOn === r.spec"
+        :armed="armed === r.spec"
+        @fold="fold(r.node.id)"
+        @open="editGoal(r.spec)"
+        @add="armAdd(r.spec)"
+        @sub="(t) => commitSub(r.spec, t)"
+        @del="del(r.spec, r.node)"
       >
-        <view class="caret" :class="{ 'is-leaf': !r.kids, 'is-closed': r.closed }" @click.stop="fold(r.node.id)">
-          <view class="caret-tri"></view>
-        </view>
-        <view class="row-main">
-          <text class="row-t">{{ r.node.t }}</text>
-          <text class="row-m">{{ r.dom.name }} · 长期</text>
-        </view>
-        <view class="bar"><view class="bar-fill" :style="'width:' + clampP(r.node.p) + '%'"></view></view>
-        <text class="row-v grow-p">{{ clampP(r.node.p) }}%</text>
-      </view>
+        <text class="row-t">{{ label(r.node) }}</text>
+        <text class="row-m">{{ pathPre(r) }}{{ r.dom.name }} · 长期 · {{ progressOf(r.spec) }}%</text>
+        <template #tail>
+          <view class="bar">
+            <view class="bar-fill" :style="'width:' + progressOf(r.spec) + '%'"></view>
+          </view>
+        </template>
+      </TreeRow>
     </view>
 
     <view class="block">
@@ -108,60 +172,106 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import {
-  db, TODAY, money, go, pickToday, weekdayCN,
-  habitDoneOn, habitStreakDays, habitTotalDays, toggleHabitLog,
-  moneyTotalOf, flattenTree, toggleFold, clampP
+  db, TODAY, money, go, weekdayCN,
+  habitDoneOn, streakText, toggleHabitLog,
+  moneyTotalOf, toggleFold, openAdd, addSub, openEdit,
+  openGoalAdd, openGoal, armDelete, delArmed, labelOf, todayTree, habitTree, goalTree,
+  progressOf, domainName, topLevel, saveState
 } from '../stores/db'
+import TreeRow from '../components/TreeRow.vue'
 
 const headDate = computed(function () {
   const p = TODAY.split('-').map(Number)
   return p[1] + ' 月 ' + p[2] + ' 日 · 周' + weekdayCN(TODAY)
 })
 
-const today = computed(() => pickToday(db.ITEMS, TODAY))
-
-const habits = computed(function () {
-  const out = []
-  for (const d of db.DOMAINS) {
-    for (const h of (d.habits || [])) out.push(h)
-  }
-  return out
-})
+/* 三棵树都来自数据层那一份构建处 —— 今日页和领域页读同一批行对象，
+   所以「子项跟着父项出现」这条规矩在两页的表现是一样的。 */
+const tt = computed(() => todayTree(TODAY))
+const hb = computed(() => habitTree())
+const gl = computed(() => goalTree())
 
 const todayLogs = computed(() => db.LOGS.filter(l => l.date === TODAY))
-const todaySum = computed(() =>
-  todayLogs.value.reduce((s, l) => s + Number(l.value || 0), 0)
-)
+const todaySum = computed(() => todayLogs.value.reduce((s, l) => s + Number(l.value || 0), 0))
 
 /* 本月合计。按日期前缀算，不是「过去 30 天」——
    月初打开时该看到这个月花了多少，不是上个月那三十天。 */
 const monthSum = computed(() => moneyTotalOf(TODAY.slice(0, 7)))
 
-/* 计划块：所有领域的长期目标平铺，子项按层级展开（折叠着的不展开）。
-   每个节点带上它所属的领域 —— 灰字里要显示「健身 · 长期」。 */
-const goalRows = computed(function () {
-  const out = []
-  for (const d of db.DOMAINS) {
-    const rows = flattenTree(d.goals, null, 0)
-    for (const r of rows) {
-      out.push({ node: r.node, depth: r.depth, kids: r.kids, closed: r.closed, dom: d })
-    }
-  }
-  return out
-})
-
-/* 模板里叫 fold，比 toggleFold 顺一点。行为就是切换折叠。 */
+const label = labelOf
 const fold = toggleFold
+const armed = delArmed
+
+/* 子项那行的灰字前面补一句上级路径。今日页不铺整棵树，
+   光靠缩进看不出来它挂在谁下面。 */
+function pathPre(r) {
+  return r.path ? r.path + ' · ' : ''
+}
+
+/* 「连续 N 天 · 累计 M 天」这句在数据层，两页共用一份措辞。
+   一次没打过的习惯那里返回 null，这一行就整段不显示。 */
+function streak(id) {
+  return streakText(id, TODAY)
+}
+
+/* ---- 就地加子项：哪一行的输入框开着 ---- */
+const subOn = ref('')
+
+function armAdd(spec) {
+  subOn.value = subOn.value === spec ? '' : spec
+}
+function commitSub(spec, text) {
+  if (subOn.value !== spec) return
+  subOn.value = ''
+  const t = String(text || '').trim()
+  if (!t) return
+  const r = addSub(spec, t)
+  if (r.error) { uni.showToast({ title: r.error, icon: 'none' }); return }
+  saveState(true)
+  uni.showToast({ title: '已加上「' + t + '」', icon: 'none' })
+}
+
+/* ---- 新增：三个区块各有一颗，走同一个弹窗、换 kind ----
+   今日页的待办写进 ITEMS（到期就是今天），这样它当场就出现在这一页；
+   习惯和计划本来就跨领域，写进所属领域的桶。这个分叉只在 commitAdd 里。 */
+function addTop(kind) {
+  if (kind === 'goal') {
+    const r = openGoalAdd(db.DOMAINS[0] ? db.DOMAINS[0].id : '', null, '')
+    if (r.error) uni.showToast({ title: r.error, icon: 'none' })
+    return
+  }
+  openAdd(kind, {})
+}
+
+/* ---- 编辑：整行点开 ---- */
+function edit(spec) {
+  const r = openEdit(spec)
+  if (r && r.error) uni.showToast({ title: r.error, icon: 'none' })
+}
+function editGoal(spec) {
+  const r = openGoal(spec)
+  if (r.error) uni.showToast({ title: r.error, icon: 'none' })
+}
+
+/* ---- 删除：两段确认 ---- */
+function del(spec, node) {
+  const r = armDelete(spec)
+  if (!r) { uni.showToast({ title: '再点一次「确认删」', icon: 'none' }); return }
+  saveState(true)
+  uni.showToast({ title: '已删除「' + labelOf(node) + '」', icon: 'none' })
+}
 
 function tick(id) {
   const on = toggleHabitLog(id, TODAY)
+  saveState()
   uni.showToast({ title: on ? '已打卡' : '已取消今天的打卡', icon: 'none' })
 }
 
 function finish(it) {
   it.status = 'done'
+  saveState()
   uni.showToast({ title: '完成了', icon: 'none' })
 }
 </script>
@@ -193,13 +303,33 @@ function finish(it) {
 .block-h {
   display: flex;
   flex-direction: row;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   padding-bottom: 6px;
 }
 .tag { font-size: 14px; font-weight: 500; color: var(--text); }
 .tag-warn { color: var(--warn); }
 .block-note { font-size: 12px; color: var(--muted); }
+.block-acts {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+/* 区块标题右边的「新增」：文字钮，不抢标题的眼。
+   它比行尾那颗加号大一点 —— 那是「加一整条」，加子项是次要动作。 */
+.addbtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 30px;
+  margin-left: 10px;
+  padding: 0 11px;
+  border: 1px solid var(--line2);
+  border-radius: 15px;
+}
+.addbtn-t { font-size: 12px; color: var(--accent); }
+.addbtn:active { background: var(--accent-bg); }
 
 .row {
   display: flex;
@@ -227,44 +357,14 @@ function finish(it) {
 .ml-go { margin-left: auto; }
 .ml-go-t { font-size: 12px; color: var(--accent); }
 
-/* ---- 计划行 ----
-   一行里塞四样：折叠箭头 / 名字+归属 / 进度条 / 百分比。
-   进度条给固定宽度而不是 flex:1 —— 固定宽度下那几条杠的左端是对齐的，
-   一眼能比出高低；跟着文字长度浮动就比不出来了。 */
-.grow { min-height: 52px; }
-.grow.is-sub { padding-left: 16px; }
-.grow-p { min-width: 34px; text-align: right; color: var(--sub); }
-
-.caret {
-  flex: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 18px;
-  height: 26px;
-}
-/* 没有子项的也占住这个位置，否则同一列的名字会左右跳 */
-.caret.is-leaf { visibility: hidden; }
-/* 三角形用边框画，不用 ▸▾ 字符：各机型的字形和基线不一致，会看着歪 */
-.caret-tri {
-  width: 0;
-  height: 0;
-  border-left: 4px solid transparent;
-  border-right: 4px solid transparent;
-  border-top: 5px solid var(--muted);
-}
-.caret.is-closed .caret-tri {
-  border-top: 4px solid transparent;
-  border-bottom: 4px solid transparent;
-  border-left: 5px solid var(--muted);
-  border-right: 0;
-}
-
+/* 计划行的进度条固定在右侧。给固定宽度而不是 flex:1 ——
+   固定宽度下那几条杠的左端是对齐的，一眼能比出高低；
+   跟着文字长度浮动就比不出来了。 */
 .bar {
   flex: none;
   width: 84px;
   height: 6px;
-  margin-right: 8px;
+  margin-left: 8px;
   background: var(--line);
   border-radius: 3px;
   overflow: hidden;
@@ -287,6 +387,15 @@ function finish(it) {
 .tick.is-on .tick-t { color: var(--ok); }
 .tick:active { background: var(--bg); }
 
+/* 连续/累计那句：数字本身由数据层那句话给全，这里只管要不要加重。
+   连着的人值得亮一下，断了的人看到灰色'连续 0 天' —— 那比换句说法诚实。 */
+.row-st {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+}
+.row-st.is-on { color: var(--ok); }
+
 .empty { padding: 12px 0 16px; }
-.empty-t { font-size: 13px; color: var(--muted); }
+.empty-t { display: block; font-size: 13px; color: var(--muted); }
 </style>
