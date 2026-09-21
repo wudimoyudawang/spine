@@ -29,7 +29,11 @@ function open() {
 .gear {
   position: fixed;
   top: calc(12px + env(safe-area-inset-top));
-  right: 12px;
+  /* 钉在「手机」那条窄栏的右上角，而不是浏览器窗口的右上角。
+     写法：右边缘先放到视口正中（right:50%），再用负 margin 往右推半个栏宽。
+     视口比栏窄时（真机上）这半个栏宽也就是半个屏，效果等于原来的 right:12px。 */
+  right: 50%;
+  margin-right: calc(var(--app-w, 430px) / -2 + 12px);
   z-index: 40;
   display: flex;
   align-items: center;

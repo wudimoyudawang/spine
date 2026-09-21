@@ -88,13 +88,23 @@ export const db = reactive({
      放在 db 里而不是组件内部，是因为底栏和面板是两个组件，
      挂在任意一边另一边都得转发事件。 */
   CAP_OPEN: false,
-  CAPTURE_KIND: 'quick'
+  CAPTURE_KIND: 'quick',
+  /* 「记一笔」那排胶囊：哪些进这一排、按什么顺序。
+     存成一张**独立的偏好表**，不去动 CAPTURE_MODES / RECORD_TYPES 本身 ——
+     那两个是「有什么可记」（数据），这张是「你想怎么摆」（偏好）。
+     混在一起的话，想恢复默认就得先把数据也还原一遍，容易误伤。
+
+     common 里**只存手动改过的**那些，没登记的按默认（内置类目都进，记录项看 quick）。
+     这样以后新增领域或记录项，它自己就会按默认规则出现在列表里，不用手动登记。 */
+  CAP_CFG: { order: [], common: {} }
 })
 
-/* 进快照、进导出文件的就是这 13 项 —— 和原型的 DATA_VARS 一字不差。
-   增减任何一项都要两边一起改，不然会出现「导出了，但少一半」。 */
+/* 进快照、进导出文件的就是这 14 项。前 13 项和原型的 DATA_VARS 一字不差，
+   末尾的 CAP_CFG 是 uni-app 版新增的（原型把这类配置放在设置页里改，没进快照）。
+   增减任何一项都要想清楚：它该不该跟着导出文件走。 */
 export const DATA_KEYS = ['ITEMS', 'HABIT_LOGS', 'INBOX', 'NOTES', 'NOTE_PROMPTS', 'LOGS',
-  'DOMAINS', 'RECORD_TYPES', 'CAPTURE_MODES', 'AUTO_RULES', 'TODAY_LOGS', 'CAT_WORDS', 'CATS']
+  'DOMAINS', 'RECORD_TYPES', 'CAPTURE_MODES', 'AUTO_RULES', 'TODAY_LOGS', 'CAT_WORDS', 'CATS',
+  'CAP_CFG']
 
 /* 界面状态：跟着设备走，不进导出文件 */
 export const UI_KEYS = ['CURRENT', 'DOMAIN_ID', 'CAPTURE_MODE', 'CAP_AUTO_CLOSE']
@@ -114,6 +124,7 @@ export function loadSeed() {
   db.CAPTURE_CAT = ''
   db.CLOSED_NODES = deepCopy(SEED_UI.CLOSED_NODES) || {}
   db.CAP_AUTO_CLOSE = true
+  db.CAP_CFG = { order: [], common: {} }
 }
 
 /* ---------------- 快照 · 本机存储 ----------------
@@ -333,21 +344,97 @@ export function addRecord(rtId, value) {
   return rec
 }
 
-/* 空间里所有能记的东西。
-   **记录项排在前面**：上面那排胶囊已经把常用类目摆出来了，
-   点「自定义」的人想看的是「空间里还有什么能记」。
-   「记一笔支出」不在列表里 —— 支出走「记账」那条路，这里再放一个就重复了。 */
+/* 空间里所有能记的东西 —— 也就是「自定义」列出来的那份全集。
+   顺序和开关都来自 db.CAP_CFG（见那边的注释）。
+
+   这里是**唯一**的来源：面板上面那排横滑、和自定义列表，读的是同一份顺序。
+   所以列表里挪一下，那一排立刻跟着变，中间不做任何映射。
+
+   两个不进列表：`money`（支出走「记账」那条路，再放一个就重复了）、
+   `on === false` 的（在数据层就被关掉的，不是用户偏好）。
+
+   内置类目排在记录项前面 —— 待办 / 随心记 / 只丢进收件箱 是最常用的三个，
+   它们该在横滑那排的前几格，不该被某天新加的记录项挤到后面去。 */
 export function allCaptureOptions() {
   const out = []
-  for (const rt of db.RECORD_TYPES) {
-    const d = domainById(rt.domain)
-    out.push({ k: 'rt:' + rt.id, t: rt.name, group: d ? d.name : '记录项', unit: rt.unit, builtin: false })
-  }
   for (const m of db.CAPTURE_MODES) {
     if (m.on === false || m.k === 'money') continue
-    out.push({ k: m.k, t: m.t, group: '内置类目', builtin: true })
+    out.push({ k: m.k, t: m.t, group: '内置类目', builtin: true, lock: !!m.lock })
   }
+  for (const rt of db.RECORD_TYPES) {
+    const d = domainById(rt.domain)
+    out.push({
+      k: 'rt:' + rt.id, t: rt.name, group: d ? d.name : '记录项',
+      unit: rt.unit, builtin: false, lock: false
+    })
+  }
+
+  /* 排序。锁住的（「自动判断」）永远在最前 —— 它是默认模式，也是规则猜不出来时的兜底，
+     允许它被挪走或关掉的话，打开面板会出现「一个都没选中」的状态。 */
+  const rank = {}
+  const cfg = db.CAP_CFG || {}
+  const ord = cfg.order || []
+  ord.forEach(function (k, i) { rank[k] = i })
+  out.sort(function (a, b) {
+    if (a.lock !== b.lock) return a.lock ? -1 : 1
+    const ra = rank[a.k] === undefined ? 1e9 : rank[a.k]
+    const rb = rank[b.k] === undefined ? 1e9 : rank[b.k]
+    return ra - rb
+  })
+
+  const cm = cfg.common || {}
+  out.forEach(function (o) {
+    o.on = (cm[o.k] === undefined) ? defaultCommon(o) : !!cm[o.k]
+  })
   return out
+}
+
+/* 没被手动改过时，哪些算「常用」（进面板上面那排横滑）。
+   照原型的 captureCandidates()：内置类目都算，记录项看 quick 标记。 */
+function defaultCommon(o) {
+  if (o.lock) return true
+  if (o.builtin) return true
+  const rt = db.RECORD_TYPES.filter(function (t) { return 'rt:' + t.id === o.k })[0]
+  return !!(rt && rt.quick)
+}
+
+/* 上面那排横滑实际显示的那些 */
+export function commonCaptureOptions() {
+  return allCaptureOptions().filter(function (o) { return o.on })
+}
+
+/* 上下挪一位。挪的就是那一排的真实次序 ——
+   列表里看到的顺序，就是记的时候看到的顺序，中间不做任何映射。 */
+export function moveCaptureOption(key, delta) {
+  const list = allCaptureOptions()
+  const keys = list.map(function (o) { return o.k })
+  const i = keys.indexOf(key)
+  if (i < 0) return false
+  if (list[i].lock) return false              /* 锁住的不参与排序 */
+  const j = i + delta
+  if (j < 0 || j >= keys.length) return false
+  if (list[j].lock) return false              /* 也不能挪到锁住的前面去 */
+  const t = keys[i]; keys[i] = keys[j]; keys[j] = t
+  if (!db.CAP_CFG) db.CAP_CFG = { order: [], common: {} }
+  db.CAP_CFG.order = keys
+  return true
+}
+
+/* 开关。只管「进不进上面那排」，不影响它在自定义列表里的位置 ——
+   关掉的东西还得能被重新打开，所以列表里始终留着它（变淡、开关显示关着）。 */
+export function toggleCaptureCommon(key) {
+  const o = allCaptureOptions().filter(function (x) { return x.k === key })[0]
+  if (!o) return false
+  if (o.lock) return true                     /* 锁住的关不掉，保持原样 */
+  if (!db.CAP_CFG) db.CAP_CFG = { order: [], common: {} }
+  if (!db.CAP_CFG.common) db.CAP_CFG.common = {}
+  db.CAP_CFG.common[key] = !o.on
+  return db.CAP_CFG.common[key]
+}
+
+/* 一键回到默认的开关和顺序 */
+export function resetCaptureConfig() {
+  db.CAP_CFG = { order: [], common: {} }
 }
 
 /* ---------------- 空间 ---------------- */

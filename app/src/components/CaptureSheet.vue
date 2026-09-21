@@ -66,14 +66,33 @@
           </view>
         </view>
 
-        <!-- 展开的是「空间里所有能记的东西」：各领域的记录项，加上内置类目。
-             常用的那几个已经在上面那排里了，这里是给「不常用但这次要用」的。 -->
+        <!-- 展开的是「空间里所有能记的东西」。每行两个控制：
+             左边的上下箭头管顺序（就是上面那排的真实次序），右边的开关管它进不进那排。
+             关掉的仍然留在列表里、只是变淡 —— 否则关掉之后就再也找不回来了。 -->
         <scroll-view v-if="showAll" class="allbox" scroll-y>
-          <view v-for="o in allOptions" :key="o.k" class="allrow" @click="pickOption(o)">
-            <text class="allrow-t" :class="{ 'is-on': mode === o.k }">{{ o.t }}</text>
-            <text class="allrow-s">{{ o.builtin ? o.group : (o.group + (o.unit ? ' · ' + o.unit : '')) }}</text>
+          <view v-for="(o, i) in allOptions" :key="o.k" class="allrow" :class="{ 'is-off': !o.on }">
+            <view class="arw">
+              <view class="arw-b" :class="{ 'is-dim': !canUp(i) }" @click="move(o, -1)">
+                <view class="tri tri-up"></view>
+              </view>
+              <view class="arw-b" :class="{ 'is-dim': !canDown(i) }" @click="move(o, 1)">
+                <view class="tri tri-dn"></view>
+              </view>
+            </view>
+            <view class="allrow-m" @click="pickOption(o)">
+              <text class="allrow-t" :class="{ 'is-on': mode === o.k }">{{ o.t }}</text>
+              <text class="allrow-s">{{ sub(o) }}</text>
+            </view>
+            <view class="sw sw-row" :class="{ 'is-on': o.on }" @click="toggle(o)">
+              <view class="sw-dot"></view>
+            </view>
           </view>
         </scroll-view>
+
+        <!-- 挪乱了想回到初始样子，不用一个个点回去 -->
+        <view v-if="showAll" class="allreset" @click="resetCfg">
+          <text class="allreset-t">恢复默认</text>
+        </view>
       </template>
 
       <!-- 切换器紧贴在「记下」上面：手在下半屏操作时，它就在指头边上 -->
@@ -95,7 +114,9 @@
 import { computed, nextTick, ref, watch } from 'vue'
 import {
   db, TODAY, money, catList, guessCategory, closeCapture,
-  addMoney, addTodo, addInbox, addRecord, allCaptureOptions
+  addMoney, addTodo, addInbox, addRecord,
+  allCaptureOptions, commonCaptureOptions, moveCaptureOption, toggleCaptureCommon,
+  resetCaptureConfig, saveState
 } from '../stores/db'
 
 const draft = ref('')
@@ -110,23 +131,52 @@ const cats = computed(function () { return catList() })
 
 const showAll = ref(false)
 
-/* 上面那排横滑的 = 常用的那几个。两个排除要注意：
-   「记一笔支出」不在这儿（支出走「记账」那条路，两边都留着等于两个入口做同一件事）；
-   记录项里标了 quick 的算常用 —— 这是照原型的 captureCandidates() 分的。 */
-const modes = computed(function () {
-  const out = []
-  for (const m of (db.CAPTURE_MODES || [])) {
-    if (m.on === false || m.k === 'money') continue
-    out.push({ k: m.k, t: m.t })
-  }
-  for (const rt of (db.RECORD_TYPES || [])) {
-    if (rt.quick) out.push({ k: 'rt:' + rt.id, t: rt.name })
-  }
-  return out
-})
+/* 上面那排横滑的 = 在自定义里开着的那几个。
+   顺序也来自那儿：列表里怎么排，这一排就怎么排，中间不做映射。 */
+const modes = computed(function () { return commonCaptureOptions() })
 
 /* 「自定义」里展开的全部：空间里所有能记的东西 */
 const allOptions = computed(function () { return allCaptureOptions() })
+
+function sub(o) {
+  if (o.builtin) return o.group
+  return o.group + (o.unit ? ' · ' + o.unit : '')
+}
+
+/* 能不能往这个方向挪。锁住的不动，也不能越过锁住的 —— 「自动判断」占着第一位。 */
+function canUp(i) {
+  const L = allOptions.value
+  return i > 0 && !L[i].lock && !L[i - 1].lock
+}
+function canDown(i) {
+  const L = allOptions.value
+  return i < L.length - 1 && !L[i].lock && !L[i + 1].lock
+}
+
+function move(o, d) {
+  if (o.lock) { uni.showToast({ title: '「自动判断」固定在第一位', icon: 'none' }); return }
+  if (!moveCaptureOption(o.k, d)) return
+  /* 挪完立刻落盘，不等那个 2 秒的定时器 —— 人可能配完就切走 */
+  saveState(true)
+}
+
+function toggle(o) {
+  if (o.lock) { uni.showToast({ title: '「自动判断」是默认项，一直都在', icon: 'none' }); return }
+  const on = toggleCaptureCommon(o.k)
+  /* 关掉的正是当前选着的那个，就退回「自动判断」——
+     不退的话，面板上会停在一个已经不在那排里的模式，看不出选中了什么。 */
+  if (!on && mode.value === o.k) mode.value = 'auto'
+  saveState(true)
+}
+
+function resetCfg() {
+  resetCaptureConfig()
+  if (mode.value !== 'auto' && !commonCaptureOptions().some(function (m) { return m.k === mode.value })) {
+    mode.value = 'auto'
+  }
+  saveState(true)
+  uni.showToast({ title: '回到默认', icon: 'none' })
+}
 
 function pickOption(o) {
   mode.value = o.k
@@ -251,13 +301,15 @@ function done(msg) {
   background: var(--mask);
 }
 /* 面板居中，不贴底。贴底那版在手机上不好用：
-   手要够到屏幕最下面，而输入法一起来，面板又被顶得只剩一半。 */
+   手要够到屏幕最下面，而输入法一起来，面板又被顶得只剩一半。
+   宽度也守住手机宽度 —— 在电脑浏览器里打开时，它不该被拉成一整条。 */
 .capbox {
   position: absolute;
-  left: 16px;
-  right: 16px;
   top: 50%;
-  transform: translateY(-50%);
+  left: 50%;
+  width: calc(100% - 32px);
+  max-width: calc(var(--app-w, 430px) - 32px);
+  transform: translate(-50%, -50%);
   padding: 12px 14px 14px;
   background: var(--card);
   border-radius: 16px;
@@ -266,8 +318,8 @@ function done(msg) {
   animation: capin .18s ease-out;
 }
 @keyframes capin {
-  from { opacity: 0; transform: translateY(-50%) scale(.96); }
-  to { opacity: 1; transform: translateY(-50%) scale(1); }
+  from { opacity: 0; transform: translate(-50%, -50%) scale(.96); }
+  to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
 }
 
 .caphead {
@@ -339,7 +391,9 @@ function done(msg) {
 .morebtn.is-on .morebtn-t { color: var(--accent); }
 
 .allbox {
-  max-height: 250px;
+  /* 列表高了会让整个面板超出屏幕，所以给它一个上限、内部滚动。
+     剩下那几样（输入框 / 切换器 / 记下）在矮屏上也必须留在视野里。 */
+  max-height: 34vh;
   margin-top: 10px;
   padding: 2px 0;
   background: var(--bg);
@@ -349,12 +403,74 @@ function done(msg) {
   display: flex;
   flex-direction: row;
   align-items: center;
+  padding: 5px 10px 5px 4px;
+}
+/* 关掉的变淡，但**不从列表里拿掉** —— 否则关掉之后就再也找不回来了 */
+.allrow.is-off .allrow-t { color: var(--muted); }
+
+/* 左边那对上下箭头：调的就是上面那排的真实次序 */
+.arw {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  width: 26px;
+  margin-right: 2px;
+}
+.arw-b {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 18px;
+  border-radius: 5px;
+}
+.arw-b:active { background: var(--line); }
+.arw-b.is-dim:active { background: transparent; }
+/* 三角形用边框画，不用 ▲▼ 字符：字符的字形各机型不一致，会看着歪 */
+.tri {
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+}
+.tri-up { border-bottom: 5px solid var(--sub); }
+.tri-dn { border-top: 5px solid var(--sub); }
+.arw-b.is-dim .tri { opacity: .25; }
+
+.allrow-m {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
   justify-content: space-between;
-  padding: 9px 12px;
+  padding: 3px 10px 3px 2px;
 }
 .allrow-t { font-size: 13px; color: var(--text); }
 .allrow-t.is-on { color: var(--accent); }
 .allrow-s { font-size: 11px; color: var(--muted); }
+
+/* 列表行里的开关比顶部那个小一号 */
+.sw-row {
+  flex: 0 0 auto;
+  width: 34px;
+  height: 20px;
+  border-radius: 10px;
+}
+.sw-row .sw-dot { top: 3px; left: 3px; width: 14px; height: 14px; }
+.sw-row.is-on .sw-dot { left: 17px; }
+
+.allreset {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  margin-top: 6px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.allreset-t { font-size: 12px; color: var(--sub); }
+.allreset:active { background: var(--bg); }
 
 .cats {
   display: flex;

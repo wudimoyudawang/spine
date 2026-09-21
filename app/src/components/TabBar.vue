@@ -54,6 +54,10 @@ function pick(k) { go(k) }
 .tabbar {
   position: fixed;
   left: 0; right: 0; bottom: 0;
+  /* 守住手机宽度、水平居中。fixed 元素不跟着 .sp-root 走，得各自带上。
+     left:0 + right:0 + 固定 max-width + margin:auto = 居中。 */
+  max-width: var(--app-w, 430px);
+  margin: 0 auto;
   z-index: 30;
   display: flex;
   flex-direction: row;

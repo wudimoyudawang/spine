@@ -9,6 +9,15 @@
 
 page,
 .sp-root {
+  /* 手机宽度上限（最大的主流机型是 430pt）。在电脑浏览器里打开时，
+     整个应用按这个宽度居中，不铺满整块宽屏。
+     真机上视口本来就小于它，这条不起作用。
+
+     注意：`position: fixed` 的元素是相对视口定位的，不会跟着 .sp-root 的
+     max-width 走 —— 底部栏 / 右上角齿轮 / 速记面板都要各自带上它，
+     少了哪个，哪个就会在宽屏上跑到屏幕边上。 */
+  --app-w: 430px;
+
   --bg: #F5F6F8;
   --card: #FFFFFF;
   --line: #E6E8EE;
@@ -34,6 +43,14 @@ page {
   font-size: 14px;
   line-height: 1.6;
   font-family: system-ui, -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+}
+
+/* 内容区守住手机宽度。宽屏上两侧多出来的地方留背景色，
+   页面看起来就是「一台手机」而不是「被拉长的网页」。 */
+.sp-root {
+  max-width: var(--app-w);
+  margin: 0 auto;
+  min-height: 100vh;
 }
 
 view,
