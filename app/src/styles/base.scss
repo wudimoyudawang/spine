@@ -1,0 +1,53 @@
+/* ================= 全局样式与设计变量 =================
+ *
+ * 变量和原型 prototype/index.html 的 :root 完全一致，改配色只改这里。
+ *
+ * 尺寸一律用 px，不用 rpx：原型就是按手机宽度写死的 px，先让「长什么样」
+ * 和原型对上。要不要 rpx 化（大屏上等比放大）等结构搬稳了再单独做一次 ——
+ * 和「搬结构」混在一起改，出了问题就说不清是搬错了还是换算错了。
+ */
+
+page,
+.sp-root {
+  --bg: #F5F6F8;
+  --card: #FFFFFF;
+  --line: #E6E8EE;
+  --line2: #D8DCE4;
+  --text: #1F2430;
+  --sub: #5A6272;
+  --muted: #8A93A3;
+  --accent: #2F6FEB;
+  --accent-bg: #EAF1FE;
+  --ok: #0F7A5A;
+  --ok-bg: #E8F6F1;
+  --warn: #A85B00;
+  --warn-bg: #FDF3E3;
+  --danger: #C0392B;
+  --danger-bg: #FDECEA;
+  --mask: rgba(31, 36, 48, .34);
+  --r: 12px;
+}
+
+page {
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.6;
+  font-family: system-ui, -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+}
+
+view,
+text,
+input,
+textarea {
+  box-sizing: border-box;
+}
+
+/* uni-app 的 input 各端默认样式不一致，这里统一。
+   字号必须 >= 16px：小于 16px 时 iOS 一聚焦就放大整个页面。 */
+input,
+textarea {
+  font-family: inherit;
+  font-size: 16px;
+  color: var(--text);
+}
