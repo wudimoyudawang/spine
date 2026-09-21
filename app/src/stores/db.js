@@ -264,25 +264,26 @@ export function kidsOf(list, parent) {
   return (list || []).filter(x => (x.parent || null) === (parent || null))
 }
 
-/* 今日页要显示的待办。原型是「只挑没做完的」—— 那样勾完就从列表里消失，
-   想反悔也没有东西可点。所以这里改一处：
-   **今天到期这一组保留已完成的**（排在未完成之后），点一下能取消。
-   过期那组不保留 —— 那些本来就是欠账，清掉就该走，留在今日页没意义。 */
+/* 今日页要显示的待办。分**三**组，不是两组：
+   overdue = 逾期没做的，due = 今天到期的，done = 今天做完的。
+
+   为什么单分一组 done：勾选框要能反悔。勾完那一行要是直接从列表消失，
+   就再没有东西可点了。所以今天做完的留在专门的一处 ——
+   不是混在待办里（那会让「还剩几件」看不清），是块头那个「已完成」按钮切过去看。
+   逾期那一组不留已完成的：那些是欠账，清掉就该走。 */
 export function pickToday(items, today) {
-  const t = today || TODAY, over = [], due = []
+  const t = today || TODAY, over = [], due = [], done = []
   for (const it of (items || [])) {
     if (!it.due) continue
-    if (it.status === 'done' && it.due !== t) continue
+    if (it.status === 'done') {
+      if (it.due === t) done.push(it)
+      continue
+    }
     if (it.due < t) over.push(it)
     else if (it.due === t) due.push(it)
   }
   over.sort((a, b) => (a.due < b.due ? -1 : (a.due > b.due ? 1 : 0)))
-  /* 完成的排到最后：它们留在列表里是为了「能反悔」，
-     不是为了和正经待办抢注意力。 */
-  due.sort(function (a, b) {
-    return (a.status === 'done' ? 1 : 0) - (b.status === 'done' ? 1 : 0)
-  })
-  return { overdue: over, due: due }
+  return { overdue: over, due: due, done: done }
 }
 
 /* ---------------- 打卡 ---------------- */
@@ -1203,23 +1204,55 @@ export function todayTree(today) {
   const picked = {}
   r.overdue.forEach(x => { picked[x.id] = 1 })
   r.due.forEach(x => { picked[x.id] = 1 })
-  function emit(node, depth, over, out, seen) {
-    if (seen[node.id]) return
-    seen[node.id] = 1
-    const kids = kidsOf(db.ITEMS, node.id)
-    out.push({ node, depth, kids: kids.length, closed: !!db.CLOSED_NODES[node.id], over, path: nodePath(db.ITEMS, node), spec: specOf('item', node.id) })
-    if (db.CLOSED_NODES[node.id]) return
-    for (const k of kids) emit(k, depth + 1, over, out, seen)
+  /* kids 数的是**可见的子项**，不是全部。待办这一组不显示已完成的子项，
+     那个「N 项」徽标就得按同一口径数 —— 写着 2 项却只数得出 1 条，
+     人会以为有一条被藏起来了（它确实被藏起来了，但在另一个视图里）。 */
+  function rowObject(node, depth, over, kidCount) {
+    return {
+      node, depth, over,
+      kids: kidCount === undefined ? kidsOf(db.ITEMS, node.id).length : kidCount,
+      closed: !!db.CLOSED_NODES[node.id],
+      path: nodePath(db.ITEMS, node),
+      spec: specOf('item', node.id)
+    }
   }
+
+  /* 待办这一组：从顶层铺，子项跟着父项走 —— 但**已完成的子项不跟**。
+     它们做完那一刻就归到「已完成」视图去了；留在这边会让「还剩几件」虚高，
+     而且一条划掉的名字夹在待办中间，本来也不是待办该有的样子。
+     子项自己的到期日照旧不看（它是「这件事的一部分」，不是另一个独立承诺）。 */
   function build(src, over) {
     const out = [], seen = {}
+    function emit(node, depth) {
+      if (seen[node.id]) return
+      seen[node.id] = 1
+      const live = kidsOf(db.ITEMS, node.id).filter(function (k) { return k.status !== 'done' })
+      out.push(rowObject(node, depth, over, live.length))
+      if (db.CLOSED_NODES[node.id]) return
+      for (const k of live) emit(k, depth + 1)
+    }
     for (const it of src) {
       if (it.parent && picked[it.parent]) continue
-      emit(it, 0, over, out, seen)
+      emit(it, 0)
     }
     return out
   }
-  return { overdue: build(r.overdue, true), due: build(r.due, false) }
+
+  /* 已完成那一组：**平铺，不铺树**。
+     一条做完的子项，它的父项很可能还没完（「写周报」下面那条做完了，周报本身没写完）——
+     挂回父项下面会让人以为父项也做完了。平铺着列、灰字标出它原本挂在哪，才说得准。
+     所以这一组也不给折叠三角：本来就是平的，展开也没东西可展。 */
+  const done = r.done.map(function (it) {
+    const o = rowObject(it, 0, false)
+    o.kids = 0
+    return o
+  })
+
+  return {
+    overdue: build(r.overdue, true),
+    due: build(r.due, false),
+    done: done
+  }
 }
 
 /* ---------------- 今天记下的（操作流水） ----------------

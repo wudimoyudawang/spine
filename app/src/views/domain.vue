@@ -75,7 +75,7 @@
           @sub="(t) => commitSub(r.spec, t)"
           @del="del(r.spec, r.node)"
         >
-          <text class="row-t">{{ label(r.node) }}</text>
+          <text class="row-t" :class="{ 'is-done': r.node.status === 'done' }">{{ label(r.node) }}</text>
           <text class="row-m">{{ pathPre(r) }}{{ dueText(r.node) }}</text>
         </TreeRow>
       </view>
@@ -473,6 +473,9 @@ function tick(id) {
 }
 .row-main { flex: 1 1 auto; min-width: 0; padding: 6px 0; }
 .row-t { display: block; font-size: 14px; color: var(--text); }
+/* 做完的待办划掉。这一页不过滤状态 —— 要的就是「这个领域一共有些什么事」，
+   所以做完的留着，但得一眼看出来它做完了 */
+.row-t.is-done { color: var(--muted); text-decoration: line-through; }
 .row-m { display: block; margin-top: 1px; font-size: 12px; color: var(--muted); }
 .row-v { font-size: 12px; color: var(--sub); }
 

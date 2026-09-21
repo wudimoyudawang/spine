@@ -53,23 +53,30 @@
       </TreeRow>
     </view>
 
+    <!-- 待办 / 已完成两个视图，用块头那颗按钮切。
+         两个都只看今天 —— 历史的去「空间」里对应的领域看（那边不过滤状态，
+         做完的和没做完的都在，只是做完的划掉）。 -->
     <view class="block">
       <view class="block-h">
-        <text class="tag">今天</text>
+        <text class="tag">{{ doneView ? '已完成' : '待办' }}</text>
         <view class="block-acts">
-          <text class="block-note">{{ topLevel(tt.due) }} 条待办</text>
-          <view class="addbtn" @click="addTop('todo')">
+          <text class="block-note">{{ doneView ? tt.done.length : topLevel(tt.due) }} 条</text>
+          <view class="addbtn" @click="doneView = !doneView">
+            <text class="addbtn-t">{{ doneView ? '待办' : '已完成' }}</text>
+          </view>
+          <view v-if="!doneView" class="addbtn" @click="addTop('todo')">
             <PlusIcon :size="14" />
             <text class="addbtn-t">新增待办</text>
           </view>
         </view>
       </view>
-      <view v-if="!tt.due.length" class="empty">
-        <text class="empty-t">今天没有到期的待办</text>
-        <text class="empty-t">点上面的「新增待办」加一条</text>
+
+      <view v-if="!rows.length" class="empty">
+        <text class="empty-t">{{ doneView ? '今天还没有做完的' : '今天没有到期的待办' }}</text>
+        <text class="empty-t">{{ doneView ? '点左边的方框就能完成一条' : '点上面的「新增待办」加一条' }}</text>
       </view>
       <TreeRow
-        v-for="r in tt.due"
+        v-for="r in rows"
         :key="r.node.id"
         :depth="r.depth"
         :kids="r.kids"
@@ -228,6 +235,14 @@ const monthSum = computed(() => moneyTotalOf(TODAY.slice(0, 7)))
 const label = labelOf
 const fold = toggleFold
 const armed = delArmed
+
+/* 待办 / 已完成两个视图，块头那颗按钮切的就是它。
+   只存一个布尔，不存「上次看的是哪个」—— 重开应用该回到待办，
+   而不是停在一屏已完成上。 */
+const doneView = ref(false)
+const rows = computed(function () {
+  return doneView.value ? tt.value.done : tt.value.due
+})
 
 /* 子项那行的灰字前面补一句上级路径。今日页不铺整棵树，
    光靠缩进看不出来它挂在谁下面。 */
