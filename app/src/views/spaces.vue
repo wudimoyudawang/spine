@@ -56,7 +56,92 @@
           <view class="sw-dot"></view>
         </view>
       </view>
-      <view class="note"><text class="note-t">自动判断的规则表下一轮搬过来。</text></view>
+      <view class="note"><text class="note-t">这里只管首页那一排出现哪些类目。判断一句话靠的是规则，在下面那块。</text></view>
+    </view>
+
+    <!-- ============ 自动判断规则 ============
+         放在设置页而不是记一笔的面板里：面板要矮到能让出输入法，
+         而规则是偶尔配一次的东西 —— 挤进那几行只会两头都难受。 -->
+    <view class="block">
+      <view class="block-h">
+        <text class="tag">自动判断规则</text>
+        <text class="block-note">生效 {{ rstat.on }} / 共 {{ rstat.total }} 条</text>
+      </view>
+
+      <view v-for="(ru, i) in db.AUTO_RULES" :key="ru.id" class="rule" :class="{ 'is-off': !ru.on }">
+        <view class="rule-h">
+          <view class="sw sw-rule" :class="{ 'is-on': ru.on }" @click="flip(ru)">
+            <view class="sw-dot"></view>
+          </view>
+          <view class="rule-n">
+            <text class="rule-t">{{ ruleName(ru) }}</text>
+            <text v-if="ru.sys" class="rule-sys">内置</text>
+          </view>
+          <text class="rule-to">{{ ruleTargetLabel(ru.to) }}</text>
+        </view>
+        <text class="rule-m">{{ ruleMatchLabel(ru) }}</text>
+        <view class="rule-ops">
+          <view class="mini" :class="{ 'is-dim': i === 0 }" @click="shift(ru, -1)"><text class="mini-t">上移</text></view>
+          <view class="mini" :class="{ 'is-dim': i === db.AUTO_RULES.length - 1 }" @click="shift(ru, 1)">
+            <text class="mini-t">下移</text>
+          </view>
+          <view class="mini" @click="editRule(ru.id)"><text class="mini-t">{{ editing === ru.id ? '收起' : '改' }}</text></view>
+          <view v-if="!ru.sys" class="mini mini-del" @click="delRule(ru)">
+            <text class="mini-t">{{ delArmed === 'rule:' + ru.id ? '确认删' : '删' }}</text>
+          </view>
+        </view>
+        <RuleForm
+          v-if="editing === ru.id"
+          :key="ru.id"
+          :rule="ru"
+          @save="saveRuleFrom"
+          @cancel="cancelRule"
+        />
+      </view>
+
+      <view class="btn btn-add" @click="editRule('new')">
+        <text class="btn-t">{{ editing === 'new' ? '收起' : '+ 新增规则' }}</text>
+      </view>
+      <RuleForm v-if="editing === 'new'" :key="'new'" @save="saveRuleFrom" @cancel="cancelRule" />
+
+      <view class="note">
+        <text class="note-t">规则从上往下匹配，取第一条命中的。</text>
+        <text class="note-t">你写的几条排在内置前面，挪不出这一组。</text>
+        <text class="note-t">排除式写错了会被忽略，整条规则还在。</text>
+        <text class="note-t">写完到下面的「试一句」里过一遍。</text>
+      </view>
+    </view>
+
+    <!-- 这一框什么都不写进数据：它只是把上面那张表走一遍给人看。 -->
+    <view class="block">
+      <view class="block-h">
+        <text class="tag">试一句</text>
+        <text class="block-note">不会真的记下来</text>
+      </view>
+      <input
+        v-model="testText"
+        class="tin"
+        placeholder="1800 kcal ／ 深蹲 80kg × 5 × 5 ／ 32 午餐"
+        placeholder-class="tph"
+      />
+      <template v-if="test">
+        <view class="tres">
+          <text class="tres-k">会记成 </text>
+          <text class="tres-v">{{ test.describe }}</text>
+        </view>
+        <text class="tres-why" :class="{ 'is-bad': !test.hit }">
+          {{ test.hit ? '命中「' + test.hit + '」' : '没有规则命中 · 会进收件箱' }}
+        </text>
+        <text class="tsub">逐条检查，顺序就是上面的顺序</text>
+        <view v-for="row in test.rows" :key="row.n" class="trow">
+          <text class="trow-t" :class="{ 'is-hit': row.hit }">{{ row.n }}. {{ row.name }}</text>
+          <text class="trow-v" :class="{ 'is-hit': row.hit }">{{ row.hit ? '命中' : '不命中' }}{{ row.why }}</text>
+        </view>
+      </template>
+      <view v-else class="note">
+        <text class="note-t">上面随便打一句。</text>
+        <text class="note-t">看不见它命中哪条，就等于没写对。</text>
+      </view>
     </view>
 
     <view class="block">
@@ -103,11 +188,15 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import {
   db, go, money, TODAY, summaryOf, recordTypesOf, togglePin, newDomain,
-  snapshot, storeFailed
+  snapshot, storeFailed,
+  ruleName, ruleTargetLabel, ruleMatchLabel, ruleStats, ruleMatches, whyNot,
+  toggleRule, moveRule, saveRule, armDelete, delArmed,
+  resolveCapture, describeCapture
 } from '../stores/db'
+import RuleForm from '../components/RuleForm.vue'
 
 function summary(d) {
   return summaryOf(d, recordTypesOf(db.RECORD_TYPES, d.id).length)
@@ -155,6 +244,61 @@ function exportData() {
     success: function () { uni.showToast({ title: '已复制全部数据', icon: 'none' }) }
   })
 }
+
+/* ---------------- 自动判断规则 ---------------- */
+const rstat = computed(ruleStats)
+
+/* 同一时刻只开一张草稿表：点开另一条就是把这张丢掉。
+   留着两张的话，人会记不清刚才是改的哪一条。 */
+const editing = ref('')
+
+function editRule(id) {
+  editing.value = editing.value === id ? '' : id
+}
+function cancelRule() { editing.value = '' }
+
+function saveRuleFrom(rec) {
+  const was = saveRule(rec)
+  editing.value = ''
+  uni.showToast({ title: was === 'new' ? '规则已加上，排在最前面' : '规则已保存', icon: 'none' })
+}
+
+function flip(ru) { toggleRule(ru.id) }
+
+function shift(ru, d) {
+  if (moveRule(ru.id, d)) return
+  /* 到边了，或者那一头是另一组 —— 两种都不许，但没必要分两句说 */
+  uni.showToast({ title: '挪不动：到边或不能跨组', icon: 'none' })
+}
+
+/* 两段确认，和删一条待办同一套：第一下只是武装，4 秒内再点一下才算。 */
+function delRule(ru) {
+  const r = armDelete('rule:' + ru.id)
+  if (!r) return
+  if (r.error) { uni.showToast({ title: r.error, icon: 'none' }); return }
+  if (editing.value === ru.id) editing.value = ''
+  uni.showToast({ title: '规则已删掉', icon: 'none' })
+}
+
+const testText = ref('')
+
+/* 把整张表按顺序走一遍给人看。判断走的是 resolveCapture / ruleMatches 本尊，
+   不是照着规则重写的一份「解释」—— 那份迟早和真的对不上。 */
+const test = computed(function () {
+  const v = testText.value.trim()
+  if (!v) return null
+  const r = resolveCapture(v, 'auto')
+  const rows = db.AUTO_RULES.map(function (ru, i) {
+    let hit = ruleMatches(ru, v)
+    let why = ''
+    if (hit) {
+      why = whyNot(ru, v)
+      if (why) hit = false
+    }
+    return { n: i + 1, name: ruleName(ru), hit: hit, why: why }
+  })
+  return { describe: describeCapture(r), hit: r.rule ? ruleName(r.rule) : '', rows: rows }
+})
 </script>
 
 <style scoped>
@@ -213,7 +357,12 @@ function exportData() {
 .card-add-t { color: var(--sub); }
 
 .note { padding: 14px 2px 0; }
-.note-t { font-size: 12px; line-height: 1.5; color: var(--muted); }
+.note-t {
+  display: block;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--muted);
+}
 
 /* ---------------- 设置那一段 ---------------- */
 .sect { padding: 12px 2px 10px; }
@@ -290,4 +439,137 @@ function exportData() {
 .btn-main { background: var(--accent); border-color: var(--accent); }
 .btn-main-t { color: #fff; }
 .btn:active { background: var(--bg); }
+
+/* ---------------- 规则那一段 ---------------- */
+.rule {
+  padding: 9px 0;
+  border-top: 1px solid var(--line);
+}
+.rule.is-off .rule-t,
+.rule.is-off .rule-m { color: var(--muted); }
+
+.rule-h {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+}
+.rule-n {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.rule-t { font-size: 13px; color: var(--text); }
+.rule-sys {
+  margin-left: 6px;
+  padding: 0 5px;
+  border: 1px solid var(--line2);
+  border-radius: 999px;
+  font-size: 10px;
+  color: var(--muted);
+}
+.rule-to {
+  flex: 0 1 auto;
+  margin-left: 8px;
+  text-align: right;
+  font-size: 11px;
+  color: var(--sub);
+}
+.rule-m {
+  display: block;
+  margin-top: 3px;
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--muted);
+  word-break: break-all;
+}
+.rule-ops {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  margin-top: 7px;
+}
+/* 行里的开关比顶部那个小一号，不然它比字还高 */
+.sw-rule {
+  flex: 0 0 auto;
+  width: 34px;
+  height: 20px;
+  margin-right: 9px;
+  border-radius: 10px;
+}
+.sw-rule .sw-dot { top: 3px; left: 3px; width: 14px; height: 14px; }
+.sw-rule.is-on .sw-dot { left: 17px; }
+
+.mini {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  height: 28px;
+  margin-right: 6px;
+  padding: 0 10px;
+  border: 1px solid var(--line2);
+  border-radius: 14px;
+}
+.mini-t { font-size: 11px; color: var(--sub); }
+.mini:active { background: var(--accent-bg); border-color: var(--accent); }
+.mini.is-dim { opacity: .35; }
+/* 删除那颗：武装起来才变红，平时它和别的按钮一个样子 */
+.mini-del:active { background: var(--danger-bg); border-color: var(--danger); }
+.mini-del:active .mini-t { color: var(--danger); }
+
+.btn-add {
+  width: 100%;
+  margin-top: 10px;
+  border-style: dashed;
+}
+
+.tin {
+  width: 100%;
+  height: 40px;
+  padding: 0 12px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  font-size: 13px;
+  color: var(--text);
+  box-sizing: border-box;
+}
+.tph { color: var(--muted); }
+
+.tres {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-top: 10px;
+}
+.tres-k { font-size: 12px; color: var(--muted); }
+.tres-v { font-size: 13px; font-weight: 500; color: var(--text); }
+.tres-why {
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+  color: var(--accent);
+}
+.tres-why.is-bad { color: var(--muted); }
+.tsub {
+  display: block;
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.trow {
+  display: flex;
+  flex-direction: row;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 5px 0;
+  border-top: 1px solid var(--line);
+}
+.trow-t { font-size: 12px; color: var(--muted); }
+.trow-v { font-size: 11px; color: var(--muted); }
+.trow-t.is-hit, .trow-v.is-hit { color: var(--accent); }
 </style>

@@ -472,6 +472,255 @@ export function resetCaptureConfig() {
   db.CAP_CFG = { order: [], common: {} }
 }
 
+/* ---------------- 自动判断的规则表 ----------------
+   一句话进来 → 它该被记成什么。纯规则，没有 AI：只有关键词和正则两种条件，
+   你能自己写完、也能自己看懂 —— 这是这台设备上「识别」的全部承诺。
+
+   规则对象：{id, sys, on, t, kw | re, ex, to, max}
+     kw = 关键词，逗号（或空格）分隔，提到一个就算命中
+     re = 正则，和 kw 二选一，两个都写时 kw 优先
+     ex = 排除式正则，命中就不采用这条规则
+     max = 句子超过这么长就不参与判断
+     to = 判成什么：money / money:分类 / todo / note / inbox / 某条记录项的 id
+
+   【你自己写的规则永远排在内置前面】—— addRule 只往最前面插，moveRule 不许跨组。
+   你写的那条应该压过我的默认判断，不然它就没有存在的意义。 */
+export function rtById(id) {
+  return db.RECORD_TYPES.filter(function (t) { return t.id === id })[0] || null
+}
+
+export function firstNumber(t) {
+  const m = String(t == null ? '' : t).match(/\d+(\.\d+)?/)
+  return m ? parseFloat(m[0]) : null
+}
+
+/* 把数字和单位从原句里挖掉，剩下的是这条记录的正文。
+   不减掉的话「体重 71.4 kg」会存成 v=71.4、正文又写回整句，读的人不知道哪个作数。 */
+export function restOf(t, num) {
+  let s = String(t == null ? '' : t)
+  if (num !== null && num !== undefined) s = s.replace(String(num), ' ')
+  s = s.replace(/kcal|千卡|大卡|卡路里|kg|公斤|千克|斤|元|块|¥|￥/gi, ' ')
+  return s.replace(/\s+/g, ' ').trim()
+}
+
+export function ruleName(r) {
+  if (!r) return '未命名规则'
+  return r.t || r.kw || r.re || '未命名规则'
+}
+
+/* 一条规则是否命中这句话。 */
+export function ruleMatches(rule, text) {
+  const t = String(text == null ? '' : text)
+  if (!rule || !t) return false
+  if (rule.max && t.length > rule.max) return false
+  let hit = false
+  if (rule.kw) {
+    const low = t.toLowerCase()
+    const ws = String(rule.kw).split(/[,，\s]+/)
+    for (const w of ws) {
+      if (w && low.indexOf(w.toLowerCase()) >= 0) { hit = true; break }
+    }
+  } else if (rule.re) {
+    try { hit = new RegExp(rule.re).test(t) } catch (e) { hit = false }
+  } else {
+    return false                    /* 没写匹配条件 = 永不命中，不猜 */
+  }
+  if (!hit) return false
+  if (rule.ex) {
+    /* 排除式写错了就当没写 —— 别让一个笔误把整条规则废掉 */
+    try { if (new RegExp(rule.ex).test(t)) return false } catch (e) {}
+  }
+  return true
+}
+
+/* 明显会把页面卡死的正则（嵌套量词 / 超长）。写错了顶多是判不准，卡死的是自己的手机。 */
+export function riskyRegex(src) {
+  const s = String(src == null ? '' : src)
+  return s.length > 200 || /\([^)]*[+*][^)]*\)[+*{]/.test(s)
+}
+
+export function ruleTarget(to) {
+  if (!to) return null
+  if (String(to).indexOf('money') === 0) {
+    const i = to.indexOf(':')
+    return { kind: 'money', category: i >= 0 ? to.slice(i + 1) : '' }
+  }
+  if (to === 'todo' || to === 'note' || to === 'inbox') return { kind: to }
+  const rt = rtById(to)
+  return rt ? { kind: 'rt', rt: rt } : null
+}
+
+export function ruleTargetLabel(to) {
+  if (!to) return '（没设目标）'
+  if (String(to).indexOf('money:') === 0) return '支出 · ' + to.slice(6)
+  if (to === 'money') return '支出'
+  if (to === 'todo') return '待办'
+  if (to === 'note') return '随心记'
+  if (to === 'inbox') return '收件箱'
+  const rt = rtById(to)
+  return rt ? '记录项 · ' + rt.name : '（目标已不存在）'
+}
+
+export function ruleMatchLabel(r) {
+  let s = '匹配 ' + (r.kw ? '关键词 ' + r.kw : (r.re ? '正则 ' + r.re : '（没写，永不命中）'))
+  if (r.ex) s += ' · 排除 ' + r.ex
+  if (r.max) s += ' · 只在 ' + r.max + ' 字内判断'
+  return s
+}
+
+/* 从上往下取第一条命中的。目标要数字而这句里没有数字 → 跳过这条，不硬塞一个 0 进去。 */
+export function pickRule(text) {
+  const num = firstNumber(text)
+  for (const r of db.AUTO_RULES) {
+    if (!r.on || !ruleMatches(r, text)) continue
+    const tg = ruleTarget(r.to)
+    if (!tg) continue
+    if (tg.kind === 'rt' && tg.rt.mode === 'number' && num === null) continue
+    if (tg.kind === 'money' && num === null) continue
+    return r
+  }
+  return null
+}
+
+function buildResolved(raw, tg, rule) {
+  const out = { raw, rule, rt: null, kind: 'inbox', value: null, unit: '', text: raw, category: '' }
+  if (tg.kind === 'rt') {
+    const rt = tg.rt
+    out.kind = 'rt'
+    out.rt = rt
+    if (rt.mode === 'number') {
+      const n = firstNumber(raw)
+      out.value = n
+      out.unit = rt.unit || ''
+      out.text = restOf(raw, n)
+    }
+    return out
+  }
+  if (tg.kind === 'money') {
+    const n = firstNumber(raw)
+    out.kind = 'money'
+    out.value = n
+    out.unit = '元'
+    out.text = restOf(raw, n)
+    out.category = tg.category || guessCategory(out.text || raw)
+    return out
+  }
+  out.kind = tg.kind
+  return out
+}
+
+/* mode 是面板上选着的那颗：'auto'，或者 'todo' / 'note' / 'inbox' / 'rt:某条记录项'。
+   手动点了类目就**完全跳过自动判断** ——
+   「我明明点了餐饮」这件事不能输给一条规则，否则那一点就成了猜测的输入。 */
+export function resolveCapture(text, mode) {
+  const t = String(text == null ? '' : text).trim()
+  const empty = { raw: '', rule: null, rt: null, kind: 'inbox', value: null, unit: '', text: '', category: '' }
+  if (!t) return empty
+  if (!mode || mode === 'auto') {
+    const r = pickRule(t)
+    const tg = r ? ruleTarget(r.to) : null
+    if (r && tg) return buildResolved(t, tg, r)
+    return { raw: t, rule: null, rt: null, kind: 'inbox', value: null, unit: '', text: t, category: '' }
+  }
+  if (mode.indexOf('rt:') === 0) {
+    const rt = rtById(mode.slice(3))
+    if (rt) return buildResolved(t, { kind: 'rt', rt: rt }, null)
+    return { raw: t, rule: null, rt: null, kind: 'inbox', value: null, unit: '', text: t, category: '' }
+  }
+  return { raw: t, rule: null, rt: null, kind: mode, value: null, unit: '', text: t, category: '' }
+}
+
+/* 那句「会记成：」的话。预览和落库必须是同一个算法算出来的，
+   所以两边都从这里过 —— 措辞只在这一处定义。 */
+export function describeCapture(r) {
+  if (!r) return '收件箱 · 先存着，以后再归类'
+  if (r.kind === 'rt') {
+    const rt = r.rt
+    if (rt.mode === 'number') {
+      const n = (r.value === null || r.value === undefined) ? '（没找到数字）' : (r.value + (rt.unit ? ' ' + rt.unit : ''))
+      return rt.name + ' ' + n + (r.text ? ' · ' + r.text : '')
+    }
+    return rt.name + (r.text ? ' · ' + r.text : '')
+  }
+  if (r.kind === 'money') return '支出 ' + (r.value === null ? '' : '¥' + r.value) + ' · ' + (r.category || '分类待定')
+  if (r.kind === 'todo') return '待办 · 进今天'
+  if (r.kind === 'note') return '随心记 · 不进统计'
+  return '收件箱 · 先存着，以后再归类'
+}
+
+/* 规则的目标下拉。'rt:' 前缀是面板那排胶囊的写法，规则里存的是光秃秃的 id
+   —— 存 id 才对：以后它在胶囊排上被挪到哪儿，规则都不用跟着改。 */
+export function ruleTargetOptions() {
+  const out = [
+    { v: 'money', t: '记一笔支出' },
+    { v: 'todo', t: '待办' },
+    { v: 'note', t: '随心记' },
+    { v: 'inbox', t: '只丢进收件箱' }
+  ]
+  for (const rt of db.RECORD_TYPES) out.push({ v: rt.id, t: '记录项 · ' + rt.name })
+  return out
+}
+
+/* 保存一条规则，两个去处：新的插到最前（它第一句就能生效，不会被旧规则先抢走），
+   改的原地换掉 —— 位置不能动，顺序在这张表里就是要紧的东西。
+   sys 跟着原来那条走：改了内置的规则不会因此变成你自己的那条，
+   它照样不能删、也不能被挪到你自己那组里去。 */
+export function saveRule(rec) {
+  const L = db.AUTO_RULES
+  const i = L.findIndex(function (r) { return r.id === rec.id })
+  if (i < 0) { L.unshift(rec); return 'new' }
+  rec.sys = !!L[i].sys
+  if (rec.max === undefined && L[i].max !== undefined) rec.max = L[i].max
+  L[i] = rec
+  return 'edit'
+}
+
+/* 内置的不给删，只给关。删除走 deleteNode('rule:xx')，
+   和别的条目共用同一套两段确认，所以这里不再单开一个 removeRule()。 */
+export function toggleRule(id) {
+  const r = db.AUTO_RULES.filter(function (x) { return x.id === id })[0]
+  if (!r) return false
+  r.on = !r.on
+  return r.on
+}
+
+/* dir = -1 上移 / 1 下移。不许跨组：跨过去你的规则就压在内置底下了。 */
+export function moveRule(id, dir) {
+  const L = db.AUTO_RULES
+  const i = L.findIndex(function (r) { return r.id === id })
+  if (i < 0) return false
+  const j = i + dir
+  if (j < 0 || j >= L.length) return false
+  if (!!L[i].sys !== !!L[j].sys) return false
+  const tmp = L[i]
+  L[i] = L[j]
+  L[j] = tmp
+  return true
+}
+
+/* 设置页那一行的两个数：生效几条、其中几条是你写的。 */
+export function ruleStats() {
+  let on = 0, user = 0
+  for (const r of db.AUTO_RULES) {
+    if (r.on) on++
+    if (!r.sys) user++
+  }
+  return { on: on, total: db.AUTO_RULES.length, user: user }
+}
+
+/* 一条规则为什么没被采用。测试框逐条检查时用，和 pickRule 的判断必须同源。 */
+export function whyNot(rule, text) {
+  if (!rule.on) return '（已关闭）'
+  const tg = ruleTarget(rule.to)
+  if (!tg) return '（目标已不存在）'
+  const num = firstNumber(text)
+  if (tg.kind === 'rt' && tg.rt.mode === 'number' && num === null) return '（数值记录项，但这句里没有数字）'
+  if (tg.kind === 'money' && num === null) return '（支出，但这句里没有数字）'
+  return ''
+}
+
+export function newRuleId() { return newId('u') }
+
 /* ---------------- 空间 ---------------- */
 export function summaryOf(d, rtCount) {
   let s = todosOf(d.id).length + ' 项待办 · ' + d.habits.length + ' 个习惯 · ' + d.goals.length + ' 个目标'
@@ -972,6 +1221,13 @@ export function deleteNode(spec) {
     if (n) {
       done = { what: '收件箱的一条', label: String(n.text || '').slice(0, 20) }
       db.INBOX.splice(db.INBOX.indexOf(n), 1)
+    }
+  } else if (kind === 'rule') {
+    const r = db.AUTO_RULES.filter(x => x.id === key)[0]
+    if (r && r.sys) return { error: '内置的规则删不掉，可以关掉它' }
+    if (r) {
+      done = { what: '规则', label: ruleName(r) }
+      db.AUTO_RULES.splice(db.AUTO_RULES.indexOf(r), 1)
     }
   } else {
     const hit = resolveNode(s)

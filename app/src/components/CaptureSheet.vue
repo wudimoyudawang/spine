@@ -66,6 +66,14 @@
           </view>
         </view>
 
+        <!-- 提交之前先说一遍会记成什么。看不见它命中哪条规则，就等于没写对。 -->
+        <view v-if="preview" class="capres">
+          <text class="capres-k">会记成 </text>
+          <text class="capres-v">{{ preview.describe }}</text>
+          <text v-if="preview.hit" class="capres-hit">· 命中「{{ preview.hit }}」</text>
+          <text v-else-if="preview.auto" class="capres-miss">· 没规则认出来，会进收件箱</text>
+        </view>
+
         <!-- 展开的是「空间里所有能记的东西」。每行两个控制：
              左边的上下箭头管顺序（就是上面那排的真实次序），右边的开关管它进不进那排。
              关掉的仍然留在列表里、只是变淡 —— 否则关掉之后就再也找不回来了。 -->
@@ -113,8 +121,9 @@
 <script setup>
 import { computed, nextTick, ref, watch } from 'vue'
 import {
-  db, TODAY, money, catList, guessCategory, closeCapture,
+  db, TODAY, money, catList, closeCapture,
   addMoney, addTodo, addInbox, addRecord,
+  resolveCapture, describeCapture, ruleName,
   allCaptureOptions, commonCaptureOptions, moveCaptureOption, toggleCaptureCommon,
   resetCaptureConfig, saveState
 } from '../stores/db'
@@ -142,6 +151,19 @@ function sub(o) {
   if (o.builtin) return o.group
   return o.group + (o.unit ? ' · ' + o.unit : '')
 }
+
+/* 只写了一半的那句话也能看出结果，不用先提交再后悔。
+   它是 resolveCapture 的又一次调用，不是另一套判断 —— 同一数字只允许一处算法。 */
+const preview = computed(function () {
+  const t = draft.value.trim()
+  if (!t) return null
+  const r = resolveCapture(t, mode.value)
+  return {
+    describe: describeCapture(r),
+    auto: mode.value === 'auto',
+    hit: r.rule ? ruleName(r.rule) : ''
+  }
+})
 
 /* 能不能往这个方向挪。锁住的不动，也不能越过锁住的 —— 「自动判断」占着第一位。 */
 function canUp(i) {
@@ -241,37 +263,41 @@ function submitMoney() {
 function submitQuick() {
   const t = draft.value.trim()
   if (!t) return
-  const mv = mode.value
+  /* 预览那行和这里落库走的是同一个 resolveCapture()，
+     所以「会记成什么」不会说了不算。 */
+  const r = resolveCapture(t, mode.value)
 
-  /* 手动点名了某个记录项：这一行里的数字（或者整句）记到它上面。
-     体重、热量、力量训练那些就是靠这条路记进去的。 */
-  if (mv.indexOf('rt:') === 0) {
-    const num = /-?\d+(?:\.\d+)?/.exec(t)
-    addRecord(mv.slice(3), num ? Number(num[0]) : t)
-    done('记下了')
+  if (r.kind === 'rt') {
+    if (r.rt.mode === 'number' && r.value === null) {
+      uni.showToast({ title: '「' + r.rt.name + '」要个数字', icon: 'none' })
+      return
+    }
+    addRecord(r.rt.id, r.rt.mode === 'number' ? r.value : r.text)
+    done('记进「' + r.rt.name + '」')
     draft.value = ''
     return
   }
-  if (mv === 'todo') { addTodo(t, ''); done('记成待办'); draft.value = ''; return }
-  if (mv === 'inbox') { addInbox(t); done('丢进收件箱了'); draft.value = ''; return }
-  if (mv === 'note') {
+  if (r.kind === 'money') {
+    if (r.value === null) {
+      uni.showToast({ title: '记支出要先写个金额', icon: 'none' })
+      return
+    }
+    addMoney(r.value, r.text, r.category)
+    done('记下 ' + money(r.value) + (r.category ? ' · ' + r.category : ''))
+    draft.value = ''
+    return
+  }
+  if (r.kind === 'todo') { addTodo(t, ''); done('记成待办'); draft.value = ''; return }
+  if (r.kind === 'inbox') { addInbox(t); done('丢进收件箱了'); draft.value = ''; return }
+  if (r.kind === 'note') {
     db.NOTES.unshift({ id: 'nt' + Date.now().toString(36), d: TODAY, text: t })
     done('记进随心记了')
     draft.value = ''
     return
   }
-
-  /* 自动判断。这一轮仍是最简规则：数字在开头 → 支出，否则 → 待办。
-     完整的规则表（关键词 / 正则 / 你自己写的那几条）下一轮搬。 */
-  const m = /^\s*[¥￥]?\s*(\d+(?:\.\d+)?)/.exec(t)
-  if (m) {
-    const c = guessCategory(t)
-    addMoney(Number(m[1]), t, c)
-    done('记下 ' + money(Number(m[1])) + (c ? ' · ' + c : ''))
-  } else {
-    addTodo(t, '')
-    done('记成待办')
-  }
+  /* 兜底：一个都没落上也不能什么都不做 —— 提交了一次没反应，比记错地方更糟。 */
+  addInbox(t)
+  done('先进收件箱，回头再归')
   draft.value = ''
 }
 
@@ -363,6 +389,20 @@ function done(msg) {
   border-radius: 10px;
 }
 .capin-first { margin-top: 2px; }
+
+/* 预览那行。字比输入框小一档：它是说明，不是内容。 */
+.capres {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-top: 8px;
+  padding: 0 2px;
+}
+.capres-k { font-size: 11px; color: var(--muted); }
+.capres-v { font-size: 11px; font-weight: 500; color: var(--text); }
+.capres-hit { margin-left: 4px; font-size: 11px; color: var(--accent); }
+.capres-miss { margin-left: 4px; font-size: 11px; color: var(--muted); }
 
 .moderow {
   display: flex;
