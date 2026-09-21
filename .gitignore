@@ -50,8 +50,24 @@ yarn-error.log*
 
 # ── 移动端打包产物与签名 ───────────────────────
 # 签名文件等同密钥（上面那条一票否决），先拦在这里。
-# android/ ios/ 这类生成目录等真开始打包了再按实际情况加。
 *.apk
 *.aab
 *.jks
 *.keystore
+
+# ── Android 壳（shell/）────────────────────────
+# 只留「源码与配置」，其余都是能重建的。
+shell/node_modules/
+shell/www/
+shell/keystore.properties
+shell/android/local.properties
+shell/android/.gradle/
+shell/android/capacitor-cordova-android-plugins/
+shell/android/app/src/main/assets/public/
+shell/android/app/src/main/assets/capacitor.config.json
+shell/android/app/src/main/assets/capacitor.plugins.json
+
+# ── 但要放行打好的安装包（宇要求入库，便于直接从仓库下载）──
+# 注：每次重打都会多存一份二进制，仓库会慢慢变大。
+# 更新包时把旧的删掉再提交，别让历史里堆一串。
+!release/spine.apk

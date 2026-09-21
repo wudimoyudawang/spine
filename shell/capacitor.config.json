@@ -1,0 +1,12 @@
+{
+  "appId": "cn.spine.app",
+  "appName": "书脊",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https"
+  },
+  "android": {
+    "allowMixedContent": false,
+    "backgroundColor": "#F5F6F8"
+  }
+}

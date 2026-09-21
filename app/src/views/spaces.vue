@@ -392,11 +392,21 @@ function takeArchive(raw, from) {
 
 function cancelImport() { pending.value = null }
 
-/* 存成文件。H5 走 Blob + a[download]。 */
+/* 存成文件。
+   两种环境走两条路，都从这一个函数出去：
+   1. **装进原生壳里**（Capacitor）—— 宿主会注入 `window.SPINE_SAVE_FILE`，
+      由它写进 App 目录再调系统分享面板。WebView 里 `a[download]` 不生效，
+      这条路是必须的。
+   2. **浏览器里** —— Blob + `a[download]`。
+   页面自己不判断环境，只认「有没有那个钩子」，所以它不会被某个壳绑死。 */
 function saveFile() {
   const name = exportFileName()
   const text = exportText()
   // #ifdef H5
+  if (typeof window !== 'undefined' && typeof window.SPINE_SAVE_FILE === 'function') {
+    window.SPINE_SAVE_FILE(name, text)
+    return
+  }
   try {
     const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }))
     const a = document.createElement('a')
@@ -412,10 +422,11 @@ function saveFile() {
     uni.showToast({ title: '这个浏览器存不了文件，用剪贴板', icon: 'none' })
   }
   // #endif
-  /* #ifndef H5
-     App 端要接原生写文件（plus.io / uni.saveFile），等壳做出来再接。
-     现在如实说一句 —— 按下去什么都不发生是最难查的一种错。 */
-  uni.showToast({ title: 'App 端的存文件还没接，先用剪贴板', icon: 'none' })
+  // #ifndef H5
+  /* 官方的 DCloud 壳（HBuilderX 那条路）还没接：那边要 `plus.io` / `uni.saveFile`。
+     装的是 Capacitor 壳的话走不到这里 —— 它用的是上面那个 H5 分支 +
+     宿主注入的 SPINE_SAVE_FILE。 */
+  uni.showToast({ title: '这个壳还没接存文件，先用剪贴板', icon: 'none' })
   // #endif
 }
 

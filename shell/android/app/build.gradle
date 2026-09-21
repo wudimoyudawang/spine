@@ -1,0 +1,81 @@
+apply plugin: 'com.android.application'
+
+/* 发布签名从 shell/keystore.properties 读。那个文件里是口令，**不进仓库**；
+   没有它也能构建，那就退回 Gradle 默认的 debug 签名（能装，但签名会随机器变）。 */
+def keyProps = new Properties()
+def keyPropsFile = rootProject.file('../keystore.properties')
+if (keyPropsFile.exists()) { keyPropsFile.withInputStream { keyProps.load(it) } }
+
+android {
+    namespace "cn.spine.app"
+    compileSdk rootProject.ext.compileSdkVersion
+    defaultConfig {
+        applicationId "cn.spine.app"
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode 1
+        versionName "1.0"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        aaptOptions {
+             // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
+             // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
+            ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
+        }
+    }
+    signingConfigs {
+        release {
+            if (keyPropsFile.exists()) {
+                /* storeFile 可以写绝对路径，也可以写相对路径 —— 相对路径按 shell/ 算
+                   （不是按 android/app/），这样 keystore 放在 shell/ 里最省事）。
+                   Gradle 默认把相对路径解析到 android/app/，那会让人摸不着头脑。 */
+                def sf = keyProps['storeFile']
+                if (sf == null || sf.toString().trim().isEmpty()) {
+                    throw new GradleException("keystore.properties 里有 storeFile 这一行是空的")
+                }
+                sf = sf.toString().trim()
+                def isAbs = sf ==~ /^([A-Za-z]:[\\\/]|[\\\/]{2}).*/
+                storeFile(isAbs ? file(sf) : rootProject.file('../' + sf))
+                storePassword keyProps['storePassword']
+                keyAlias keyProps['keyAlias']
+                keyPassword keyProps['keyPassword']
+            }
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            /* 固定签名 —— 这样以后重打的包能覆盖安装，数据不会被清掉 */
+            if (keyPropsFile.exists()) { signingConfig signingConfigs.release }
+        }
+    }
+}
+
+repositories {
+    flatDir{
+        dirs '../capacitor-cordova-android-plugins/src/main/libs', 'libs'
+    }
+}
+
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
+    implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
+    implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
+    implementation project(':capacitor-android')
+    testImplementation "junit:junit:$junitVersion"
+    androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
+    androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
+    implementation project(':capacitor-cordova-android-plugins')
+}
+
+apply from: 'capacitor.build.gradle'
+
+try {
+    def servicesJSON = file('google-services.json')
+    if (servicesJSON.text) {
+        apply plugin: 'com.google.gms.google-services'
+    }
+} catch(Exception e) {
+    logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
+}
