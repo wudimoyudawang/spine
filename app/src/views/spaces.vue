@@ -1,6 +1,6 @@
 <template>
   <view class="page">
-    <view class="pagehead"><text class="ph-t">空间</text></view>
+    <PageHead title="空间" />
 
     <view class="grid">
       <view v-for="d in db.DOMAINS" :key="d.id" class="card" @click="openDomain(d)">
@@ -268,6 +268,7 @@ import {
   addCat, renameCat, catUsed,
   resolveCapture, describeCapture
 } from '../stores/db'
+import PageHead from '../components/PageHead.vue'
 import PlusIcon from '../components/PlusIcon.vue'
 import RuleForm from '../components/RuleForm.vue'
 
@@ -533,8 +534,6 @@ const test = computed(function () {
   padding: 14px 14px calc(76px + env(safe-area-inset-bottom));
 }
 
-.pagehead { padding: 4px 46px 12px 2px; }
-.ph-t { font-size: 22px; font-weight: 500; color: var(--text); }
 
 .grid {
   display: grid;

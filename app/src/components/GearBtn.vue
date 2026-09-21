@@ -1,9 +1,11 @@
 <template>
-  <!-- 齿轮固定在右上角，每个页面都在。
-       点它进「空间」——那一页往下滑就是设置（两段在同一个滚动里，
-       所以齿轮也顺便把「设置」这件事收进了同一个入口）。
+  <!-- 齿轮是「空间」唯一的入口（底栏那四项之外它是唯一的路），所以每个页面都有。
 
-       用 inline SVG 而不是 ⚙ 字符：字符在不同设备上字形差别很大，
+       **它是页头那一行里的一个元素，不是浮在页面上的层。**
+       早先那版是 position:fixed —— 往下滚时卡片会从它下面穿过去，
+       正好盖住行尾的 `×` / `+`。挪进页头之后这个问题从根上没了。
+
+       图标用 inline SVG 而不是 ⚙ 字符：字符在不同设备上字形差别很大，
        有的还会被渲染成彩色 emoji，控件的样子不该由系统决定。 -->
   <view class="gear" :class="{ 'is-on': db.CURRENT === 'spaces' }" @click="open">
     <svg class="gear-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -27,25 +29,20 @@ function open() {
 
 <style scoped>
 .gear {
-  position: fixed;
-  top: calc(12px + env(safe-area-inset-top));
-  /* 钉在「手机」那条窄栏的右上角，而不是浏览器窗口的右上角。
-     写法：右边缘先放到视口正中（right:50%），再用负 margin 往右推半个栏宽。
-     视口比栏窄时（真机上）这半个栏宽也就是半个屏，效果等于原来的 right:12px。 */
-  right: 50%;
-  margin-right: calc(var(--app-w, 430px) / -2 + 12px);
-  z-index: 40;
+  flex: none;
   display: flex;
   align-items: center;
   justify-content: center;
   width: 34px;
   height: 34px;
   border-radius: 50%;
-  background: var(--card);
-  border: 1px solid var(--line);
   color: var(--sub);
+  /* 图标缩在 34px 的盒子里，右边缘本来会离容器边 7px。
+     拉回来 7px，图标的光学右边缘就落在和标题左边缘一样的 2px 上。
+     点按区域仍然是整个 34px 的盒子，不用缩。 */
+  margin-right: -7px;
 }
 .gear:active { background: var(--bg); }
-.gear.is-on { color: var(--accent); border-color: var(--accent); }
-.gear-ico { width: 19px; height: 19px; display: block; }
+.gear.is-on { color: var(--accent); }
+.gear-ico { width: 20px; height: 20px; display: block; }
 </style>

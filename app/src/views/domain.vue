@@ -1,9 +1,10 @@
 <template>
   <view class="page">
-    <view class="pagehead">
-      <view class="back" @click="go('spaces')"><text class="back-t">‹ 空间</text></view>
-      <text class="ph-t">{{ d ? d.name : '领域' }}</text>
-    </view>
+    <PageHead :title="d ? d.name : '领域'">
+      <template #above>
+        <view class="back" @click="go('spaces')"><text class="back-t">‹ 空间</text></view>
+      </template>
+    </PageHead>
 
     <view v-if="!d" class="block">
       <view class="empty"><text class="empty-t">找不到这个领域。</text><text class="empty-t">回空间页看看。</text></view>
@@ -232,6 +233,7 @@ import {
   progressOf, setGoalP, bumpGoal, GOAL_STEPS, recordTypesOf, saveState,
   saveRecordType, addRecord, renameDomain, domainContentCount
 } from '../stores/db'
+import PageHead from '../components/PageHead.vue'
 import PlusIcon from '../components/PlusIcon.vue'
 import TreeRow from '../components/TreeRow.vue'
 import RtForm from '../components/RtForm.vue'
@@ -439,10 +441,8 @@ function tick(id) {
   padding: 14px 14px calc(76px + env(safe-area-inset-bottom));
 }
 
-.pagehead { padding: 4px 46px 10px 2px; }
 .back { padding: 2px 0 6px; }
 .back-t { font-size: 13px; color: var(--accent); }
-.ph-t { display: block; font-size: 22px; font-weight: 500; color: var(--text); }
 
 .block {
   margin-bottom: 14px;

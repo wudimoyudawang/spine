@@ -1,6 +1,6 @@
 <template>
   <view class="page">
-    <view class="pagehead"><text class="ph-t">收集</text></view>
+    <PageHead title="收集" />
 
     <view class="quick">
       <input :maxlength="-1"
@@ -57,6 +57,7 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { db, fmtCN, addInbox, classifyInbox, armDelete, delArmed, saveState } from '../stores/db'
+import PageHead from '../components/PageHead.vue'
 
 const draft = ref('')
 const open = ref('')
@@ -110,8 +111,6 @@ function del(it) {
   padding: 14px 14px calc(76px + env(safe-area-inset-bottom));
 }
 
-.pagehead { padding: 4px 46px 12px 2px; }
-.ph-t { font-size: 22px; font-weight: 500; color: var(--text); }
 
 .quick {
   display: flex;

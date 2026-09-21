@@ -17,7 +17,6 @@
     <AddSheet />
     <EditSheet />
     <GoalSheet />
-    <GearBtn />
     <TabBar />
   </view>
 </template>
@@ -28,7 +27,6 @@ import { onHide, onShow } from '@dcloudio/uni-app'
 import { db, saveState } from '../../stores/db'
 
 import TabBar from '../../components/TabBar.vue'
-import GearBtn from '../../components/GearBtn.vue'
 import CaptureSheet from '../../components/CaptureSheet.vue'
 import AddSheet from '../../components/AddSheet.vue'
 import EditSheet from '../../components/EditSheet.vue'

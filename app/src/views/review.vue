@@ -1,6 +1,6 @@
 <template>
   <view class="page">
-    <view class="pagehead"><text class="ph-t">复盘</text></view>
+    <PageHead title="复盘" />
 
     <view class="seg">
       <view
@@ -138,6 +138,7 @@ import {
   reviewData, metricLine, metricKey, trendRows, trendCandidates, addTrend,
   habitTree, streakText
 } from '../stores/db'
+import PageHead from '../components/PageHead.vue'
 import PlusIcon from '../components/PlusIcon.vue'
 
 const MODES = [{ k: 'week', n: '本周' }, { k: 'month', n: '本月' }, { k: 'custom', n: '自定义' }]
@@ -244,8 +245,6 @@ function exportText() {
   padding: 14px 14px calc(76px + env(safe-area-inset-bottom));
 }
 
-.pagehead { padding: 4px 46px 12px 2px; }
-.ph-t { font-size: 22px; font-weight: 500; color: var(--text); }
 
 .seg {
   display: flex;
