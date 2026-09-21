@@ -96,15 +96,24 @@ export const db = reactive({
 
      common 里**只存手动改过的**那些，没登记的按默认（内置类目都进，记录项看 quick）。
      这样以后新增领域或记录项，它自己就会按默认规则出现在列表里，不用手动登记。 */
-  CAP_CFG: { order: [], common: {} }
+  CAP_CFG: { order: [], common: {} },
+  /* 复盘页：看哪一段、以及那一段里盯着哪几项数值。
+     REV_MODE / REV_FROM / REV_TO 是「这次打开想看到什么」，切走再切回来不该回到本周，
+     所以放在这儿而不是组件里；它们**不进 UI_KEYS** —— 隔一天再打开还停在昨天那个
+     自定义区间，看着像数据坏了。
+     REV_TRENDS 是花心思挑出来的一份清单，跟着导出文件走（见 DATA_KEYS 那句）。 */
+  REV_MODE: 'week',
+  REV_FROM: '',
+  REV_TO: '',
+  REV_TRENDS: [{ k: 'money' }, { k: 'rt', id: 'rt_weight' }, { k: 'rt', id: 'rt_kcal_in' }]
 })
 
-/* 进快照、进导出文件的就是这 14 项。前 13 项和原型的 DATA_VARS 一字不差，
-   末尾的 CAP_CFG 是 uni-app 版新增的（原型把这类配置放在设置页里改，没进快照）。
-   增减任何一项都要想清楚：它该不该跟着导出文件走。 */
+/* 进快照、进导出文件的就是这 15 项。前 13 项和原型的 DATA_VARS 一字不差，
+   末尾两项是 uni-app 版新增的界面偏好（原型把这类配置放在设置页里改，没进快照）：
+   挑哪几颗胶囊、盯哪几项趋势，都是人一条条调出来的，换设备时不该重来一遍。 */
 export const DATA_KEYS = ['ITEMS', 'HABIT_LOGS', 'INBOX', 'NOTES', 'NOTE_PROMPTS', 'LOGS',
   'DOMAINS', 'RECORD_TYPES', 'CAPTURE_MODES', 'AUTO_RULES', 'TODAY_LOGS', 'CAT_WORDS', 'CATS',
-  'CAP_CFG']
+  'CAP_CFG', 'REV_TRENDS']
 
 /* 界面状态：跟着设备走，不进导出文件 */
 export const UI_KEYS = ['CURRENT', 'DOMAIN_ID', 'CAPTURE_MODE', 'CAP_AUTO_CLOSE']
@@ -126,6 +135,12 @@ export function loadSeed() {
   db.CLOSED_NODES = deepCopy(SEED_UI.CLOSED_NODES) || {}
   db.CAP_AUTO_CLOSE = true
   db.CAP_CFG = { order: [], common: {} }
+  /* 这一项不在种子数据里（它是偏好不是数据），不显式给一份的话
+     上面那句 DATA_KEYS.forEach 会把它写成 undefined */
+  db.REV_TRENDS = [{ k: 'money' }, { k: 'rt', id: 'rt_weight' }, { k: 'rt', id: 'rt_kcal_in' }]
+  db.REV_MODE = 'week'
+  db.REV_FROM = ''
+  db.REV_TO = ''
 }
 
 /* ---------------- 快照 · 本机存储 ----------------
@@ -1274,6 +1289,229 @@ export function cnDateOf(iso) {
   return p[1] + '月' + p[2] + '日'
 }
 
+/* ---------------- 复盘 ----------------
+   复盘是「读取层」，不是又多了一张数据表：这一节里没有一个数字是存下来的，
+   全是从 ITEMS / LOGS / HABIT_LOGS / RECORD_TYPES 当场算的。
+   **刻意不读 NOTES** —— 随心记一旦被复盘看见，人写的时候就会开始表演。 */
+
+export function inRange(d, from, to) {
+  const s = String(d || '')
+  return !!s && s >= from && s <= to
+}
+
+export function reviewRange() {
+  if (db.REV_MODE === 'month') return { from: startOfMonth(TODAY), to: TODAY }
+  if (db.REV_MODE === 'custom') return { from: db.REV_FROM || startOfWeek(TODAY), to: db.REV_TO || TODAY }
+  return { from: startOfWeek(TODAY), to: TODAY }
+}
+
+/* 上一期 = 往前挪一段**一样长**的。含头含尾，所以天数要 +1。
+   原型那里少加了 1，于是 9月14–18 日的「上一期」算成 9月10–14 日 ——
+   14 号那一天同时进了本期和上一期，同一笔账被自己比了一遍。 */
+export function prevRange(r) {
+  const n = dayCount(r.from, r.to) + 1
+  return { from: shiftDays(r.from, -n), to: shiftDays(r.to, -n) }
+}
+
+export function rangeLabel(r) {
+  return fmtCN(r.from) + (r.from === r.to ? '' : ' – ' + fmtCN(r.to))
+}
+
+/* 切到「自定义」时把当前区间落成两个具体日子，日期轮盘一打开就有值。 */
+export function setRevMode(m) {
+  if (['week', 'month', 'custom'].indexOf(m) < 0) return
+  db.REV_MODE = m
+  if (m === 'custom') {
+    const r = reviewRange()
+    db.REV_FROM = r.from
+    db.REV_TO = r.to
+  }
+}
+
+export function setRevEnd(which, iso) {
+  const v = String(iso || '')
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) return
+  if (db.REV_MODE !== 'custom') db.REV_MODE = 'custom'
+  /* 起 > 止 的话区间是负的，那些「这一期 N 天」会算出看不懂的数 ——
+     所以改完一头，另一头跟着挪，而不是报错。 */
+  if (which === 'from') {
+    db.REV_FROM = v
+    if (db.REV_TO < v) db.REV_TO = v
+  } else {
+    db.REV_TO = v
+    if (db.REV_FROM > v) db.REV_FROM = v
+  }
+}
+
+/* ---- 聚合：每个数字只在这里算一次 ---- */
+export function todosIn(from, to) {
+  let done = 0, total = 0
+  for (const it of db.ITEMS) {
+    if (!inRange(it.due, from, to)) continue
+    total++
+    if (it.status === 'done') done++
+  }
+  return { done: done, total: total }
+}
+/* 习惯「有打卡的天数」，同一天打三次也只算一天 —— 次数看着热闹，
+   但它说明不了「这几天有没有在坚持」。 */
+export function habitDaysIn(from, to) {
+  const seen = {}
+  for (const h of db.HABIT_LOGS) {
+    if (inRange(h.date, from, to)) seen[h.date] = 1
+  }
+  return Object.keys(seen).length
+}
+export function moneyIn(from, to) {
+  let t = 0
+  for (const l of db.LOGS) {
+    if (l.kind === 'money' && inRange(l.date, from, to)) t += Number(l.value || 0)
+  }
+  return Math.round(t * 100) / 100
+}
+function rtLogsIn(rt, from, to) {
+  const out = []
+  for (const l of (rt && rt.logs) || []) {
+    if (inRange(isoOfCnDate(l.d, TODAY), from, to)) out.push(l)
+  }
+  return out
+}
+/* 文字型记录项在这一期记了什么 —— 复盘真正想看的细节。
+   它们的日期是「9月16日 周三」这种给人看的串，先还原成 ISO 再比。 */
+export function textLogsIn(from, to) {
+  const out = []
+  for (const t of db.RECORD_TYPES) {
+    if (t.mode !== 'text' || t.retired) continue
+    for (const l of rtLogsIn(t, from, to)) out.push({ d: isoOfCnDate(l.d, TODAY), name: t.name, v: l.v })
+  }
+  out.sort(function (a, b) { return a.d < b.d ? 1 : (a.d > b.d ? -1 : 0) })
+  return out
+}
+/* 这一期一共记了几笔：支出 + 所有记录项。 */
+export function captureCount(from, to) {
+  let n = 0
+  for (const l of db.LOGS) { if (inRange(l.date, from, to)) n++ }
+  for (const t of db.RECORD_TYPES) {
+    if (t.retired) continue
+    n += rtLogsIn(t, from, to).length
+  }
+  return n
+}
+export function avgOfRt(id, from, to) {
+  const rt = rtById(id)
+  if (!rt) return null
+  const hit = rtLogsIn(rt, from, to)
+  if (!hit.length) return null
+  let sum = 0
+  for (const l of hit) sum += Number(l.v || 0)
+  return Math.round(sum / hit.length * 10) / 10
+}
+
+/* ---- 趋势清单：只存「我选了哪几项」，怎么算由 metricDefs 定义 ----
+   所以加一项趋势不用动渲染代码，新建一个数值记录项它自己就出现在候选里。 */
+export function metricDefs() {
+  const out = [
+    { k: 'money', name: '支出', unit: '¥' },
+    { k: 'habit', name: '打卡天数', unit: '天' },
+    { k: 'todo', name: '待办完成', unit: '' }
+  ]
+  for (const t of db.RECORD_TYPES) {
+    if (t.mode !== 'number' || t.retired) continue   /* 纯文字的记录项没有数值可画 */
+    out.push({ k: 'rt', id: t.id, name: t.name, unit: t.unit || '' })
+  }
+  return out
+}
+export function metricKey(sel) {
+  return sel.k === 'rt' ? ('rt:' + sel.id) : sel.k
+}
+export function findMetric(k, id) {
+  for (const df of metricDefs()) {
+    if (df.k !== k) continue
+    if (k !== 'rt' || df.id === id) return df
+  }
+  return null
+}
+/* 认不出的（比如那个记录项已经收起来了）不铺，但**留在清单里** ——
+   把记录项恢复出来，那一行原本看的是哪项还在。 */
+export function trendRows() {
+  const out = []
+  for (const sel of (db.REV_TRENDS || [])) {
+    const def = findMetric(sel.k, sel.id)
+    if (def) out.push({ def: def, key: metricKey(sel) })
+  }
+  return out
+}
+export function trendCandidates() {
+  const used = {}
+  for (const sel of (db.REV_TRENDS || [])) used[metricKey(sel)] = 1
+  return metricDefs().filter(df => !used[metricKey(df)])
+}
+export function addTrend(key) {
+  const cut = String(key || '').indexOf(':')
+  const k = cut < 0 ? String(key || '') : String(key).slice(0, cut)
+  const id = cut < 0 ? '' : String(key).slice(cut + 1)
+  if (!findMetric(k, id)) return false
+  if (!db.REV_TRENDS) db.REV_TRENDS = []
+  for (const sel of db.REV_TRENDS) { if (metricKey(sel) === metricKey({ k: k, id: id })) return false }
+  db.REV_TRENDS.push(k === 'rt' ? { k: 'rt', id: id } : { k: k })
+  return true
+}
+export function delTrend(key) {
+  const list = db.REV_TRENDS || []
+  for (let i = 0; i < list.length; i++) {
+    if (metricKey(list[i]) !== String(key)) continue
+    const def = findMetric(list[i].k, list[i].id)
+    list.splice(i, 1)
+    return { name: def ? def.name : String(key) }
+  }
+  return null
+}
+
+function thousands(n, dec) {
+  const v = (dec === 0) ? Math.round(n) : Math.round(n * 10) / 10
+  let s = (v % 1 === 0) ? String(v) : v.toFixed(1)
+  const p = s.split('.')
+  p[0] = p[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+  return p.join('.')
+}
+/* 记录项记的都是整数（热量 1800、深蹲 80）→ 均值也按整数显示。
+   「约 1823.3 kcal」那种精度不是我算得准，是我没收拾。 */
+function rtIntegerOnly(id) {
+  const rt = rtById(id)
+  if (!rt || !(rt.logs || []).length) return false
+  for (const l of rt.logs) { if (Number(l.v) % 1 !== 0) return false }
+  return true
+}
+
+/* 一项趋势在一期里长什么样。统一是「本期 · 上一期」——
+   横向比必须比同一件事，不能这周看均值、上周看最新值。 */
+export function metricLine(def, d) {
+  if (def.k === 'money') return money(d.money) + ' · 上一期 ' + money(d.moneyPrev)
+  if (def.k === 'habit') return d.habit + ' / ' + d.days + ' 天'
+  if (def.k === 'todo') return d.todos.total ? (d.todos.done + ' / ' + d.todos.total) : '— 这一期没有到期的待办'
+  const now = avgOfRt(def.id, d.range.from, d.range.to)
+  const prev = avgOfRt(def.id, d.prev.from, d.prev.to)
+  const u = def.unit ? (' ' + def.unit) : ''
+  const dec = rtIntegerOnly(def.id) ? 0 : 1
+  if (now === null && prev === null) return '— 这一期和上一期都没记'
+  return (now === null ? '— 这一期没记' : (thousands(now, dec) + u)) +
+    ' · 上一期 ' + (prev === null ? '没记' : (thousands(prev, dec) + u))
+}
+
+export function reviewData() {
+  const r = reviewRange()
+  const p = prevRange(r)
+  return {
+    range: r, prev: p, days: dayCount(r.from, r.to) + 1,
+    todos: todosIn(r.from, r.to),
+    habit: habitDaysIn(r.from, r.to),
+    money: moneyIn(r.from, r.to),
+    moneyPrev: moneyIn(p.from, p.to),
+    captures: captureCount(r.from, r.to),
+    texts: textLogsIn(r.from, r.to)
+  }
+}
+
 /* ---------------- 新增 ---------------- */
 /* 三个区块共用的配置。字段少是有意的：一次编辑只问「叫什么 + 一句说明」，
    多一个必填就多一次犹豫。 */
@@ -1747,6 +1985,12 @@ export function deleteNode(spec) {
     const r = delCat(key)
     if (r.error) return r
     done = { what: '品类', label: r.name, detail: '已记的 ' + r.used + ' 笔不改' }
+  } else if (kind === 'trend') {
+    /* 按 metric key 删，不按下标 —— 删掉中间一项之后下标整体错位，
+       那是「确认删」武装着的那一项已经不是刚才点的那一项了 */
+    const r = delTrend(key)
+    if (!r) return { error: '这一项已经不在了' }
+    done = { what: '趋势项', label: r.name, detail: '数据一条没动，只是不再单独看' }
   } else {
     const hit = resolveNode(s)
     if (hit) {
