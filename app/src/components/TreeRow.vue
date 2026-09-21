@@ -6,6 +6,10 @@
         <view class="caret-tri"></view>
       </view>
 
+      <!-- 前导位：待办的勾选框放这儿 —— 名字左边，离行尾那排按钮远一点，
+           免得手滑一下把「已完成」按成了「删掉」。不传就没有 -->
+      <slot name="lead" />
+
       <view class="row-main"><slot /></view>
 
       <text v-if="kids" class="kidb">{{ kids }} 项</text>

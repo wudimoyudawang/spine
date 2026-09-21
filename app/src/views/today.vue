@@ -18,10 +18,10 @@
     <!-- 记东西的入口不在这儿了：底栏中间那颗加号打开面板。
          这一页从此只负责「看今天」，不负责「记」。 -->
 
-    <!-- 已过期。排在最前面 —— 这一天的第一眼该看见最欠着的那些事。 -->
+    <!-- 逾期。排在最前面 —— 这一天的第一眼该看见最欠着的那些事。 -->
     <view v-if="tt.overdue.length" class="block">
       <view class="block-h">
-        <text class="tag tag-warn">已过期</text>
+        <text class="tag tag-warn">逾期</text>
         <text class="block-note">{{ topLevel(tt.overdue) }} 条</text>
       </view>
       <TreeRow
@@ -38,13 +38,18 @@
         @sub="(t) => commitSub(r.spec, t)"
         @del="del(r.spec, r.node)"
       >
-        <text class="row-t">{{ label(r.node) }}</text>
-        <text class="row-m">{{ pathPre(r) }}{{ domainName(r.node) }} · {{ r.node.due.slice(5) }} 到期</text>
-        <template #tail>
-          <view class="tick" @click.stop="finish(r.node)">
-            <text class="tick-t">完成</text>
+        <template #lead>
+          <view class="cbox" @click.stop="toggleDone(r.node)">
+            <view class="cbox-box" :class="{ 'is-on': r.node.status === 'done' }">
+              <svg v-if="r.node.status === 'done'" class="cbox-tick" viewBox="0 0 16 16">
+                <path d="M3.4 8.6l3.1 3.1 6.1-6.6" fill="none" stroke="#fff"
+                      stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </view>
           </view>
         </template>
+        <text class="row-t" :class="{ 'is-done': r.node.status === 'done' }">{{ label(r.node) }}</text>
+        <text class="row-m">{{ pathPre(r) }}{{ domainName(r.node) }} · {{ r.node.due.slice(5) }} 到期</text>
       </TreeRow>
     </view>
 
@@ -76,13 +81,18 @@
         @sub="(t) => commitSub(r.spec, t)"
         @del="del(r.spec, r.node)"
       >
-        <text class="row-t">{{ label(r.node) }}</text>
-        <text class="row-m">{{ pathPre(r) }}{{ domainName(r.node) }}</text>
-        <template #tail>
-          <view class="tick" @click.stop="finish(r.node)">
-            <text class="tick-t">完成</text>
+        <template #lead>
+          <view class="cbox" @click.stop="toggleDone(r.node)">
+            <view class="cbox-box" :class="{ 'is-on': r.node.status === 'done' }">
+              <svg v-if="r.node.status === 'done'" class="cbox-tick" viewBox="0 0 16 16">
+                <path d="M3.4 8.6l3.1 3.1 6.1-6.6" fill="none" stroke="#fff"
+                      stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </view>
           </view>
         </template>
+        <text class="row-t" :class="{ 'is-done': r.node.status === 'done' }">{{ label(r.node) }}</text>
+        <text class="row-m">{{ pathPre(r) }}{{ domainName(r.node) }}</text>
       </TreeRow>
     </view>
 
@@ -284,10 +294,14 @@ function tick(id) {
   uni.showToast({ title: on ? '已打卡' : '已取消今天的打卡', icon: 'none' })
 }
 
-function finish(it) {
-  it.status = 'done'
+/* 勾选框：点一下完成，再点一下取消。
+   能反悔是**有意做的** —— 误触一下就没了、还找不回来的按钮，人用起来会不敢点。
+   完成的那一条不会从列表里消失（见 db.js 的 pickToday），所以有东西可点。 */
+function toggleDone(it) {
+  const wasDone = it.status === 'done'
+  it.status = wasDone ? 'todo' : 'done'
   saveState()
-  uni.showToast({ title: '完成了', icon: 'none' })
+  uni.showToast({ title: wasDone ? '取消完成' : '完成了', icon: 'none' })
 }
 </script>
 
@@ -433,4 +447,31 @@ function finish(it) {
 
 .empty { padding: 12px 0 16px; }
 .empty-t { display: block; font-size: 13px; color: var(--muted); }
+/* ---- 待办的勾选框 ----
+   点按区域比那个方框大一圈：方框本身只有 17px，手指点不准，
+   而这一下点歪了是「没完成」和「完成了」的区别。 */
+.cbox {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  margin-right: 2px;
+}
+.cbox-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 17px;
+  height: 17px;
+  border: 1.5px solid var(--line2);
+  border-radius: 4px;
+  background: var(--card);
+}
+.cbox-box.is-on { background: var(--ok); border-color: var(--ok); }
+.cbox-tick { width: 11px; height: 11px; display: block; }
+
+/* 完成的待办划掉。它留在列表里是为了能取消，不是为了让人再看一遍 */
+.row-t.is-done { color: var(--muted); text-decoration: line-through; }
 </style>

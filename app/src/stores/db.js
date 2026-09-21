@@ -264,16 +264,24 @@ export function kidsOf(list, parent) {
   return (list || []).filter(x => (x.parent || null) === (parent || null))
 }
 
-/* 今日页要显示的待办。照抄原型 pickToday：
-   只挑没做完、有日期的，分成「已过期」和「今天到期」两组，过期那组按日期从早到晚。 */
+/* 今日页要显示的待办。原型是「只挑没做完的」—— 那样勾完就从列表里消失，
+   想反悔也没有东西可点。所以这里改一处：
+   **今天到期这一组保留已完成的**（排在未完成之后），点一下能取消。
+   过期那组不保留 —— 那些本来就是欠账，清掉就该走，留在今日页没意义。 */
 export function pickToday(items, today) {
   const t = today || TODAY, over = [], due = []
   for (const it of (items || [])) {
-    if (it.status === 'done' || !it.due) continue
+    if (!it.due) continue
+    if (it.status === 'done' && it.due !== t) continue
     if (it.due < t) over.push(it)
     else if (it.due === t) due.push(it)
   }
   over.sort((a, b) => (a.due < b.due ? -1 : (a.due > b.due ? 1 : 0)))
+  /* 完成的排到最后：它们留在列表里是为了「能反悔」，
+     不是为了和正经待办抢注意力。 */
+  due.sort(function (a, b) {
+    return (a.status === 'done' ? 1 : 0) - (b.status === 'done' ? 1 : 0)
+  })
   return { overdue: over, due: due }
 }
 
