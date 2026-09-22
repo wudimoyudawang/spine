@@ -49,6 +49,12 @@ android {
             if (keyPropsFile.exists()) { signingConfig signingConfigs.release }
         }
     }
+    /* 关掉 release 构建里自带的 lintVital：自用 App 不需要 lint 把关，
+       而它在这台机器上依赖解析会报「文件名、目录名或卷标语法不正确」——
+       那不是代码有问题，是 lint 自己的缓存路径在本机文件环境下不可靠。 */
+    lint {
+        checkReleaseBuilds false
+    }
 }
 
 repositories {

@@ -9,15 +9,11 @@
 
 ## 现在能用了
 
-**应用本身已经完整**，功能都在 `app/` 里跑通了。安装包在 `release/spine.apk`。
+**[`release/spine.apk`](release/spine.apk)** —— 安卓装这个，点开就用（3MB，离线、无任何联网请求）。
 
 - 数据**全部存在手机本机**，不联网、不要账号。关掉再打开，记的东西还在。
 - 换手机或备份：空间页 → 数据 → **存成文件**，得到一份 `书脊-日期.json`；导回来用**从文件导入**。
 - 装的时候第一次要允许「未知来源」。**以后升级直接覆盖安装，数据不会丢**（签名固定，见下面「关于签名」）。
-
-> **当前状态：APK 还没打出来。** 壳工程（`shell/`）已经完整、能同步、能构建，
-> 但**这台机器上 Gradle 跑不动** —— 见下面「换一台机器打包」里那段关于文件操作速度的说明。
-> 换一台正常的机器，`cd shell && npm install && node make-apk.cjs` 就能出包。
 
 只在电脑上看看它长什么样：打开 [`app/`](app/) 跑 `npm run dev:h5`，
 或者看那版定稿的单文件原型 [`prototype/index.html`](prototype/index.html)（零依赖，双击即开）。
@@ -216,7 +212,19 @@ console.log(Date.now()-t, 'ms')
 | 系统临时目录 | 0.5 秒 | 0.8 秒（471 个/秒） |
 
 **同一块盘慢 40 倍**，说明拦的是目录不是磁盘。处理办法：
-给项目目录加杀软白名单，或者干脆换台机器打。
+给项目目录加杀软白名单，或者**把 Gradle 的家搬到快的目录**再打——
+实测这台机器就是这么把包打出来的：
+
+```bat
+set GRADLE_USER_HOME=C:\Users\你的用户名\AppData\Local\Temp\gradle-home
+node make-apk.cjs
+```
+
+另一个在这台机器上真踩过的坑：**报「文件名、目录名或卷标语法不正确」时，先查 `platforms\android-34` 是不是完整的**——
+里面必须有 `android.jar` 和 `source.properties`，缺了 AGP 会把它当成没安装，
+转头去用它自带的下载器（连的是 Google 官方源，境内基本卡死，表现为超时）。
+`local.properties` 里的路径用**正斜杠**写（`sdk.dir=C:/xxx`），反斜杠会被
+Java properties 当转义符吃掉，`C:\workbuddy` 会变成 `C:workbuddy`——这也是同一句报错的来源之一，`make-apk.cjs` 已经自动处理了。
 
 > **为什么是 Capacitor 壳而不是 HBuilderX 的官方壳？**
 > 两条路的**前端代码完全一样**，区别只在最后一步由谁把代码装进 APK。
@@ -232,7 +240,7 @@ console.log(Date.now()-t, 'ms')
 |---|---|---|
 | 前端 | **uni-app + Vue3 + Vite**（一套代码，可编译到 H5 / App / 小程序） | 已跑通 |
 | 前端存储 | 本机 `uni.setStorageSync`，接口只有 `snapshot()` / `restore()` 两个函数 | 已落本机 |
-| Android 壳 | Capacitor 6 + Gradle（Android SDK 34） | 壳就绪，出包待正常机器 |
+| Android 壳 | Capacitor 6 + Gradle（Android SDK 34） | **已出包**（`release/spine.apk`） |
 | 后端 / 数据库 / 部署 | Python + FastAPI + SQLModel + SQLite + Docker | **第 5 步才做** |
 
 **存储层刻意做薄**：全部接口就是 `snapshot()` / `restore()` 两个函数，

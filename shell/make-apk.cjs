@@ -68,7 +68,10 @@ if (!SDK) die('没找到 Android SDK。设个 SPINE_ANDROID_SDK 或 ANDROID_HOME
    但 Gradle 不认环境变量、只认这个文件，所以每次跑都刷一遍。 */
 {
   const lp = path.join(ANDROID, 'local.properties')
-  const line = 'sdk.dir=' + SDK.replace(/\//g, '\\\\') + '\n'
+  /* 反斜杠不能进 properties 文件：Java 把它当转义符，`\w` `\.` `\a`
+     会被吃成 "C:workbuddy.toolchainsandroid-sdk" —— 「卷标语法不正确」。
+     正斜杠 Windows 的 File 照样认，所以统一写成正斜杠。 */
+  const line = 'sdk.dir=' + SDK.replace(/\\/g, '/') + '\n'
   const old = fs.existsSync(lp) ? fs.readFileSync(lp, 'utf8') : ''
   if (old !== line) { fs.writeFileSync(lp, line, 'utf8'); console.log('  写了 android/local.properties') }
 }
