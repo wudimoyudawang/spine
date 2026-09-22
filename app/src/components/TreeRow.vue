@@ -1,6 +1,10 @@
 <template>
   <view class="tnode">
     <view class="trow" :style="'padding-left:' + (depth * 18) + 'px'" @click="tapRow">
+      <!-- 象限色条。绝对定位贴在行左缘、不占布局宽度 ——
+           占宽度的话，有色行和没色行的文字会左右错位，整列就对不齐了。
+           颜色由 is-1 / is-2 / is-3 给（见下面样式），没传 bar 就整条不渲染。 -->
+      <view v-if="bar" class="qbar" :class="'is-' + bar"></view>
       <!-- 折叠三角。没有子项时也占着这个位置（藏起来），否则同一列的名字会左右跳 -->
       <view class="caret" :class="{ 'is-leaf': !kids, 'is-closed': closed }" @click.stop="$emit('fold')">
         <view class="caret-tri"></view>
@@ -56,7 +60,10 @@ const props = defineProps({
   armed: { type: Boolean, default: false },
   /* 计划行走它自己的弹窗（进度滑杆），整行点开在那一轮才接 */
   openable: { type: Boolean, default: true },
-  addPh: { type: String, default: '子项内容，回车建好' }
+  addPh: { type: String, default: '子项内容，回车建好' },
+  /* 左缘那条象限色条的档位（'1' | '2' | '3'），空串 = 不渲染。
+     颜色本身在样式里，这里只传档位 —— 组件不该知道象限是什么。 */
+  bar: { type: String, default: '' }
 })
 const emit = defineEmits(['open', 'fold', 'add', 'del', 'sub'])
 
@@ -88,11 +95,27 @@ function loseFocus() {
 <style scoped>
 .tnode { border-top: 1px solid var(--line); }
 .trow {
+  position: relative;
   display: flex;
   flex-direction: row;
   align-items: center;
   min-height: 46px;
 }
+/* 象限色条。四个档的颜色由设置里的四象限配色给（CSS 变量 --q1..--q4），
+   和四象限页那四张卡的左缘是同一份 —— 改一个颜色两处一起变。
+   四档都有色：只有三个的话，没色的那格读出来是「还没标」，
+   而不是它真正的意思「标过了、不用管」。 */
+.qbar {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+}
+.qbar.is-1 { background: var(--q1); }
+.qbar.is-2 { background: var(--q2); }
+.qbar.is-3 { background: var(--q3); }
+.qbar.is-4 { background: var(--q4); }
 .row-main { flex: 1 1 auto; min-width: 0; padding: 6px 0; }
 
 .caret {

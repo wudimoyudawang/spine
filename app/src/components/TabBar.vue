@@ -4,7 +4,7 @@
       v-for="t in LEFT"
       :key="t.k"
       class="navi"
-      :class="{ 'is-on': db.CURRENT === t.k }"
+      :class="{ 'is-on': isOn(t.k) }"
       @click="pick(t.k)"
     >
       <text class="navi-t">{{ t.t }}</text>
@@ -22,7 +22,7 @@
       v-for="t in RIGHT"
       :key="t.k"
       class="navi"
-      :class="{ 'is-on': db.CURRENT === t.k }"
+      :class="{ 'is-on': isOn(t.k) }"
       @click="pick(t.k)"
     >
       <text class="navi-t">{{ t.t }}</text>
@@ -44,6 +44,19 @@ const RIGHT = [
   { k: 'notes', t: '随心记' },
   { k: 'review', t: '复盘' }
 ]
+
+/* 今日这一格底下有今日 / 日历 / 四象限三个镜头（今日页头那颗分段器切）。
+   它们不是一个新的一级模块，所以在哪一格上都得亮「今日」——
+   不这么写的话，切到日历底栏就四个格子全灰，看着像没在任何一页上。 */
+const FAMILY = {
+  today: ['today', 'calendar', 'quadrant']
+}
+
+function isOn(k) {
+  const fam = FAMILY[k]
+  if (fam) return fam.indexOf(db.CURRENT) >= 0
+  return db.CURRENT === k
+}
 
 function pick(k) { go(k) }
 </script>

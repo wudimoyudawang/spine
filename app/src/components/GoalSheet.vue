@@ -8,6 +8,7 @@
         <text class="modal-note">{{ spaceName }}</text>
       </view>
 
+      <view class="modal-body">
       <view class="field">
         <text class="field-k">目标名称（必填）</text>
         <input :maxlength="-1" v-model="GOAL.draft.t" class="inline-in" :focus="focused" placeholder="比如「读完《置身事内》」" />
@@ -45,6 +46,8 @@
 
       <view v-if="GOAL.parentName" class="field">
         <text class="field-k">挂在「{{ GOAL.parentName }}」下面</text>
+      </view>
+
       </view>
 
       <view class="modal-f">

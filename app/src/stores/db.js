@@ -45,6 +45,13 @@ export function startOfWeek(iso) {
   return shiftDays(iso, -(w === 0 ? 6 : w - 1))
 }
 export function startOfMonth(iso) { return String(iso).slice(0, 7) + '-01' }
+/* 这个月最后一天。'2026-09-01' → '2026-09-30'。
+   new Date(y, m, 0) 里的「0 日」= 上个月最后一天，而 m 是 1 起的月份数，
+   所以它正好是「第 m 个月的最后一天」—— 这个写法容易看错，留个记号。 */
+export function endOfMonth(iso) {
+  const p = String(iso).split('-').map(Number)
+  return p[0] + '-' + pad2(p[1]) + '-' + pad2(new Date(p[0], p[1], 0).getDate())
+}
 
 /* 今天。原型里 TODAY 是写死的 '2026-09-18'（演示用），真机上必须是真日子。 */
 export const TODAY = isoOf(new Date())
@@ -97,6 +104,11 @@ export const db = reactive({
      common 里**只存手动改过的**那些，没登记的按默认（内置类目都进，记录项看 quick）。
      这样以后新增领域或记录项，它自己就会按默认规则出现在列表里，不用手动登记。 */
   CAP_CFG: { order: [], common: {} },
+  /* 四象限的四个颜色（hex）。默认那套是 Todoist 的优先级色（P1 红 P2 橙 P3 蓝 P4 灰），
+     宇从四组候选里选的。颜色在根节点上以 CSS 变量注入（见 quadVarStyle），
+     四象限页的卡片、待办行左缘的色条、编辑弹窗里的 2×2 选择器读的是同一份 ——
+     改一个颜色三处一起变。它进 DATA_KEYS：换设备不该重新调一遍颜色。 */
+  QUAD_COLORS: { q1: '#D64545', q2: '#E08E2B', q3: '#3B7DD8', q4: '#8A8F99' },
   /* 复盘页：看哪一段、以及那一段里盯着哪几项数值。
      REV_MODE / REV_FROM / REV_TO 是「这次打开想看到什么」，切走再切回来不该回到本周，
      所以放在这儿而不是组件里；它们**不进 UI_KEYS** —— 隔一天再打开还停在昨天那个
@@ -113,7 +125,7 @@ export const db = reactive({
    挑哪几颗胶囊、盯哪几项趋势，都是人一条条调出来的，换设备时不该重来一遍。 */
 export const DATA_KEYS = ['ITEMS', 'HABIT_LOGS', 'INBOX', 'NOTES', 'NOTE_PROMPTS', 'LOGS',
   'DOMAINS', 'RECORD_TYPES', 'CAPTURE_MODES', 'AUTO_RULES', 'TODAY_LOGS', 'CAT_WORDS', 'CATS',
-  'CAP_CFG', 'REV_TRENDS']
+  'CAP_CFG', 'REV_TRENDS', 'QUAD_COLORS']
 
 /* 界面状态：跟着设备走，不进导出文件 */
 export const UI_KEYS = ['CURRENT', 'DOMAIN_ID', 'CAPTURE_MODE', 'CAP_AUTO_CLOSE']
@@ -244,6 +256,28 @@ export function importSnapshot(raw) {
   return ''
 }
 
+/* ---------------- 清空数据 ----------------
+ * 清成**空的**，不是清成种子：种子里那几条是示例，「清空」之后又长回来，
+ * 人会以为没清掉。loadState 那边的规矩是「存储里有东西就恢复、没有才种种子」，
+ * 所以清完立刻 saveState(true) 把这份空写进去 —— 下次打开还是空的，不会自己长回来。
+ *
+ * 领域也一起清。空间页在没有领域时会显示空态、能新建，不会白屏。
+ * 界面状态（CURRENT / DOMAIN_ID …）不在这里动：清数据不该把人踢到别的页面去。
+ * 四象限配色也回到默认 —— 它也算数据，而且跟着导出文件走。
+ */
+export function clearAllData() {
+  for (const k of ['ITEMS', 'HABIT_LOGS', 'INBOX', 'NOTES', 'NOTE_PROMPTS', 'LOGS',
+    'DOMAINS', 'RECORD_TYPES', 'CAPTURE_MODES', 'AUTO_RULES', 'TODAY_LOGS', 'CATS', 'REV_TRENDS']) {
+    db[k] = []
+  }
+  db.CAT_WORDS = {}
+  db.CAP_CFG = { order: [], common: {} }
+  db.QUAD_COLORS = {}
+  db.CLOSED_NODES = {}
+  saveState(true)
+  return { ok: true }
+}
+
 /* 老档案缺 id 的要补上：流水行的 id 是后加的，记录项的日志 id 也是。
    少一个入口是一回事，整份数据打不开是另一回事。 */
 function ensureIds() {
@@ -268,6 +302,19 @@ let LAST_SAVED = ''
 /* 存不下的时候要有人管。用户以为存住了、其实没存，是这个应用最不能出的一种错 ——
    所以这里不是一个 console.error 就算了，UI 会读这个标志把实情显示出来。 */
 export const storeFailed = ref(false)
+/* 最后一次存成功的时刻。页头那行「已保存 HH:MM」读的就是它。
+   存储状态必须一直看得见 —— 埋在设置里的话，人会默认它就是存上了，
+   而「以为记下了其实没记」是这个应用最不能出的一种错。 */
+export const lastSavedAt = ref(0)
+
+/* 页头那句话。存失败时如实说，平时给时刻 ——
+   时刻比「已保存」三个字有用：一眼能看出是刚才存的那次。 */
+export function saveStateText() {
+  if (storeFailed.value) return { bad: true, text: '存储失败' }
+  if (!lastSavedAt.value) return { bad: false, text: '' }
+  const d = new Date(lastSavedAt.value)
+  return { bad: false, text: '已保存 ' + pad2(d.getHours()) + ':' + pad2(d.getMinutes()) }
+}
 
 export function loadState() {
   let raw = ''
@@ -287,9 +334,64 @@ export function saveState(force) {
     uni.setStorageSync(LS_KEY, snap)
     LAST_SAVED = snap
     storeFailed.value = false
+    lastSavedAt.value = Date.now()
   } catch (e) {
     storeFailed.value = true
+    return
   }
+  /* 存**成功**了才留快照：失败时留的会是旧数据，
+     反悔回去反到的是错的那份 —— 那比没有备份更糟。 */
+  try { autoBackup() } catch (e) {}
+}
+
+/* ---------------- 自动备份 ----------------
+ * research-02 防守策略第 3 条：上线前必须有自动备份（反时光序数据丢失的教训）。
+ * 做法：**每天第一次保存**时留一份全量快照，本地留最近 7 份。
+ * 一份大概 8KB，7 份 56KB，本机存储给得起。
+ * 清空数据**不清**备份 —— 清空恰恰是最需要能反悔的时刻。
+ * 只有 saveState 调它：它是「存」这个动作的附属品，不该有别处来叫。
+ */
+const LS_BACKUP = 'spine-backups'
+const BACKUP_KEEP = 7
+
+function readBackups() {
+  let list = []
+  try { list = JSON.parse(uni.getStorageSync(LS_BACKUP) || '[]') } catch (e) { list = [] }
+  if (!Array.isArray(list)) return []
+  return list
+}
+function writeBackups(list) {
+  try { uni.setStorageSync(LS_BACKUP, JSON.stringify(list)) } catch (e) {}
+}
+
+export function autoBackup() {
+  const list = readBackups()
+  if (list.length && list[0].date === TODAY) return false
+  list.unshift({ date: TODAY, at: Date.now(), counts: localCounts(), raw: snapshot() })
+  writeBackups(list.slice(0, BACKUP_KEEP))
+  return true
+}
+
+/* 给设置页看的清单。不带 raw —— 那是几 KB 的 JSON，塞进响应式里没有意义 */
+export function backupList() {
+  return readBackups().map(function (b) {
+    return { date: b.date, at: b.at, counts: b.counts }
+  })
+}
+
+/* 恢复到某一天。**恢复前先把现在这份也留成备份** ——
+   恢复这件事本身应该可以反悔，不然「恢复」就成了另一个单向的破坏动作。 */
+export function restoreBackup(date) {
+  const hit = readBackups().filter(function (x) { return x.date === date })[0]
+  if (!hit) return { error: '那份备份已经不在了' }
+  const list = readBackups()
+  list.unshift({ date: TODAY + ' 恢复前', at: Date.now(), counts: localCounts(), raw: snapshot() })
+  writeBackups(list.slice(0, BACKUP_KEEP))
+  const again = readBackups().filter(function (x) { return x.date === date })[0]
+  if (!again) return { error: '那份备份已经不在了' }
+  try { restore(again.raw) } catch (e) { return { error: '那份备份读不出来' } }
+  saveState(true)
+  return { ok: true }
 }
 
 /* ---------------- 查询 ---------------- */
@@ -365,19 +467,71 @@ export function habitDaysInRange(id, from, to) {
 /* 连续打卡天数：从今天往回数，遇到第一个没打卡的日子就停。
    今天还没打卡**不算断** —— 这一天还没过完，早上打开一眼就被判「断了」太伤人。
    所以：今天有卡就从今天起数，今天没有就从昨天起数。 */
+/* 一个习惯按什么单位算连续/累计：频率带「每周」就按周，带「每月」就按月，
+   其余（每天、自定义文案）按天。看字面就够了 —— 频率现在是滚轮选的，
+   写法固定，不会出现「一周三次」这种要猜的写法。 */
+export function habitUnit(m) {
+  const s = String(m || '')
+  if (s.indexOf('每月') >= 0) return 'month'
+  if (s.indexOf('每周') >= 0) return 'week'
+  return 'day'
+}
+
+/* 频率 = 单位 × 次数，两个滚轮选。存进 m 的仍然是显示的那句话，
+   打卡统计（habitUnit）和导出都不用跟着改。
+   解析不出来的（老数据手填的「工作日」之类）返回 null —— 界面保持原样，
+   用户不动滚轮就不改写它，不会悄悄把手填的词冲掉。 */
+export const FREQ_UNITS = ['每日', '每周', '每月']
+export function parseFreq(m) {
+  const hit = /^每(天|日|周|月)\s*(\d+)?\s*次?$/.exec(String(m || '').trim())
+  if (!hit) return null
+  return { unit: hit[1] === '周' ? '每周' : hit[1] === '月' ? '每月' : '每日', n: hit[2] ? Number(hit[2]) : 1 }
+}
+export function freqText(unit, n) {
+  if (n === 1) return unit === '每日' ? '每天' : unit
+  return unit + ' ' + n + ' 次'
+}
+
+/* 一个打卡日期落在哪个期。周口径和全应用一致：周一为头；
+   月口径用 YYYY-MM（字符串就能比大小、也能当下一个/上一个的键）。 */
+function periodKey(iso, unit) {
+  if (unit === 'week') return startOfWeek(iso)
+  if (unit === 'month') return String(iso).slice(0, 7)
+  return iso
+}
+
+function prevPeriodKey(key, unit) {
+  if (unit === 'week') return shiftDays(key, -7)
+  if (unit === 'month') {
+    const p = key.split('-').map(Number)
+    const d = new Date(p[0], p[1] - 2, 1)
+    return d.getFullYear() + '-' + pad2(d.getMonth() + 1)
+  }
+  return shiftDays(key, -1)
+}
+
 export function habitStreakDays(id, today) {
-  const has = {}, dts = habitDates(id)
-  dts.forEach(d => { has[d] = 1 })
-  let day = today || TODAY
-  if (!has[day]) day = shiftDays(day, -1)
+  const m = habitById(id)
+  const unit = habitUnit(m ? m.m : '')
+  const has = {}
+  habitDates(id).forEach(d => { has[periodKey(d, unit)] = 1 })
+  let k = periodKey(today || TODAY, unit)
+  if (!has[k]) k = prevPeriodKey(k, unit)
   let n = 0
-  while (has[day] && n < 3660) { n++; day = shiftDays(day, -1) }   /* 十年封顶，防数据坏了转不出来 */
+  const cap = unit === 'day' ? 3660 : 600   /* 十年 / 五十年封顶，防数据坏了转不出来 */
+  while (has[k] && n < cap) { n++; k = prevPeriodKey(k, unit) }
   return n
 }
 
-/* 一次拿全：界面上「连续/累计」这两个数到处要，别让每处各算一遍。 */
+/* 一次拿全：界面上「连续/累计」这两个数到处要，别让每处各算一遍。
+   total 里有打卡记录的**期数**：按周算就是「打卡过的周数」，按天就是天数 ——
+   单位换了，两个数都换，不然「连续 3 周 · 累计 40 天」会让人对不上。 */
 export function habitStat(id, today) {
-  return { cur: habitStreakDays(id, today), total: habitTotalDays(id) }
+  const m = habitById(id)
+  const unit = habitUnit(m ? m.m : '')
+  const has = {}
+  habitDates(id).forEach(d => { has[periodKey(d, unit)] = 1 })
+  return { cur: habitStreakDays(id, today), total: Object.keys(has).length, unit }
 }
 
 /* 「连续 N 天 · 累计 M 天」这句**只在这里说一次**。
@@ -386,11 +540,15 @@ export function habitStat(id, today) {
  *     一个累计四十天、这周断了的人，也被那句话描述成了「从没开始过」。
  *   · 断了要说「连续 0 天」，不改词。换一句说法就等于换了一套算法。
  * on 只管要不要加重（连着的那几天值得亮一下），不影响数字。
- */
+ * 单位跟频率走：每周几次的说「连续 N 周」，每月的说「连续 N 个月」。
+ * 一周里只要打过一次那周就算数 —— 不按「每周 N 次」的次数卡达标，
+ * 卡达标的话每周头几天永远显示「断了」，比真断了还劝退。 */
+const UNIT_WORD = { day: '天', week: '周', month: '个月' }
 export function streakText(id, today) {
   const st = habitStat(id, today)
   if (!st.total) return null
-  return { s: '连续 ' + st.cur + ' 天 · 累计 ' + st.total + ' 天', on: st.cur > 0 }
+  const u = UNIT_WORD[st.unit] || '天'
+  return { s: '连续 ' + st.cur + ' ' + u + ' · 累计 ' + st.total + ' ' + u, on: st.cur > 0 }
 }
 
 export function toggleHabitLog(id, date) {
@@ -509,6 +667,11 @@ export function delCat(name) {
 export function go(name) {
   if (!name) return
   db.CURRENT = name
+  /* 换页回到顶部。视图是 v-show 切换的，滚动位置会原样留着 ——
+     上一个页面滚到 800px、切过来还停在 800px，
+     看起来像「这个页面少了东西」，而不是「我上次看到这儿」。
+     duration 0 是瞬时的：切页本来就该直接落在头上，动画只会让人等着。 */
+  try { uni.pageScrollTo({ scrollTop: 0, duration: 0 }) } catch (e) {}
 }
 
 /* ---------------- 写 ---------------- */
@@ -533,6 +696,19 @@ export function addMoney(value, text, category) {
   return rec
 }
 
+/* 记账那个「记下」框的提交，抽到数据层：记账页上有一个框、品类弹层里还有一个，
+   两处各写一份的话，迟早有一天一句话在两处解成两个金额 ——
+   那是这台设备上最难查的一种错。返回 { rec } 或 { error }。 */
+export function commitMoneyText(t) {
+  const text = String(t || '').trim()
+  if (!text) return { error: '先写一句' }
+  const r = resolveCapture(text, 'auto')
+  if (r.kind !== 'money' || r.value === null) return { error: '这里只记支出，金额写在开头' }
+  const rec = addMoney(r.value, r.text, r.category)
+  if (!rec) return { error: '金额不对' }
+  return { rec: rec }
+}
+
 export function addTodo(title, domId, due) {
   const t = String(title || '').trim()
   if (!t) return null
@@ -540,10 +716,55 @@ export function addTodo(title, domId, due) {
     id: newId('it'), title: t,
     dom: domainById(domId) ? domId : null,
     due: due === undefined ? TODAY : (due || null),
-    status: 'todo', parent: null
+    status: 'todo', parent: null,
+    /* 四象限两个轴。**新条目不预设**（都落「都不」那一格）——
+       预设了等于替人判断「这事重要/紧急」，而那种猜错比空着更难发现：
+       格子看着是满的，其实全是机器分的。见下面 quadOf 那段。 */
+    imp: false, urg: false
   }
   db.ITEMS.unshift(rec)
   return rec
+}
+
+/* ---------------- 重复待办 ----------------
+ * 完成一条带 repeat 的待办时，把下一次也建好。
+ * 用「新建一条」而不是「把这条的到期日往后推」—— 推日期的话，
+ * 做完的那一次就没有了，复盘里「这一周完成了几条」会越算越少，
+ * 而「已完成」那一栏也再没有东西可以反悔。
+ *
+ * 只有**顶层**会滚。子项跟着父项走（到期日/领域都是继承的），
+ * 子项做完就做完了，再长一条出来只会让树上多出一个孤儿。
+ * 月/年的「同一天」在该月不存在时（1/31 → 2 月）收到那个月最后一天，
+ * 不然 Date 自己会把它滚到下个月头上去，日历上就跳了一个月。
+ */
+const REPEAT_STEP = { daily: 1, weekly: 7 }
+
+export function repeatName(k) {
+  return { daily: '每天', weekly: '每周', monthly: '每月', yearly: '每年' }[k] || ''
+}
+
+export function rollRepeat(it) {
+  if (!it || !it.repeat || !it.due || it.parent) return null
+  let next = ''
+  const step = REPEAT_STEP[it.repeat]
+  if (step) {
+    next = shiftDays(it.due, step)
+  } else {
+    const p = it.due.split('-').map(Number)
+    let yy = p[0], mm = p[1]
+    if (it.repeat === 'monthly') { mm += 1; if (mm > 12) { mm = 1; yy += 1 } }
+    else if (it.repeat === 'yearly') { yy += 1 }
+    else return null
+    const last = Number(endOfMonth(yy + '-' + pad2(mm) + '-01').slice(8))
+    next = yy + '-' + pad2(mm) + '-' + pad2(Math.min(p[2], last))
+  }
+  if (!next) return null
+  const copy = {
+    id: newId('it'), title: it.title, dom: it.dom || null, due: next,
+    status: 'todo', parent: null, imp: !!it.imp, urg: !!it.urg, repeat: it.repeat
+  }
+  db.ITEMS.unshift(copy)
+  return copy
 }
 
 export function addInbox(text) {
@@ -732,6 +953,65 @@ export function restOf(t, num) {
   return s.replace(/\s+/g, ' ').trim()
 }
 
+/* ---------------- 日期的口语解析 ----------------
+   快速记里写「明天交周报」，「明天」该变成到期日，而不是留在标题里让人再去弹窗选一次。
+   只认下面这一批写法，认不出的原样保留 —— **猜错一个日期比不认更糟**：
+   不认最多让人去弹窗里选一次，认错了人会以为日子记对了。
+   只对待办生效（见 buildResolved）：「明天午餐 32」记的是今天的钱，不是明天的钱。
+   周一起头（startOfWeek），和复盘的「一周」同一个口径。 */
+export function parseDatePhrase(t) {
+  const out = { iso: '', text: String(t == null ? '' : t).trim() }
+  let s = out.text
+  if (!s) return out
+  const y = Number(TODAY.slice(0, 4)), mo = Number(TODAY.slice(5, 7))
+  const mk = function (yy, mm, dd) { return yy + '-' + pad2(mm) + '-' + pad2(dd) }
+  const wk = function (cn) {
+    const i = '一二三四五六日天'.indexOf(cn)
+    return i === 6 ? 0 : i + 1            /* 「日/天」= 周日 = JS 的 0 */
+  }
+  function take(re, fn) {
+    if (out.iso) return
+    const m = re.exec(s)
+    if (!m) return
+    const d = fn(m)
+    if (!d) return
+    out.iso = d
+    s = (s.slice(0, m.index) + ' ' + s.slice(m.index + m[0].length)).replace(/\s+/g, ' ').trim()
+  }
+  take(/大后天/, function () { return shiftDays(TODAY, 3) })
+  take(/后天/, function () { return shiftDays(TODAY, 2) })
+  take(/明天|明日/, function () { return shiftDays(TODAY, 1) })
+  take(/今天|今日/, function () { return TODAY })
+  take(/(下下周|下周|下星期|下礼拜)([一二三四五六日天])/, function (m) {
+    const base = startOfWeek(TODAY)
+    const add = m[1] === '下下周' ? 14 : 7
+    const wd = wk(m[2])
+    return shiftDays(base, add + (wd === 0 ? 6 : wd - 1))
+  })
+  take(/(下周|下星期|下礼拜)(?![一二三四五六日天])/, function () { return shiftDays(startOfWeek(TODAY), 7) })
+  take(/(本周|这周|这星期|周|星期|礼拜)([一二三四五六日天])/, function (m) {
+    const wd = wk(m[2])
+    const d = shiftDays(startOfWeek(TODAY), wd === 0 ? 6 : wd - 1)
+    /* 这周的已经过了，说的就是下一个 —— 周六说「周五」指的是下周五 */
+    return d < TODAY ? shiftDays(d, 7) : d
+  })
+  take(/(\d{1,2})月(\d{1,2})[日号]/, function (m) {
+    const mm = Number(m[1]), dd = Number(m[2])
+    if (mm < 1 || mm > 12 || dd < 1 || dd > 31) return null
+    return mk(y, mm, dd)
+  })
+  take(/(\d{1,2})[日号]/, function (m) {
+    const dd = Number(m[1])
+    if (dd < 1 || dd > 31) return null
+    const d = mk(y, mo, dd)
+    /* 这个月的那天已经过了，就是下个月同一天 */
+    return d < TODAY ? shiftDays(endOfMonth(TODAY), dd) : d
+  })
+  take(/月底|月末/, function () { return endOfMonth(TODAY) })
+  if (out.iso) out.text = s
+  return out
+}
+
 export function ruleName(r) {
   if (!r) return '未命名规则'
   return r.t || r.kw || r.re || '未命名规则'
@@ -835,6 +1115,12 @@ function buildResolved(raw, tg, rule) {
     return out
   }
   out.kind = tg.kind
+  /* 待办：顺带把口语里的日期拎出来当到期日。
+     只对待办做这件事 —— 「明天午餐 32」记的是今天的钱，不是明天的钱。 */
+  if (tg.kind === 'todo') {
+    const d = parseDatePhrase(raw)
+    if (d.iso) { out.due = d.iso; out.text = d.text }
+  }
   return out
 }
 
@@ -874,7 +1160,10 @@ export function describeCapture(r) {
   /* 「没选分类」这件事只有一种说法：未分类。预览、流水、记账列表说的是同一个事实，
      换个词（'分类待定'）就等于多出一处措辞，将来两处会各说一套。 */
   if (r.kind === 'money') return '支出 ' + (r.value === null ? '' : '¥' + r.value) + ' · ' + (r.category || '未分类')
-  if (r.kind === 'todo') return '待办 · 进今天'
+  if (r.kind === 'todo') {
+    if (r.due) return '待办 · ' + (r.due === TODAY ? '今天到期' : fmtCN(r.due) + ' 到期')
+    return '待办 · 进今天'
+  }
   if (r.kind === 'note') return '随心记 · 不进统计'
   return '收件箱 · 先存着，以后再归类'
 }
@@ -1306,10 +1595,386 @@ export function todayTree(today) {
     return o
   })
 
+  const overdue = build(r.overdue, true)
+  const due = build(r.due, false)
   return {
-    overdue: build(r.overdue, true),
-    due: build(r.due, false),
+    overdue,
+    due,
+    /* 逾期和今天到期合成一条列表：它们本来就是同一种东西（没做完的待办），
+       差的只是到期日早晚。分成两张卡片之后，「今天还剩几件」要在两处各数一遍，
+       两个标题也在做同一件事。合并后按到期日自然排序 ——
+       欠着的本来就在最前面，「这一天的第一眼看见最欠着的」这条并没有丢。
+       overdue / due 仍然分开返回：只想看其中一组的时候还要用。 */
+    open: overdue.concat(due),
     done: done
+  }
+}
+
+/* ---------------- 四象限 ----------------
+ * 四象限是**又一个属性**，不是又一个页面 —— 和 D4「跨度是属性，不是页面」同一条道理。
+ * 它只回答一个问题：接下来先做哪个。
+ *
+ * 「重要」和「紧急」是两个**独立的轴**，所以数据里存两个布尔，不存 1–4 的编号。
+ * 编号是这两个轴的组合；存组合的话，以后想只看「所有重要的」得先反解一遍，
+ * 而两个轴本身才是真东西。编号只活在界面上（编辑弹窗里那个 2×2 选择器）。
+ *
+ * 两个轴都**由人标**，不自动推断。想过「逾期或今天到期就算紧急」，放弃了：
+ * 那样四个格子会长期是机器分好的样子，人就不再看了 —— 一个没人看的视图，再准也等于没有。
+ * 而且标这个动作本身有用：把「重要不紧急」和「紧急不重要」分开，是这套方法唯一的价值。
+ */
+export const QUAD = [
+  { k: '1', n: '重要且紧急', act: '马上做' },
+  { k: '2', n: '重要不紧急', act: '定个时间做' },
+  { k: '3', n: '紧急不重要', act: '尽快甩掉' },
+  { k: '4', n: '不重要也不紧急', act: '别做' }
+]
+
+export function quadOf(node) {
+  const imp = !!(node && node.imp), urg = !!(node && node.urg)
+  if (imp && urg) return '1'
+  if (imp) return '2'
+  if (urg) return '3'
+  return '4'
+}
+
+/* 界面上一次点选 = 同时定两个轴。数据里仍然是两个独立的 bool。 */
+export function setQuad(node, q) {
+  if (!node) return
+  node.imp = (q === '1' || q === '2')
+  node.urg = (q === '1' || q === '3')
+}
+
+export function quadName(k) {
+  for (const q of QUAD) if (q.k === k) return q.n
+  return ''
+}
+
+/* 象限 → 颜色档。**四个档都给色**，第 4 格是灰。
+   原来第 4 格刻意不给：它是「没标过 / 不用管」的那格，给色像是在提醒人看它。
+   但放到今日页的待办列表里这个理由站不住 —— 红蓝橙都有条、就它没有，
+   读出来的是「这条还没标」，而不是「这条不重要」，
+   两种意思混在同一个「没有颜色」上，反而说不清。
+   四档都有色之后，每一条待办都看得出自己被分到了哪儿。
+   四象限页的卡片底色、待办行左边那条竖色条，都用这一个映射 ——
+   两处各写一套的话，改一个色另一个就悄悄对不上了。 */
+export function quadTone(k) {
+  return (k === '1' || k === '2' || k === '3' || k === '4') ? k : ''
+}
+
+/* ---------------- 四象限配色 ---------------- */
+export const QUAD_COLOR_DEFAULT = { q1: '#D64545', q2: '#E08E2B', q3: '#3B7DD8', q4: '#8A8F99' }
+const QUAD_KEYS = ['q1', 'q2', 'q3', 'q4']
+
+function hexOf(v, fallback) {
+  const p = /^#?([0-9a-f]{6})$/i.exec(String(v || ''))
+  return p ? '#' + p[1].toLowerCase() : fallback
+}
+/* 把颜色往白里混。t 是颜色自己的占比，0.12 和设计变量里那几个 -bg 的深浅一致：
+   太深会压住正文，太浅就看不出是哪一格了。
+   不用 CSS 的 color-mix()：App 端走系统 WebView，老内核不认，H5 认了 App 也不认。 */
+function tintOf(hex, t) {
+  const n = parseInt(hex.slice(1), 16)
+  const c = function (v) {
+    const s = Math.round(v * t + 255 * (1 - t)).toString(16)
+    return s.length < 2 ? '0' + s : s
+  }
+  return '#' + c((n >> 16) & 255) + c((n >> 8) & 255) + c(n & 255)
+}
+
+/* 根节点上要注入的那串 CSS 变量。四个主色加四个调淡后的底色，
+   四象限页、待办行的色条、编辑弹窗的 2×2 选择器读的都是这几个 ——
+   在设置里改一个颜色，三处一起变，不用挨个组件去改。 */
+export function quadVarStyle() {
+  const src = db.QUAD_COLORS || {}
+  const out = []
+  for (const k of QUAD_KEYS) {
+    const base = hexOf(src[k], QUAD_COLOR_DEFAULT[k])
+    out.push('--' + k + ':' + base)
+    out.push('--' + k + '-bg:' + tintOf(base, 0.12))
+  }
+  return out.join(';')
+}
+
+export function setQuadColor(k, hex) {
+  if (QUAD_KEYS.indexOf(k) < 0) return { error: '没有这个象限' }
+  if (!db.QUAD_COLORS) db.QUAD_COLORS = {}
+  const v = hexOf(hex, '')
+  if (!v) return { error: '颜色要写成 #RRGGBB' }
+  db.QUAD_COLORS[k] = v
+  return { ok: true, hex: v }
+}
+
+export function quadColorOf(k) {
+  return hexOf((db.QUAD_COLORS || {})[k], QUAD_COLOR_DEFAULT[k])
+}
+
+/* 四象限那一页要的行：**全部未完成**，跨领域、不限日期。
+ *   ① 只看今天的话每格顶多一两件，排不出「重要且紧急」和「重要不紧急」的比例，
+ *      那这四个格子就白摆了。
+ *   ② 平铺、不铺树。子项的四象限是它自己的事，挂回父项下面会让人以为跟着父项走；
+ *      而且这一页每一格都是平的，缩进在这里没有意义。
+ *   ③ 已完成的也不留。这四个格子问的是「接下来做什么」，不是「做过什么」。
+ * 排序：有日期的按日期升序排前面，没日期的沉到最后 —— 同一格里先看快到期的。
+ */
+export function quadRows() {
+  const g = { '1': [], '2': [], '3': [], '4': [] }
+  for (const it of (db.ITEMS || [])) {
+    if (it.status === 'done') continue
+    g[quadOf(it)].push({
+      node: it,
+      path: nodePath(db.ITEMS, it),
+      spec: specOf('item', it.id),
+      kids: 0, depth: 0, closed: false
+    })
+  }
+  function byDue(a, b) {
+    const x = a.node.due || '9999-99-99', y = b.node.due || '9999-99-99'
+    return x < y ? -1 : (x > y ? 1 : 0)
+  }
+  for (const q of ['1', '2', '3', '4']) g[q].sort(byDue)
+  return g
+}
+
+/* ---------------- 日历 ----------------
+ * 待办在时间轴上的样子。今日页是「这一天」，日历是「这个月」——
+ * 同一批事换个焦距。所以它读的还是 ITEMS，没有第二份存储，也没有「日历事件」这种东西。
+ *
+ * 一个月的账**只算一遍**：先把有东西的日子摊成几张按天索引的表，再去铺格子。
+ * 按格子各扫一遍全量数据的话是 42 × 全量，白扫 41 遍。
+ *
+ * 随心记**不进这里**（「零字段文本框，不进任何聚合与复盘」），收集箱也不进 ——
+ * 它们是「还没归属的东西」，日历只放已经落在某一天上的事。
+ */
+export function shiftMonths(iso, n) {
+  const p = String(iso).split('-').map(Number)
+  return isoOf(new Date(p[0], p[1] - 1 + n, 1))
+}
+
+export function monthView(anchorIso) {
+  const p = String(anchorIso).split('-').map(Number)
+  const y = p[0], m = p[1]
+  const first = y + '-' + pad2(m) + '-01'
+  /* 周一起头。网格第一格是「含 1 号的那一周的周一」，可能落在上个月。 */
+  const lead = startOfWeek(first)
+
+  const open = {}, done = {}, habit = {}, money = {}, rt = {}
+  for (const it of (db.ITEMS || [])) {
+    if (!it.due) continue
+    if (it.status === 'done') done[it.due] = (done[it.due] || 0) + 1
+    else open[it.due] = (open[it.due] || 0) + 1
+  }
+  for (const h of (db.HABIT_LOGS || [])) if (h.date) habit[h.date] = (habit[h.date] || 0) + 1
+  for (const l of (db.LOGS || [])) {
+    if (!l.date) continue
+    /* money 在这里存的是**当天的支出合计**，不是笔数 ——
+       格子里要显示的是「那天花了多少」。笔数另外由 dayMarks 给。 */
+    if (l.kind === 'money') money[l.date] = (money[l.date] || 0) + Number(l.value || 0)
+    else rt[l.date] = (rt[l.date] || 0) + 1
+  }
+  for (const t of (db.RECORD_TYPES || [])) {
+    if (t.retired) continue
+    for (const l of (t.logs || [])) {
+      const iso = isoOfCnDate(l.d, TODAY)
+      if (iso) rt[iso] = (rt[iso] || 0) + 1
+    }
+  }
+
+  /* 行数按「这个月最后一天落在第几周」算。固定铺 6 行的话，
+     有些月份会多出一整行全是灰的 —— 那一行每天都在，却什么也不表示。 */
+  const lastDay = new Date(y, m, 0).getDate()
+  const need = dayCount(lead, y + '-' + pad2(m) + '-' + pad2(lastDay)) + 1
+  const rows = Math.ceil(need / 7)
+
+  const cells = []
+  let mOpen = 0, mDone = 0
+  for (let i = 0; i < rows * 7; i++) {
+    const iso = shiftDays(lead, i)
+    const inMonth = Number(iso.slice(5, 7)) === m
+    const c = {
+      iso, day: Number(iso.slice(8)), inMonth,
+      today: iso === TODAY,
+      open: open[iso] || 0,
+      done: done[iso] || 0,
+      habit: habit[iso] || 0,
+      money: Math.round((money[iso] || 0) * 100) / 100,
+      rt: rt[iso] || 0
+    }
+    c.any = !!(c.habit || c.money || c.rt)
+    if (inMonth) { mOpen += c.open; mDone += c.done }
+    cells.push(c)
+  }
+
+  return {
+    y, m, first, lead, rows, cells,
+    /* last 给账单那一条用（算这一期的合计、以及和上个月比）*/
+    last: y + '-' + pad2(m) + '-' + pad2(lastDay),
+    label: y + ' 年 ' + m + ' 月',
+    mOpen, mDone
+  }
+}
+
+/* 选中那一天列出来的东西。**平铺**，和「已完成」那一组同一个理由：
+   日历是按日子在看的，把跨天的一棵树缩进铺出来，反而看不出哪些是那天的。 */
+export function dayRows(iso) {
+  const out = []
+  for (const it of (db.ITEMS || [])) {
+    if (it.due !== iso) continue
+    out.push({
+      node: it, depth: 0, kids: 0, closed: false,
+      path: nodePath(db.ITEMS, it),
+      spec: specOf('item', it.id)
+    })
+  }
+  /* 没做完的排前面，做完的沉下去 —— 和今日页同一个先后 */
+  out.sort(function (a, b) {
+    return (a.node.status === 'done' ? 1 : 0) - (b.node.status === 'done' ? 1 : 0)
+  })
+  return out
+}
+
+/* 那一天除了待办，还留下了什么。日历格子只放得下几个点，
+   点开某一天要给得出「点的到底是什么」。 */
+export function dayMarks(iso) {
+  const habits = [], rts = []
+  for (const h of (db.HABIT_LOGS || [])) {
+    if (h.date !== iso) continue
+    const hb = habitById(h.key)
+    const n = hb ? labelOf(hb) : ''
+    if (n && habits.indexOf(n) < 0) habits.push(n)
+  }
+  const moneyList = []
+  let moneyCount = 0, moneySum = 0
+  for (const l of (db.LOGS || [])) {
+    if (l.date !== iso || l.kind !== 'money') continue
+    moneyCount++
+    moneySum += Number(l.value || 0)
+    /* 日历那天那一栏要把每一笔列出来（分类 + 金额），不是只给个合计 */
+    moneyList.push({ category: l.category || '未分类', value: Math.round(Number(l.value || 0) * 100) / 100 })
+  }
+  for (const t of (db.RECORD_TYPES || [])) {
+    if (t.retired) continue
+    for (const l of (t.logs || [])) {
+      if (isoOfCnDate(l.d, TODAY) === iso) {
+        rts.push({ name: t.name, v: l.v, unit: t.unit || '' })
+      }
+    }
+  }
+  return { habits, moneyList, moneyCount, moneySum: Math.round(moneySum * 100) / 100, rts }
+}
+
+export function shiftWeeks(iso, n) { return shiftDays(iso, n * 7) }
+
+/* 一周的议程：一天一行，那天的事列在行下面。
+ *
+ * 为什么不是 7 列看板：一列只有五十几个像素宽，待办标题连一行都放不下。
+ * 为什么不是「一天一页左右翻」：那样看不出这一周整体的节奏，
+ * 而周视图存在的理由恰恰就是看节奏。
+ *
+ * 这里是 7 天各扫一遍全量数据（dayRows + dayMarks），不像 monthView 那样先摊平成表。
+ * 7 遍和 42 遍不是一回事，为省这 7 遍把取数拆成两套写法不值得。
+ */
+export function weekView(anchorIso) {
+  const lead = startOfWeek(anchorIso || TODAY)
+  const days = []
+  for (let i = 0; i < 7; i++) {
+    const iso = shiftDays(lead, i)
+    const all = dayRows(iso)
+    const live = all.filter(function (r) { return r.node.status !== 'done' })
+    const m = dayMarks(iso)
+    days.push({
+      iso,
+      d: Number(iso.slice(8)),
+      w: weekdayCN(iso),
+      today: iso === TODAY,
+      rows: live,
+      done: all.length - live.length,
+      habit: m.habits.length,
+      moneySum: m.moneySum,
+      rt: m.rts.length
+    })
+  }
+  return { lead, days, last: days[6].iso }
+}
+
+/* 一段时间里的账。月视图和周视图各要一条汇总，所以做成通用的 ——
+ * 传这一期的区间，以及上一期的区间。
+ *
+ * 「对比上期」是这里最容易做错的一处：上一期一笔都没记的时候，
+ * 不能拿 0 当分母算出「多了 100%」—— 那种数会让人以为账坏了。
+ * 所以 prev / prevCount 原样给出去，措辞由显示层决定（见 calendar.vue）。 */
+export function moneyBrief(from, to, pf, pt) {
+  const cats = {}
+  let sum = 0, count = 0
+  for (const l of (db.LOGS || [])) {
+    if (l.kind !== 'money' || !inRange(l.date, from, to)) continue
+    const v = Number(l.value || 0)
+    sum += v
+    count++
+    const k = l.category || '未分类'
+    cats[k] = (cats[k] || 0) + v
+  }
+  const list = []
+  for (const k in cats) list.push({ name: k, sum: Math.round(cats[k] * 100) / 100 })
+  list.sort(function (a, b) { return b.sum - a.sum })
+
+  let prev = 0, prevCount = 0
+  if (pf && pt) {
+    for (const l of (db.LOGS || [])) {
+      if (l.kind !== 'money' || !inRange(l.date, pf, pt)) continue
+      prev += Number(l.value || 0)
+      prevCount++
+    }
+  }
+  return {
+    sum: Math.round(sum * 100) / 100,
+    count,
+    cats: list,
+    prev: Math.round(prev * 100) / 100,
+    prevCount
+  }
+}
+
+/* ---------------- 全局搜索 ----------------
+ * 数据全在本机，遍历就够了 —— 不建索引、不防抖，输入什么搜什么。
+ * 本地优先的一个隐藏好处：搜索不经过任何服务器，也没有「搜不到是因为没同步」这种事。
+ * 返回 null = 还没输入要搜的字。每一组都可能为空。
+ * 计划（goal）不给 spec：它的编辑要走进度弹窗，那一轮还没搬，
+ * 给了也点不动，不如如实不给出「能点」的样子。 */
+export function searchAll(q) {
+  const kw = String(q || '').trim().toLowerCase()
+  if (!kw) return null
+  const hit = function (s) { return String(s == null ? '' : s).toLowerCase().indexOf(kw) >= 0 }
+  const todos = [], habits = [], goals = [], moneyRows = [], notes = [], inbox = []
+  for (const it of (db.ITEMS || [])) {
+    if (!hit(it.title)) continue
+    todos.push({
+      id: it.id, title: it.title, done: it.status === 'done',
+      sub: domainName(it) + (it.due ? ' · ' + fmtCN(it.due) : ''),
+      spec: specOf('item', it.id)
+    })
+  }
+  for (const d of (db.DOMAINS || [])) {
+    for (const h of (d.habits || [])) {
+      if (hit(h.t)) habits.push({ id: h.id, title: labelOf(h), sub: d.name, spec: specOf('habit', h.id) })
+    }
+    for (const g of (d.goals || [])) {
+      if (hit(g.t)) goals.push({ id: g.id, title: labelOf(g), sub: d.name + (g.m ? ' · ' + g.m : '') })
+    }
+  }
+  for (const l of (db.LOGS || [])) {
+    if (l.kind !== 'money') continue
+    if (!hit(l.category) && !hit(l.text) && !hit(String(l.value))) continue
+    moneyRows.push({ id: l.id, title: (l.category || '未分类') + ' ' + money(l.value), sub: fmtCN(l.date), spec: 'money:' + l.id })
+  }
+  for (const n of (db.NOTES || [])) {
+    if (hit(n.text)) notes.push({ id: n.id, title: n.text, sub: '随心记 · ' + fmtCN(n.d) })
+  }
+  for (const n of (db.INBOX || [])) {
+    if (hit(n.text)) inbox.push({ id: n.id, title: n.text, sub: '收件箱 · ' + n.at })
+  }
+  return {
+    todos, habits, goals, money: moneyRows, notes, inbox,
+    total: todos.length + habits.length + goals.length + moneyRows.length + notes.length + inbox.length
   }
 }
 
@@ -1711,7 +2376,13 @@ export function addSub(spec, text) {
   const p = hit.node
   let node
   if (hit.kind === 'item') {
-    node = { id: newId('it'), title: t, dom: p.dom || null, due: p.due || null, status: 'todo', parent: p.id }
+    /* 子项继承父项的**领域、日期和四象限** —— 理由同前：它是「这件事的一部分」，
+       不是另一个独立承诺。四象限不继承的话，四象限页那一列是平铺的，
+       一条子项会跑得离父项很远，看着像两件不相干的事。 */
+    node = {
+      id: newId('it'), title: t, dom: p.dom || null, due: p.due || null,
+      status: 'todo', parent: p.id, imp: !!p.imp, urg: !!p.urg
+    }
     db.ITEMS.push(node)
   } else {
     node = newNode(hit.kind, t, '')
@@ -1743,6 +2414,12 @@ export function editFields() {
     return [
       { k: 'title', label: '内容（必填）', type: 'text' },
       { k: 'due', label: '到期日', type: 'date' },
+      /* 重复只在有到期日时才有意义 —— 「每周五」得先有「周五」。
+         选了重复但没填日期的话，commitEdit 会把它退回来。 */
+      { k: 'repeat', label: '重复', type: 'chips', opts: [['', '不重复'], ['daily', '每天'], ['weekly', '每周'], ['monthly', '每月'], ['yearly', '每年']] },
+      /* 四象限是一格两选（重要 × 紧急），不是一排平铺的选项 ——
+         它自己长成一个 2×2，和这个概念的形状对上，也不用读说明。 */
+      { k: 'quad', label: '四象限', type: 'quad' },
       { k: 'status', label: '状态', type: 'chips', opts: [['todo', '待办'], ['done', '已完成']] },
       { k: 'dom', label: '领域', type: 'chips', opts: domainOpts() }
     ]
@@ -1750,7 +2427,9 @@ export function editFields() {
   if (ED.kind === 'habit') {
     return [
       { k: 't', label: '习惯（必填）', type: 'text' },
-      { k: 'm', label: '频率，选填', type: 'text' }
+      /* 频率用滚轮选不用手填：它只有「单位 × 次数」两种组合，
+         手填会填出「一周四次」「周4」「每周4次」三种写法，复盘里没法归到一起。 */
+      { k: 'm', label: '频率', type: 'freq' }
     ]
   }
   if (ED.kind === 'money') {
@@ -1807,7 +2486,11 @@ export function openEdit(spec) {
   ED.spec = spec
   ED.kind = hit.kind
   ED.draft = hit.kind === 'item'
-    ? { title: hit.node.title, due: hit.node.due || '', dom: hit.node.dom || '', status: hit.node.status || 'todo' }
+    ? {
+      title: hit.node.title, due: hit.node.due || '', dom: hit.node.dom || '',
+      status: hit.node.status || 'todo', quad: quadOf(hit.node),
+      repeat: hit.node.repeat || ''
+    }
     : { t: labelOf(hit.node), m: hit.node.m || '' }
   ED.title = hit.kind === 'habit' ? '修改习惯' : '修改待办'
   ED.where = hit.kind === 'item' ? domainName(hit.node) : (d ? d.name : '')
@@ -1901,12 +2584,23 @@ export function commitEdit() {
     const t1 = String(dr.title || '').trim()
     if (!t1) return { error: '内容不能空' }
     const st0 = it.status || 'todo', st1 = dr.status || 'todo'
+    const q0 = quadOf(it), q1 = dr.quad || q0
+    const r0 = it.repeat || '', r1 = dr.repeat || ''
     if (it.title !== t1) ch.push('内容「' + it.title + '」→「' + t1 + '」')
     if ((it.due || '') !== (dr.due || '')) ch.push('到期日 ' + (it.due || '没有') + ' → ' + (dr.due || '没有'))
+    if (r0 !== r1) ch.push('重复 ' + (repeatName(r0) || '不重复') + ' → ' + (repeatName(r1) || '不重复'))
     if ((it.dom || '') !== (dr.dom || '')) ch.push('领域「' + domainName(it) + '」→「'
       + (dr.dom && domainById(dr.dom) ? domainById(dr.dom).name : '未归类') + '」')
+    if (q0 !== q1) ch.push('四象限 ' + quadName(q0) + ' → ' + quadName(q1))
     if (st0 !== st1) ch.push('状态 ' + (st0 === 'done' ? '已完成' : '待办') + ' → ' + (st1 === 'done' ? '已完成' : '待办'))
-    if (ch.length) { it.title = t1; it.due = dr.due || null; it.dom = dr.dom || null; it.status = st1 }
+    if (r1 && !dr.due) return { error: '重复得先有到期日 —— 上面把日期填上' }
+    if (ch.length) {
+      it.title = t1; it.due = dr.due || null; it.dom = dr.dom || null; it.status = st1
+      it.repeat = r1 || null
+      setQuad(it, q1)
+      /* 在弹窗里把状态改成「已完成」和点勾选框是同一件事，重复的照滚 */
+      if (st1 === 'done' && st0 !== 'done') rollRepeat(it)
+    }
     target = t1
   } else {
     const nd = hit.node

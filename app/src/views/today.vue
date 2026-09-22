@@ -1,6 +1,9 @@
 <template>
   <view class="page">
     <PageHead title="今日" :sub="headDate" />
+    <!-- 今日 / 日历 / 四象限。三个镜头一起放在页头下面，位置在三个页面里都一样 ——
+         切过去的时候那颗分段器不跳，才知道自己还在同一处。 -->
+    <ViewSeg />
 
     <!-- 今天花了多少。本月的合计也放这儿 —— 单看今天没参照。 -->
     <view class="moneyline">
@@ -15,49 +18,15 @@
     <!-- 记东西的入口不在这儿了：底栏中间那颗加号打开面板。
          这一页从此只负责「看今天」，不负责「记」。 -->
 
-    <!-- 逾期。排在最前面 —— 这一天的第一眼该看见最欠着的那些事。 -->
-    <view v-if="tt.overdue.length" class="block">
-      <view class="block-h">
-        <text class="tag tag-warn">逾期</text>
-        <text class="block-note">{{ topLevel(tt.overdue) }} 条</text>
-      </view>
-      <TreeRow
-        v-for="r in tt.overdue"
-        :key="r.node.id"
-        :depth="r.depth"
-        :kids="r.kids"
-        :closed="r.closed"
-        :add-on="subOn === r.spec"
-        :armed="armed === r.spec"
-        @fold="fold(r.node.id)"
-        @open="edit(r.spec)"
-        @add="armAdd(r.spec)"
-        @sub="(t) => commitSub(r.spec, t)"
-        @del="del(r.spec, r.node)"
-      >
-        <template #lead>
-          <view class="cbox" @click.stop="toggleDone(r.node)">
-            <view class="cbox-box" :class="{ 'is-on': r.node.status === 'done' }">
-              <svg v-if="r.node.status === 'done'" class="cbox-tick" viewBox="0 0 16 16">
-                <path d="M3.4 8.6l3.1 3.1 6.1-6.6" fill="none" stroke="#fff"
-                      stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
-              </svg>
-            </view>
-          </view>
-        </template>
-        <text class="row-t" :class="{ 'is-done': r.node.status === 'done' }">{{ label(r.node) }}</text>
-        <text class="row-m">{{ pathPre(r) }}{{ domainName(r.node) }} · {{ r.node.due.slice(5) }} 到期</text>
-      </TreeRow>
-    </view>
-
-    <!-- 待办 / 已完成两个视图，用块头那颗按钮切。
-         两个都只看今天 —— 历史的去「空间」里对应的领域看（那边不过滤状态，
-         做完的和没做完的都在，只是做完的划掉）。 -->
+    <!-- 逾期和到期的待办在**同一条列表**里：它们本来就是同一种东西（没做完的待办），
+         差的只是到期日早晚。分成两张卡片之后，「今天还剩几件」要在两处各数一遍，
+         两个标题也在做同一件事。合并后按到期日自然排序 —— 欠着的本来就在最前面，
+         「这一天的第一眼看见最欠着的那些事」这条并没有丢，只是不再靠两个卡片实现。 -->
     <view class="block">
       <view class="block-h">
         <text class="tag">{{ doneView ? '已完成' : '待办' }}</text>
         <view class="block-acts">
-          <text class="block-note">{{ doneView ? tt.done.length : topLevel(tt.due) }} 条</text>
+          <text class="block-note">{{ doneView ? tt.done.length + ' 条' : openCount + ' 条' }}<text v-if="!doneView && overCount" class="note-late"> · {{ overCount }} 条逾期</text></text>
           <view class="addbtn" @click="doneView = !doneView">
             <text class="addbtn-t">{{ doneView ? '待办' : '已完成' }}</text>
           </view>
@@ -80,6 +49,7 @@
         :closed="r.closed"
         :add-on="subOn === r.spec"
         :armed="armed === r.spec"
+        :bar="rowBar(r)"
         @fold="fold(r.node.id)"
         @open="edit(r.spec)"
         @add="armAdd(r.spec)"
@@ -87,17 +57,13 @@
         @del="del(r.spec, r.node)"
       >
         <template #lead>
-          <view class="cbox" @click.stop="toggleDone(r.node)">
-            <view class="cbox-box" :class="{ 'is-on': r.node.status === 'done' }">
-              <svg v-if="r.node.status === 'done'" class="cbox-tick" viewBox="0 0 16 16">
-                <path d="M3.4 8.6l3.1 3.1 6.1-6.6" fill="none" stroke="#fff"
-                      stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
-              </svg>
-            </view>
-          </view>
+          <DoneBox :on="r.node.status === 'done'" @toggle="toggleDone(r.node)" />
         </template>
         <text class="row-t" :class="{ 'is-done': r.node.status === 'done' }">{{ label(r.node) }}</text>
-        <text class="row-m">{{ pathPre(r) }}{{ domainName(r.node) }}</text>
+        <!-- 逾期那行整行灰字转橙、并写出逾期几天。合进一条列表之后，
+             这是唯一能一眼分出「欠着的」和「今天该做的」的东西 ——
+             只写日期的话，得心算才知道 9-16 是几天前。 -->
+        <text class="row-m" :class="{ 'is-late': isLate(r) }">{{ pathPre(r) }}{{ domainName(r.node) }}{{ lateOf(r) }}</text>
       </TreeRow>
     </view>
 
@@ -198,15 +164,17 @@
 <script setup>
 import { computed, ref } from 'vue'
 import {
-  db, TODAY, money, go, weekdayCN,
+  db, TODAY, money, go, weekdayCN, dayCount,
   habitDoneOn, streakText, toggleHabitLog,
   moneyTotalOf, toggleFold, openAdd, addSub, openEdit, openLogEdit, rowBody,
   openGoalAdd, openGoal, armDelete, delArmed, labelOf, todayTree, habitTree, goalTree,
-  progressOf, domainName, topLevel, saveState
+  progressOf, domainName, saveState, quadOf, quadTone, rollRepeat
 } from '../stores/db'
 import PageHead from '../components/PageHead.vue'
 import PlusIcon from '../components/PlusIcon.vue'
 import TreeRow from '../components/TreeRow.vue'
+import DoneBox from '../components/DoneBox.vue'
+import ViewSeg from '../components/ViewSeg.vue'
 
 const headDate = computed(function () {
   const p = TODAY.split('-').map(Number)
@@ -239,8 +207,34 @@ const armed = delArmed
    而不是停在一屏已完成上。 */
 const doneView = ref(false)
 const rows = computed(function () {
-  return doneView.value ? tt.value.done : tt.value.due
+  return doneView.value ? tt.value.done : tt.value.open
 })
+
+/* 两个数都数**列表里看得见的行**（含子项），不是只数顶层。
+   这是项目里已有那条规矩：写得出的数必须数得出来 ——
+   原来「逾期」和「待办」分成两张卡片时，两张各自只装顶层行，数顶层是对的；
+   合并成一条之后列表里带着子项，再数顶层就会写成「5 条 · 2 条逾期」
+   而屏幕上有四条带「逾期」的行。合并前那个数是对的，合并后不对了。 */
+const openCount = computed(function () { return tt.value.open.length })
+const overCount = computed(function () { return tt.value.open.filter(isLate).length })
+
+/* 逾期与否**按这一条自己的到期日算**，不看它在哪一组。
+   合进一条列表之后这两件事会分家：一条子项挂在逾期的父项下面出现，
+   但它自己的到期日可能是今天 —— 那种情况下不该写「逾期」。
+   （父项在逾期组里，子项就跟过来，这是「子项跟着父项走」那条规矩。） */
+function isLate(r) {
+  return !!r.node.due && r.node.status !== 'done' && r.node.due < TODAY
+}
+function lateOf(r) {
+  if (!isLate(r)) return ''
+  return ' · ' + r.node.due.slice(5) + ' 到期 · 逾期 ' + dayCount(r.node.due, TODAY) + ' 天'
+}
+
+/* 行左缘那条象限色条。已完成那一栏不给 —— 事情做完了，它属于哪个象限不再是
+   需要一眼看到的东西；那一栏的灰和划线本身就是答案。 */
+function rowBar(r) {
+  return doneView.value ? '' : quadTone(quadOf(r.node))
+}
 
 /* 子项那行的灰字前面补一句上级路径。今日页不铺整棵树，
    光靠缩进看不出来它挂在谁下面。 */
@@ -319,8 +313,16 @@ function tick(id) {
 function toggleDone(it) {
   const wasDone = it.status === 'done'
   it.status = wasDone ? 'todo' : 'done'
+  /* 重复的待办：完成的同时把下一次也建好。
+     反悔（取消完成）的时候**不删**那条新生成的 —— 它是下一个月/周的事，
+     删了就得再点一次勾选框才能找回来。 */
+  let rolled = null
+  if (!wasDone) rolled = rollRepeat(it)
   saveState()
-  uni.showToast({ title: wasDone ? '取消完成' : '完成了', icon: 'none' })
+  uni.showToast({
+    title: wasDone ? '取消完成' : (rolled ? '完成了 · 下一次已排到 ' + rolled.due : '完成了'),
+    icon: 'none'
+  })
 }
 </script>
 
@@ -347,7 +349,9 @@ function toggleDone(it) {
   padding-bottom: 6px;
 }
 .tag { font-size: 14px; font-weight: 500; color: var(--text); }
-.tag-warn { color: var(--warn); }
+/* 「N 条逾期」那半句。它挂在「5 条」后面，所以是一段内联文字，不是另一个标签 ——
+   （原来逾期是单独一张卡片、有自己的橙色标题，合并之后只剩这半句了。） */
+.note-late { font-size: 12px; color: var(--warn); }
 .block-note { font-size: 12px; color: var(--muted); }
 .block-acts {
   display: flex;
@@ -370,6 +374,9 @@ function toggleDone(it) {
 .row-main { flex: 1 1 auto; min-width: 0; padding: 6px 0; }
 .row-t { display: block; font-size: 14px; color: var(--text); }
 .row-m { display: block; font-size: 12px; color: var(--muted); margin-top: 1px; }
+/* 逾期那一行的灰字整行转橙。合并成一条列表之后，颜色是唯一的即时区分 ——
+   正文不乱动（还是黑的），只把说明那行染色，扫的时候不会觉得整块都在报警。 */
+.row-m.is-late { color: var(--warn); }
 .row-v { font-size: 14px; color: var(--text); }
 
 /* ---- 操作流水那几行 ---- */
@@ -447,30 +454,9 @@ function toggleDone(it) {
 
 .empty { padding: 12px 0 16px; }
 .empty-t { display: block; font-size: 13px; color: var(--muted); }
-/* ---- 待办的勾选框 ----
-   点按区域比那个方框大一圈：方框本身只有 17px，手指点不准，
-   而这一下点歪了是「没完成」和「完成了」的区别。 */
-.cbox {
-  flex: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  margin-right: 2px;
-}
-.cbox-box {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 17px;
-  height: 17px;
-  border: 1.5px solid var(--line2);
-  border-radius: 4px;
-  background: var(--card);
-}
-.cbox-box.is-on { background: var(--ok); border-color: var(--ok); }
-.cbox-tick { width: 11px; height: 11px; display: block; }
+/* 待办的勾选框（.cbox / .cbox-box / .cbox-tick）搬到 components/DoneBox.vue 了 ——
+   原来这一页里就写了两份一模一样的（逾期一组、待办一组），日历和四象限还要用。
+   留在这一页的话，「勾选样式改一下」要改四处。 */
 
 /* 完成的待办划掉。它留在列表里是为了能取消，不是为了让人再看一遍 */
 .row-t.is-done { color: var(--muted); text-decoration: line-through; }

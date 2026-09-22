@@ -35,6 +35,19 @@ page,
   --danger-bg: #FDECEA;
   --mask: rgba(31, 36, 48, .34);
   --r: 12px;
+
+  /* 四象限的四个颜色（加各自的浅底）。
+     这里是**兜底值** —— 真正的值由 index.vue 在根节点上用内联样式注入
+     （db.QUAD_COLORS → quadVarStyle()），用户在设置里改的就是那份。
+     保留兜底的原因：样式先于 JS 生效的那一瞬间，不该是一堆没有颜色的框。 */
+  --q1: #D64545;  /* 重要且紧急 */
+  --q2: #E08E2B;  /* 重要不紧急 */
+  --q3: #3B7DD8;  /* 紧急不重要 */
+  --q4: #8A8F99;  /* 都不 */
+  --q1-bg: #F8ECEC;
+  --q2-bg: #FCF1E4;
+  --q3-bg: #EBF1F8;
+  --q4-bg: #F2F3F4;
 }
 
 page {
@@ -43,6 +56,12 @@ page {
   font-size: 14px;
   line-height: 1.6;
   font-family: system-ui, -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+  /* 数字一律等宽（字形、字号都不变，只把每个数字的占宽统一）。
+     金额、笔数、进度百分比、连续天数这些天生会上下几行堆在一起，
+     比例数字会让它们左右参差 —— 「本月累计」和「本周累计」并排时最明显。
+     这是继承属性，写在根上一处覆盖全应用；逐个元素加的话，
+     以后新增一个显示数字的地方就会漏掉，而漏掉是看不见的（只是没对齐）。 */
+  font-variant-numeric: tabular-nums;
 }
 
 /* 内容区守住手机宽度。宽屏上两侧多出来的地方留背景色，
@@ -87,3 +106,30 @@ textarea {
 .addbtn:active { background: var(--accent-bg); }
 /* 图标和文字之间留一点。加号只在按钮里和文字并排，所以跟着 addbtn 放 */
 .addbtn .pi { margin-right: 5px; }
+
+/* 分段器：一排互斥的切换钮。
+ * 复盘页（本周/本月/自定义）和今日页头（今日/日历/四象限）共用这一份 ——
+ * 原本只有复盘页有，今日页要加第二个的时候，抄一份就等于以后
+ * 「选中态颜色改一下」要改两处，漏一处两页就长得不一样。
+ * 外边距不在这儿定：两页各自要的空不一样（复盘下面紧跟区间条，今日下面紧跟区块）。 */
+.seg {
+  display: flex;
+  flex-direction: row;
+  padding: 3px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+.seg-b {
+  display: flex;
+  flex: 1 1 0;
+  min-width: 0;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  border-radius: 8px;
+}
+.seg-b.is-on { background: var(--accent); }
+.seg-t { font-size: 13px; color: var(--sub); }
+.seg-b.is-on .seg-t { color: #fff; }
+.seg-b:active { background: var(--bg); }

@@ -54,22 +54,19 @@
 
     <view class="block">
       <view class="block-h">
-        <text class="tag">快记类目</text>
-        <text class="block-note">首页速记里出现的</text>
+        <text class="tag">记一笔</text>
+        <text class="block-note">首页速记</text>
       </view>
-      <view v-for="m in db.CAPTURE_MODES" :key="m.k" class="srow">
-        <text class="srow-k">{{ m.t }}</text>
-        <text class="srow-v">{{ m.on ? (m.lock ? '常开' : '开') : '关' }}</text>
-      </view>
-      <!-- 和面板右上角那个是同一个值：面板上那份是「记的时候就近改」，
-           这里才是它的正式位置。 -->
       <view class="srow">
         <text class="srow-k">记完自动关</text>
         <view class="sw" :class="{ 'is-on': db.CAP_AUTO_CLOSE }" @click="db.CAP_AUTO_CLOSE = !db.CAP_AUTO_CLOSE">
           <view class="sw-dot"></view>
         </view>
       </view>
-      <view class="note"><text class="note-t">这里只管首页那一排出现哪些类目。判断一句话靠的是规则，在下面那块。</text></view>
+      <!-- 「快记类目」那一截删掉了：它是一份**只读**的清单，
+           只显示哪些类目开着，本身一个都改不了 —— 能改的地方在记一笔面板的「自定义」里。
+           摆一份改不了的状态在这里，等于让人跑来这儿找开关然后扑个空。 -->
+      <view class="note"><text class="note-t">那排类目在面板上点「自定义」就能调顺序和开关；判断一句话靠的是规则，在下面那块。</text></view>
     </view>
 
     <!-- ============ 自动判断规则 ============
@@ -160,45 +157,32 @@
 
     <view class="block">
       <view class="block-h">
-        <text class="tag">记账品类</text>
+        <text class="tag">四象限配色</text>
         <view class="block-acts">
-          <text class="block-note">{{ db.CATS.length }} 个</text>
-          <view class="addbtn" @click="newCat">
-            <PlusIcon v-if="catOn !== 'new'" :size="14" /><text class="addbtn-t">{{ catOn === 'new' ? '收起' : '新增' }}</text>
-          </view>
-        </view>
-      </view>
-      <view v-if="!db.CATS.length && catOn !== 'new'" class="note">
-        <text class="note-t">还没有品类。点上面的「新增」加一个。</text>
-      </view>
-      <view v-for="c in db.CATS" :key="c" class="srow">
-        <view class="cat-n">
-          <text class="srow-k">{{ c }}</text>
-          <text v-if="usedOf(c)" class="cat-used">记过 {{ usedOf(c) }} 笔</text>
-        </view>
-        <view class="cat-ops">
-          <view class="mini" @click="renameCatStart(c)"><text class="mini-t">{{ catOn === c ? '收起' : '改名' }}</text></view>
-          <view class="mini mini-del" @click="delCatGo(c)">
-            <text class="mini-t">{{ armed === 'cat:' + c ? '确认删' : '删' }}</text>
-          </view>
-        </view>
-      </view>
-      <!-- 新建和改名共用这一块：一句话的事，不值得开弹窗 -->
-      <view v-if="catOn" class="rt-in">
-        <input :maxlength="-1"
-          v-model="catDraft"
-          class="tin tin-in"
-          :placeholder="catOn === 'new' ? '新品类叫什么，比如「宠物」' : '改成叫什么'"
-          placeholder-class="tph"
-        />
-        <view class="chips">
-          <view class="btn btn-main" @click="commitCat"><text class="btn-t btn-main-t">{{ catOn === 'new' ? '创建' : '改名' }}</text></view>
-          <view class="btn" @click="catOn = ''"><text class="btn-t">取消</text></view>
+          <view class="mini" @click="resetQuad"><text class="mini-t">恢复默认</text></view>
         </view>
       </view>
       <view class="note">
-        <text class="note-t">删掉一个品类只去掉选项，已记的流水一个字不改。</text>
-        <text class="note-t">改名会把已记的那几笔一起改过来。</text>
+        <text class="note-t">这四个颜色在四象限页、待办行左边的色条、编辑弹窗里是同一份。</text>
+      </view>
+      <view v-for="q in QUAD_ROWS" :key="q.k" class="qcrow">
+        <view class="qcr-h">
+          <view class="qcr-dot" :style="{ background: quadColorOf(q.k) }"></view>
+          <text class="qcr-n">{{ q.n }}</text>
+        </view>
+        <view class="qcswatches">
+          <view
+            v-for="s in SWATCHES"
+            :key="s"
+            class="qcsw"
+            :class="{ 'is-on': quadColorOf(q.k) === s }"
+            :style="{ background: s }"
+            @click="pickQuad(q.k, s)"
+          ></view>
+        </view>
+      </view>
+      <view class="note">
+        <text class="note-t">点一个色块就换。「都不」那一格建议给灰的 —— 它是「没标过 / 不用管」的那格，太显眼会让人以为也值得看。</text>
       </view>
     </view>
 
@@ -207,9 +191,10 @@
         <text class="tag">数据</text>
         <text class="block-note">都在本机</text>
       </view>
-      <view class="srow">
-        <text class="srow-k">本机存储</text>
-        <text class="srow-v">{{ storeText }}</text>
+      <!-- 「本机存储：已自动保存」那行撤了 —— 存储状态现在常驻在每一页的页头，
+           这里再摆一份是重复。存失败时这里留一句解释，页头那行只有四个字说不清。 -->
+      <view v-if="storeFailed" class="note">
+        <text class="note-t">这台设备现在存不了：刚记的只在这块屏幕上，换页或关掉就没有了。试着清一点存储空间再打开。</text>
       </view>
       <view class="chips">
         <view class="btn btn-main" @click="saveFile"><text class="btn-t btn-main-t">存成文件</text></view>
@@ -242,6 +227,29 @@
 
     <view class="block">
       <view class="block-h">
+        <text class="tag">自动备份</text>
+        <text class="block-note">每天一份 · 留最近 {{ backups.length }} 份</text>
+      </view>
+      <view v-if="!backups.length" class="note">
+        <text class="note-t">还没有备份。今天记下第一笔之后就会有一份，不用管它。</text>
+      </view>
+      <view v-for="b in backups" :key="b.date" class="srow">
+        <view class="bk-main">
+          <text class="srow-k">{{ bkLabel(b) }}</text>
+          <text class="bk-sub">{{ countLine(b.counts) }}</text>
+        </view>
+        <view class="mini" :class="{ 'mini-del': bkArmed === b.date }" @click="restoreGo(b)">
+          <text class="mini-t" :class="{ 'is-danger': bkArmed === b.date }">{{ bkArmed === b.date ? '确认恢复' : '恢复到这天' }}</text>
+        </view>
+      </view>
+      <view class="note">
+        <text class="note-t">每天第一次记东西时自动留一份，留最近 7 份，清空数据也不清它们。</text>
+        <text class="note-t">恢复会把本机换成那天的样子 —— 恢复前会先把现在这份也留成备份，所以恢复是可反悔的。</text>
+      </view>
+    </view>
+
+    <view class="block">
+      <view class="block-h">
         <text class="tag">这一版不做的</text>
         <text class="block-note">都是定好的，不是漏了</text>
       </view>
@@ -254,6 +262,26 @@
       <view class="block-h"><text class="tag">外观</text><text class="block-note">先做浅色，够用</text></view>
       <view class="srow"><text class="srow-k">主题</text><text class="srow-v">浅色</text></view>
     </view>
+
+    <!-- 清空数据放在设置的最底下，和上面的导出/导入隔了三块 ——
+         离得远不是随手排的：这一颗按下去清的是全部。
+         两段确认和别处的删除是同一个思路，但这里文案直接写清后果，
+         不用「再点一次」这种不含信息量的提示。 -->
+    <view class="block block-danger">
+      <view class="block-h">
+        <text class="tag">清空数据</text>
+        <text class="block-note">清掉全部，回到空白</text>
+      </view>
+      <view class="note">
+        <text class="note-t">清掉所有的待办、习惯、计划、记账、随心记、收集箱和领域，四象限配色也回到默认。</text>
+        <text class="note-t">清掉就找不回来了 —— 想留一份的话，先去上面的「数据」里存成文件。</text>
+      </view>
+      <view class="chips">
+        <view class="btn" :class="{ 'btn-danger': clearArmed }" @click="clearGo">
+          <text class="btn-t" :class="{ 'btn-danger-t': clearArmed }">{{ clearArmed ? '再点一次，确认清空全部' : '清空全部数据' }}</text>
+        </view>
+      </view>
+    </view>
   </view>
 </template>
 
@@ -261,11 +289,12 @@
 import { computed, ref } from 'vue'
 import {
   db, go, money, TODAY, summaryOf, recordTypesOf, togglePin, newDomain,
-  storeFailed, importSnapshot, saveState,
+  storeFailed, importSnapshot, saveState, clearAllData,
   exportText, exportFileName, peekArchive, localCounts,
+  backupList, restoreBackup,
   ruleName, ruleTargetLabel, ruleMatchLabel, ruleStats, ruleMatches, whyNot,
   toggleRule, moveRule, saveRule, armDelete, delArmed, disarmDelete,
-  addCat, renameCat, catUsed,
+  quadColorOf, setQuadColor, QUAD_COLOR_DEFAULT,
   resolveCapture, describeCapture
 } from '../stores/db'
 import PageHead from '../components/PageHead.vue'
@@ -319,43 +348,86 @@ function createDomain() {
   uni.showToast({ title: '已创建「' + r.name + '」', icon: 'none' })
 }
 
-/* ---------------- 记账品类 ---------------- */
-const catOn = ref('')      /* 'new' = 正在新建；否则是正在改名的那个品类名 */
-const catDraft = ref('')
+/* ---------------- 四象限配色 ----------------
+ * 十二个候选色。不做「随便填一个 hex」的输入框：
+ * 移动端上没有现成的取色器，自己拼一个输入框出来，输入的色到底长什么样要靠猜；
+ * 给一排色块点一下就换，所见即所得。 */
+const QUAD_ROWS = [
+  { k: 'q1', n: '重要且紧急' },
+  { k: 'q2', n: '重要不紧急' },
+  { k: 'q3', n: '紧急不重要' },
+  { k: 'q4', n: '都不' }
+]
+const SWATCHES = [
+  '#D64545', '#E05252', '#C97B63', '#E08E2B', '#C9A227', '#A85B00',
+  '#2F9E8F', '#3B7DD8', '#2F6FEB', '#7C5CC4', '#8A8F99', '#5A6272'
+]
+
+function pickQuad(k, hex) {
+  const r = setQuadColor(k, hex)
+  if (r.error) { uni.showToast({ title: r.error, icon: 'none' }); return }
+  saveState(true)
+}
+function resetQuad() {
+  for (const k of ['q1', 'q2', 'q3', 'q4']) setQuadColor(k, QUAD_COLOR_DEFAULT[k])
+  saveState(true)
+  uni.showToast({ title: '已恢复默认配色', icon: 'none' })
+}
+
+/* ---------------- 清空数据 ----------------
+ * 两段确认，和别处的删除是同一个闸门（armDelete / delArmed）：
+ * 第一下只武装（变红、文案变成「确认清空」），第二下才真清；几秒不动自动回退。
+ * 这一颗清掉的是**全部**数据，所以那颗钮要和上面的导出离得远一点。 */
+const clearArmed = ref(false)
+let clearTimer = null
+
+function clearGo() {
+  if (!clearArmed.value) {
+    clearArmed.value = true
+    if (clearTimer) clearTimeout(clearTimer)
+    clearTimer = setTimeout(function () { clearArmed.value = false }, 4000)
+    return
+  }
+  if (clearTimer) { clearTimeout(clearTimer); clearTimer = null }
+  clearArmed.value = false
+  disarmDelete()
+  clearAllData()
+  uni.showToast({ title: '已清空', icon: 'none' })
+}
+
 const armed = delArmed
 
-function usedOf(c) { return catUsed(c) }
+/* ---------------- 自动备份 ----------------
+ * 恢复是两段确认（和别处的删除同一个思路），因为「恢复」覆盖的是全部。
+ * backupList() 读的是存储不是响应式，所以用 bkTick 逼它重算 ——
+ * 恢复完列表本身也变了（多出一份「恢复前」），不逼一次就是旧清单。 */
+const bkTick = ref(0)
+const bkArmed = ref('')
+let bkTimer = null
 
-function newCat() {
-  if (catOn.value === 'new') { catOn.value = ''; return }
-  catOn.value = 'new'
-  catDraft.value = ''
+const backups = computed(function () {
+  bkTick.value
+  return backupList()
+})
+
+function bkLabel(b) {
+  if (b.date === TODAY) return '今天 · ' + b.date
+  return b.date
 }
-function renameCatStart(c) {
-  if (catOn.value === c) { catOn.value = ''; return }
-  catOn.value = c
-  catDraft.value = c
-}
-function commitCat() {
-  const v = catDraft.value.trim()
-  if (!v) { uni.showToast({ title: '先写个名字', icon: 'none' }); return }
-  const r = catOn.value === 'new' ? addCat(v) : renameCat(catOn.value, v)
+function restoreGo(b) {
+  if (bkArmed.value !== b.date) {
+    bkArmed.value = b.date
+    if (bkTimer) clearTimeout(bkTimer)
+    bkTimer = setTimeout(function () { bkArmed.value = '' }, 4000)
+    return
+  }
+  if (bkTimer) { clearTimeout(bkTimer); bkTimer = null }
+  bkArmed.value = ''
+  const r = restoreBackup(b.date)
   if (r.error) { uni.showToast({ title: r.error, icon: 'none' }); return }
-  catOn.value = ''
-  saveState(true)
-  uni.showToast({
-    title: r.moved === undefined ? '已加「' + r.name + '」' : '已改名，' + r.moved + ' 笔也跟着改过来了'
-  , icon: 'none' })
-}
-/* 这几颗按钮的名字刻意和 stores/db 里那几个错开（Start / Go 后缀）：
-   同名会把 import 的那个遮掉，commitCat 里就再也叫不动真正的改名了。 */
-function delCatGo(c) {
-  const r = armDelete('cat:' + c)
-  if (!r) return
-  if (r.error) { uni.showToast({ title: r.error, icon: 'none' }); return }
-  if (catOn.value === c) catOn.value = ''
-  saveState(true)
-  uni.showToast({ title: '已去掉「' + r.name + '」· 已记的没改', icon: 'none' })
+  bkTick.value++
+  disarmDelete()
+  uni.showToast({ title: '已恢复到 ' + b.date, icon: 'none' })
 }
 
 /* ---------------- 导入 / 导出 ----------------
@@ -477,10 +549,8 @@ function doImport() {
   uni.showToast({ title: '已导入，本机数据已换成这份', icon: 'none' })
 }
 
-/* 存储状态如实显示。存不下还一声不吭是最坑的一种错 —— 用户以为记下了，其实没有。 */
-const storeText = computed(function () {
-  return storeFailed.value ? '这台设备存不了' : '已自动保存'
-})
+/* 存储状态常驻在每一页的页头（saveStateText），这里不再重复一份。
+   失败时的解释留在上面那个 note 里 —— 页头只有四个字，说不清原因。 */
 
 /* ---------------- 自动判断规则 ---------------- */
 const rstat = computed(ruleStats)
@@ -700,11 +770,30 @@ const test = computed(function () {
 .block-acts { display: flex; flex-direction: row; align-items: center; }
 /* .addbtn 那三行搬到 styles/base.scss 了 —— 今日 / 领域 / 空间三页共用一份。 */
 
-/* 品类那一行：名字 + 「记过 N 笔」，右边两颗按钮 */
-.cat-n { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: row; align-items: baseline; }
-.cat-used { margin-left: 8px; font-size: 11px; color: var(--muted); }
-.cat-ops { flex: 0 0 auto; display: flex; flex-direction: row; align-items: center; }
-.rt-in { margin-top: 8px; }
+/* 四象限配色那一行：左边「色点 + 名字」，下面一排色块。
+   色块 26px 见方 —— 这是设置页里唯一靠颜色本身说话的控件，
+   做小了看不出它到底是不是那个色。选中的那颗描一圈边，不靠对勾图标。 */
+.bk-main { flex: 1 1 auto; min-width: 0; }
+.bk-sub { display: block; margin-top: 1px; font-size: 11px; color: var(--muted); }
+.mini-t.is-danger { color: var(--danger); }
+.qcrow { padding: 9px 0 3px; border-top: 1px solid var(--line); }
+.qcr-h { display: flex; flex-direction: row; align-items: center; }
+.qcr-dot { flex: none; width: 13px; height: 13px; margin-right: 7px; border-radius: 50%; }
+.qcr-n { font-size: 13px; color: var(--text); }
+.qcswatches { display: flex; flex-direction: row; flex-wrap: wrap; margin-top: 7px; }
+.qcsw {
+  width: 26px;
+  height: 26px;
+  margin: 0 7px 7px 0;
+  border-radius: 7px;
+  border: 1px solid rgba(31, 36, 48, .12);
+}
+.qcsw.is-on { border: 2px solid var(--text); }
+
+/* 清空数据那块：整块描红边，不是只有那颗钮是红的。
+   离得远 + 整块变红，两种信号一起说「这一块和上面那些不一样」。 */
+.block-danger { border-color: var(--danger); }
+.btn-danger-t { color: var(--danger); }
 
 .chips { display: flex; flex-direction: row; padding-top: 10px; }
 /* 一个块里的两颗按钮平分宽度：让「取消」比「创建」窄一半，

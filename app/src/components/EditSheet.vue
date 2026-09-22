@@ -8,6 +8,7 @@
         <text class="modal-note">{{ ED.where }}</text>
       </view>
 
+      <view class="modal-body">
       <text v-if="ED.hint" class="modal-sub">{{ ED.hint }}</text>
 
       <!-- 一行流水：只有正文，没有字段。它是「发生过什么」的记录，不是可以改的东西。 -->
@@ -52,6 +53,29 @@
           </view>
         </view>
 
+        <!-- 四象限：选择器**自己长成一个 2×2**，两个轴各占一边。
+             一排平铺四个选项的话，得先读字才知道哪个挨着哪个；
+             摆成矩阵就不用读 —— 形状本身就是说明。 -->
+        <view v-else-if="f.type === 'quad'" class="quad">
+          <view class="quad-r">
+            <text class="quad-ax"></text>
+            <text class="quad-ax quad-ax-c">紧急</text>
+            <text class="quad-ax quad-ax-c">不紧急</text>
+          </view>
+          <view v-for="row in QUAD_ROWS" :key="row.n" class="quad-r">
+            <text class="quad-ax">{{ row.n }}</text>
+            <view
+              v-for="q in row.qs"
+              :key="q.k"
+              class="qcell"
+              :class="['q' + q.k, { 'is-on': ED.draft[f.k] === q.k }]"
+              @click="ED.draft[f.k] = q.k"
+            >
+              <text class="qcell-t">{{ q.n }}</text>
+            </view>
+          </view>
+        </view>
+
         <view v-else-if="f.type === 'chips'" class="chips">
           <view
             v-for="o in f.opts"
@@ -63,6 +87,13 @@
             <text class="mchip-t">{{ o[1] }}</text>
           </view>
         </view>
+
+        <!-- 频率：内嵌的选择块（单位 × 次数），不弹窗。手填会填出「一周四次」
+             「周4」这种各写各的，复盘里没法归到一起；选择块把写法收成一种。
+             解析不了的老值（手填的「工作日」）不动它就不改写。 -->
+        <FreqField v-else-if="f.type === 'freq'" :value="ED.draft[f.k] || ''" @change="ED.draft[f.k] = $event" />
+      </view>
+
       </view>
 
       <view class="modal-f">
@@ -78,11 +109,19 @@
 
 <script setup>
 import { computed, ref, watch } from 'vue'
-import { db, ED, editFields, closeEdit, commitEdit, saveState } from '../stores/db'
+import { db, ED, editFields, closeEdit, commitEdit, saveState, QUAD } from '../stores/db'
+import FreqField from './FreqField.vue'
 
 const err = ref('')
 
 const fields = computed(function () { return editFields() })
+
+/* 2×2 的两行：重要 / 不重要。紧急和不紧急在表头那一行。
+   从 QUAD 里取而不是再写一遍那四个名字 —— 两份名字早晚会不一致。 */
+const QUAD_ROWS = [
+  { n: '重要', qs: [QUAD[0], QUAD[1]] },
+  { n: '不重要', qs: [QUAD[2], QUAD[3]] }
+]
 
 /* 只让第一个文本框带焦点。都给的话，光标会停在最后那个上，
    人打开弹窗第一眼要看的是最上面那条。 */
@@ -169,4 +208,53 @@ function submit() {
 }
 .dateclear-t { font-size: 12px; color: var(--sub); }
 .dateclear:active { background: var(--bg); }
+
+/* ---- 四象限选择器 ----
+   3 列：左边一列是「重要/不重要」，右边两格是紧急与否。
+   第一行的两个空格是表头的「紧急 / 不紧急」，故意也占满格宽 ——
+   它们要对准下面那两格，光靠上面一排小字很容易看串。 */
+.quad { }
+.quad-r {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+}
+.quad-ax {
+  flex: none;
+  width: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 0;
+  font-size: 11px;
+  color: var(--muted);
+}
+.quad-ax-c { flex: 1 1 0; width: auto; }
+.qcell {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  margin: 0 0 4px 4px;
+  padding: 3px 4px;
+  border-radius: 9px;
+}
+.qcell-t { font-size: 12px; color: var(--sub); }
+/* 四格的底色由设置里的四象限配色给（--qN 与 --qN-bg），
+   和四象限页那四张卡是同一份。
+   在这里就上色的理由：颜色↔象限的对应关系是在「选」的那一刻学会的，
+   等到四象限页才第一次见到颜色，人得回去再看一遍自己标的是什么。 */
+.qcell.q1 { background: var(--q1-bg); }
+.qcell.q2 { background: var(--q2-bg); }
+.qcell.q3 { background: var(--q3-bg); }
+.qcell.q4 { background: var(--q4-bg); }
+.qcell.q1.is-on { background: var(--q1); }
+.qcell.q2.is-on { background: var(--q2); }
+.qcell.q3.is-on { background: var(--q3); }
+.qcell.q4.is-on { background: var(--q4); }
+.qcell.is-on .qcell-t { color: #fff; }
+/* 点下去的反馈用透明度而不是换底色 —— 换底色会把上面那套对应关系冲掉 */
+.qcell:active { opacity: .7; }
 </style>

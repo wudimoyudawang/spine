@@ -37,29 +37,32 @@ export const CAT_WORDS={
  * 「跨度是属性不是页面」：有日期和没日期的是同一类东西，差别在 due 上，不在存哪儿。
  */
 export const ITEMS=[
-  {id:'it1',title:'交上月报销单',dom:'work',due:'2026-09-16',status:'todo',parent:null},
-  {id:'it2',title:'给张工回邮件',dom:'work',due:'2026-09-17',status:'todo',parent:null},
-  {id:'it3',title:'写周报',dom:'work',due:'2026-09-18',status:'todo',parent:null},
-  {id:'it8',title:'整理本周产出',dom:'work',due:'2026-09-18',status:'todo',parent:'it3'},
-  {id:'it9',title:'补上周遗留的两条',dom:'work',due:'2026-09-18',status:'done',parent:'it3'},
-  {id:'it4',title:'买跑鞋',dom:'life',due:'2026-09-18',status:'todo',parent:null},
-  {id:'it5',title:'交物业费',dom:'life',due:'2026-09-21',status:'todo',parent:null},
-  {id:'it6',title:'整理周三的会议纪要',dom:'work',due:'2026-09-16',status:'done',parent:null},
-  {id:'it7',title:'把体检报告拍照存档',dom:'life',due:'2026-09-15',status:'done',parent:null},
-  {id:'it10',title:'做体测',dom:'fitness',due:'2026-09-16',status:'done',parent:null},
-  {id:'it11',title:'预约牙医',dom:'life',due:'2026-09-17',status:'done',parent:null},
+  /* imp = 重要，urg = 紧急。两个轴各自独立（见 db.js 的 QUAD 那段），
+     这里给出一份有高有低的分布 —— 四格全空的话，四象限那一页第一次打开
+     看着像是坏了，而不是像「还没标」。 */
+  {id:'it1',title:'交上月报销单',dom:'work',due:'2026-09-16',status:'todo',parent:null,imp:true,urg:true},
+  {id:'it2',title:'给张工回邮件',dom:'work',due:'2026-09-17',status:'todo',parent:null,imp:false,urg:true},
+  {id:'it3',title:'写周报',dom:'work',due:'2026-09-18',status:'todo',parent:null,imp:true,urg:true},
+  {id:'it8',title:'整理本周产出',dom:'work',due:'2026-09-18',status:'todo',parent:'it3',imp:true,urg:true},
+  {id:'it9',title:'补上周遗留的两条',dom:'work',due:'2026-09-18',status:'done',parent:'it3',imp:true,urg:true},
+  {id:'it4',title:'买跑鞋',dom:'life',due:'2026-09-18',status:'todo',parent:null,imp:true,urg:false},
+  {id:'it5',title:'交物业费',dom:'life',due:'2026-09-21',status:'todo',parent:null,imp:true,urg:false},
+  {id:'it6',title:'整理周三的会议纪要',dom:'work',due:'2026-09-16',status:'done',parent:null,imp:false,urg:true},
+  {id:'it7',title:'把体检报告拍照存档',dom:'life',due:'2026-09-15',status:'done',parent:null,imp:false,urg:false},
+  {id:'it10',title:'做体测',dom:'fitness',due:'2026-09-16',status:'done',parent:null,imp:true,urg:false},
+  {id:'it11',title:'预约牙医',dom:'life',due:'2026-09-17',status:'done',parent:null,imp:false,urg:true},
   /* 下面这些原来只在领域页的 todos 里，今日页看不见 —— 合并进来才有的一份 */
-  {id:'it12',title:'知识库项目上线',dom:'work',due:'2026-09-18',status:'todo',parent:null},
-  {id:'it13',title:'整理接口文档',dom:'work',due:'2026-09-16',status:'todo',parent:'it12'},
-  {id:'it14',title:'跑一遍回归',dom:'work',due:'2026-09-17',status:'todo',parent:'it12'},
-  {id:'it15',title:'换瑜伽垫',dom:'fitness',due:'2026-09-21',status:'todo',parent:null},
-  {id:'it16',title:'约体测',dom:'fitness',due:null,status:'todo',parent:null},
-  {id:'it17',title:'整理读书笔记',dom:'study',due:null,status:'todo',parent:null},
-  {id:'it18',title:'把 SmartVoyage 的章节笔记归档',dom:'study',due:null,status:'todo',parent:null}
+  {id:'it12',title:'知识库项目上线',dom:'work',due:'2026-09-18',status:'todo',parent:null,imp:true,urg:false},
+  {id:'it13',title:'整理接口文档',dom:'work',due:'2026-09-16',status:'todo',parent:'it12',imp:true,urg:false},
+  {id:'it14',title:'跑一遍回归',dom:'work',due:'2026-09-17',status:'todo',parent:'it12',imp:false,urg:true},
+  {id:'it15',title:'换瑜伽垫',dom:'fitness',due:'2026-09-21',status:'todo',parent:null,imp:false,urg:false},
+  {id:'it16',title:'约体测',dom:'fitness',due:null,status:'todo',parent:null,imp:true,urg:false},
+  {id:'it17',title:'整理读书笔记',dom:'study',due:null,status:'todo',parent:null,imp:false,urg:false},
+  {id:'it18',title:'把 SmartVoyage 的章节笔记归档',dom:'study',due:null,status:'todo',parent:null,imp:false,urg:false}
 ];
 
 export const HABIT_LOGS=[
-  /* 健身 · 训练日打卡（每周 4 次）→ 连续 3 天 · 累计 4 天 */
+  /* 健身 · 训练日打卡（每周 4 次，按周算）→ 平移后落两周 → 连续 2 周 · 累计 2 周 */
   {key:'h-fit-1',date:'2026-09-14'},
   {key:'h-fit-1',date:'2026-09-16'},
   {key:'h-fit-1',date:'2026-09-17'},

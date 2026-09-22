@@ -12,6 +12,10 @@
         </view>
       </view>
 
+      <!-- 中间的输入区自己滚，「记下」那颗钉在底下 ——
+           面板高一点（胶囊换行之后）也不能把记下的那颗顶出屏幕外。 -->
+      <view class="capbody">
+
       <!-- 记账：先挑品类，再填金额。
            这条路上没有「自动判断」—— 选了记账就是「我知道这是支出、我要分类」，
            再让规则去猜，等于把你的明确意图当成猜测的输入。 -->
@@ -48,19 +52,20 @@
           confirm-type="done"
           @confirm="submit"
         />
-        <view class="moderow">
-          <scroll-view class="modes" scroll-x :show-scrollbar="false">
-            <view
-              v-for="m in modes"
-              :key="m.k"
-              class="mchip"
-              :class="{ 'is-on': mode === m.k }"
-              @click="mode = m.k"
-            >
-              <text class="mchip-t">{{ m.t }}</text>
-            </view>
-          </scroll-view>
-          <!-- 固定在右侧：不跟着上面那排横滑滚走，永远在同一个位置 -->
+        <!-- 胶囊自动换行，不横滑。
+             原来是横向滚动的一行：放不下的要滑了才看得到，
+             而这一排就是「现在能记什么」的清单，藏起来一半等于没有。
+             「自定义」跟在末尾一起换行 —— 它本来就是这一排的最后一个动作。 -->
+        <view class="modes">
+          <view
+            v-for="m in modes"
+            :key="m.k"
+            class="mchip"
+            :class="{ 'is-on': mode === m.k }"
+            @click="mode = m.k"
+          >
+            <text class="mchip-t">{{ m.t }}</text>
+          </view>
           <view class="morebtn" :class="{ 'is-on': showAll }" @click="showAll = !showAll">
             <text class="morebtn-t">自定义</text>
           </view>
@@ -103,6 +108,8 @@
         </view>
       </template>
 
+      </view>
+
       <!-- 切换器紧贴在「记下」上面：手在下半屏操作时，它就在指头边上 -->
       <view class="kindsw">
         <view class="kindsw-b" :class="{ 'is-on': kind === 'quick' }" @click="setKind('quick')">
@@ -121,7 +128,7 @@
 <script setup>
 import { computed, nextTick, ref, watch } from 'vue'
 import {
-  db, money, catList, closeCapture,
+  db, money, fmtCN, catList, closeCapture,
   addMoney, addTodo, addInbox, addNote, addRecord,
   resolveCapture, describeCapture, ruleName,
   allCaptureOptions, commonCaptureOptions, moveCaptureOption, toggleCaptureCommon,
@@ -287,7 +294,13 @@ function submitQuick() {
     draft.value = ''
     return
   }
-  if (r.kind === 'todo') { addTodo(t, ''); done('记成待办'); draft.value = ''; return }
+  if (r.kind === 'todo') {
+    /* r.text 是去掉日期短语之后的正文（「明天交周报」→「交周报」），
+       r.due 是解析出来的到期日；没有日期词时 due 为空 → addTodo 落到今天 */
+    addTodo(r.text || t, '', r.due || undefined)
+    done(r.due ? '待办 · ' + (r.due === TODAY ? '今天' : fmtCN(r.due)) : '记成待办')
+    draft.value = ''; return
+  }
   if (r.kind === 'inbox') { addInbox(t); done('丢进收件箱了'); draft.value = ''; return }
   if (r.kind === 'note') {
     addNote(t)
@@ -341,8 +354,22 @@ function done(msg) {
   border-radius: 16px;
   box-shadow: 0 10px 40px rgba(31, 36, 48, .22);
   max-height: 86vh;
+  /* 中间的输入区自己滚，「记下」/ 切换器钉在外面 */
+  display: flex;
+  flex-direction: column;
   animation: capin .18s ease-out;
 }
+/* 负外边距 + 同值内边距：滚动区贴满盒子的宽，滚动条不占内容的位 */
+.capbody {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  margin: 0 -14px;
+  padding: 0 14px;
+}
+.caphead { flex: none; }
+.kindsw { flex: none; }
+.capgo { flex: none; }
 @keyframes capin {
   from { opacity: 0; transform: translate(-50%, -50%) scale(.96); }
   to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
@@ -404,16 +431,15 @@ function done(msg) {
 .capres-hit { margin-left: 4px; font-size: 11px; color: var(--accent); }
 .capres-miss { margin-left: 4px; font-size: 11px; color: var(--muted); }
 
-.moderow {
+/* 胶囊自动换行。原来是一行横滑（scroll-view + nowrap），
+   放不下的要滑了才看得到 —— 这一排是「现在能记什么」的清单，
+   藏起来一半的话，人只会用他看得见的那几种。 */
+.modes {
   display: flex;
   flex-direction: row;
+  flex-wrap: wrap;
   align-items: center;
   margin-top: 10px;
-}
-.modes {
-  flex: 1 1 auto;
-  min-width: 0;
-  white-space: nowrap;
 }
 .morebtn {
   flex: 0 0 auto;
@@ -421,6 +447,9 @@ function done(msg) {
   align-items: center;
   justify-content: center;
   height: 30px;
+  /* 左边 auto 把它推到本行最右，下边 6px 和胶囊的行距一致 ——
+     它跟胶囊一起换行，行距不一样的话换行处会高一块矮一块 */
+  margin: 0 0 6px auto;
   padding: 0 12px;
   margin-left: 8px;
   border: 1px solid var(--line2);

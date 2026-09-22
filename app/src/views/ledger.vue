@@ -19,16 +19,18 @@
       </view>
     </view>
 
-    <view class="quick">
-      <input :maxlength="-1"
-        v-model="draft"
-        class="quick-in"
-        placeholder="比如 32 午餐，分类可以留空"
-        confirm-type="done"
-        @confirm="submit"
-      />
-      <view class="quick-btn" @click="submit"><text class="quick-btn-t">记下</text></view>
+    <!-- 记一笔的入口，输入框在品类那个弹层里（CatSheet）。
+         页面上不再常驻一个输入框：打开记账页最常看的是「这个月花了多少」，
+         其次才是记一笔 —— 记一笔多一步，换来统计和流水能往上提一截。 -->
+    <view class="block qe" @click="catOpen = true">
+      <view class="qe-row">
+        <text class="qe-k">记一笔 · 品类</text>
+        <text class="qe-v">{{ db.CATS.length }} 个品类</text>
+        <text class="qe-go">›</text>
+      </view>
     </view>
+
+    <CatSheet :on="catOpen" @close="catOpen = false" />
 
     <view class="block">
       <view class="block-h">
@@ -56,12 +58,12 @@
 <script setup>
 import { computed, ref } from 'vue'
 import {
-  db, TODAY, money, weekdayCN, sumByCategory, addMoney,
-  resolveCapture, openEdit, armDelete, delArmed, saveState
+  db, TODAY, money, weekdayCN, sumByCategory,
+  openEdit, armDelete, delArmed, saveState
 } from '../stores/db'
 import PageHead from '../components/PageHead.vue'
+import CatSheet from '../components/CatSheet.vue'
 
-const draft = ref('')
 const month = TODAY.slice(0, 7)
 const armed = delArmed
 
@@ -96,24 +98,6 @@ function dayLabel(iso) {
   return p[1] + '月' + p[2] + '日 周' + weekdayCN(iso)
 }
 
-/* 这个框只收支出，所以判完还要看判成了什么 —— 不是一律记成钱。
-   走速记那一套判断而不是在这儿再写一遍「取开头的数字 + 猜分类」：
-   同一句话在两处解成两个金额，是这台设备上最难查的那种错。 */
-function submit() {
-  const t = draft.value.trim()
-  if (!t) return
-  const r = resolveCapture(t, 'auto')
-  if (r.kind !== 'money' || r.value === null) {
-    uni.showToast({ title: '这里只记支出，金额写在开头', icon: 'none' })
-    return
-  }
-  const rec = addMoney(r.value, r.text, r.category)
-  if (!rec) { uni.showToast({ title: '金额不对', icon: 'none' }); return }
-  draft.value = ''
-  saveState(true)
-  uni.showToast({ title: '记下 ' + money(rec.value), icon: 'none' })
-}
-
 function edit(l) {
   const r = openEdit('money:' + l.id)
   if (r.error) uni.showToast({ title: r.error, icon: 'none' })
@@ -128,6 +112,10 @@ function del(l) {
   saveState(true)
   uni.showToast({ title: '已删除', icon: 'none' })
 }
+
+/* 品类弹层开着没有。只有这一页用它，所以是个本地 ref，不进 db ——
+   进 db 的都是「换一台设备还得在」或「跨组件要共享」的东西。 */
+const catOpen = ref(false)
 </script>
 
 <style scoped>
@@ -175,28 +163,6 @@ function del(l) {
 .bar-fill { height: 100%; background: var(--accent); border-radius: 4px; }
 .barrow-v { width: 62px; text-align: right; font-size: 12px; color: var(--text); }
 
-.quick {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  margin-bottom: 14px;
-  padding: 6px 6px 6px 12px;
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: var(--r);
-}
-.quick-in { flex: 1 1 auto; min-width: 0; height: 34px; }
-.quick-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 34px;
-  padding: 0 14px;
-  background: var(--accent);
-  border-radius: 8px;
-}
-.quick-btn-t { color: #fff; font-size: 13px; }
-
 .row {
   display: flex;
   flex-direction: row;
@@ -228,4 +194,18 @@ function del(l) {
 
 .empty { padding: 12px 0 16px; }
 .empty-t { font-size: 13px; color: var(--muted); }
+
+/* ---- 「记一笔 · 品类」那个入口 ----
+   做成一行而不是一块卡片：它是个门，不是内容。
+   右边那颗 › 是唯一的方向符号 —— 这一行整块都能点，不需要再加「进入」两个字。 */
+.qe:active { background: var(--bg); }
+.qe-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  min-height: 34px;
+}
+.qe-k { font-size: 14px; color: var(--text); }
+.qe-v { margin-left: auto; font-size: 12px; color: var(--muted); }
+.qe-go { flex: none; margin-left: 8px; font-size: 15px; color: var(--muted); }
 </style>

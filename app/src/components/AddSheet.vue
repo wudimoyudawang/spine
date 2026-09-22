@@ -8,6 +8,7 @@
         <text class="modal-note">{{ cfg.note }}</text>
       </view>
 
+      <view class="modal-body">
       <view class="field">
         <text class="field-k">{{ cfg.nameK }}</text>
         <input :maxlength="-1"
@@ -20,8 +21,8 @@
         />
       </view>
 
-      <!-- 待办问的是**到期日**，习惯和目标问的是一句说明。
-           同一个字段的位子，两种内容 —— 因为合并成一份存储之后，
+      <!-- 待办问的是**到期日**，习惯问的是频率（按钮选），目标问的是一句说明。
+           同一个字段的位子，三种内容 —— 因为合并成一份存储之后，
            一条待办唯一能问的就是「哪天」，再问一句自由说明就又是两套事实。 -->
       <view v-if="isTodo" class="field">
         <text class="field-k">什么时候要办</text>
@@ -38,6 +39,13 @@
             <text class="mchip-t">没有日期</text>
           </view>
         </view>
+      </view>
+
+      <!-- 习惯的频率：内嵌的选择块（单位 × 次数），不弹窗。手填会填出
+           「一周四次」「周4」「每周4次」三种写法，复盘里没法归到一起。 -->
+      <view v-else-if="isHabit" class="field">
+        <text class="field-k">频率</text>
+        <FreqField :value="meta" @change="meta = $event; err = ''" />
       </view>
 
       <view v-else class="field">
@@ -66,6 +74,8 @@
         <text class="field-k">挂在「{{ ADD.parentName }}」下面</text>
       </view>
 
+      </view>
+
       <view class="modal-f">
         <text class="modal-hint" :class="{ 'is-err': !!err }">{{ err || '确认后记到「今天记下的」里' }}</text>
         <view class="btn" @click="cancel"><text class="btn-t">取消</text></view>
@@ -80,6 +90,7 @@ import { computed, nextTick, ref, watch } from 'vue'
 import {
   db, TODAY, ADD, ADD_KINDS, closeAdd, pickAddSpace, commitAdd, domainById, saveState
 } from '../stores/db'
+import FreqField from './FreqField.vue'
 
 const name = ref('')
 const meta = ref('')
@@ -93,6 +104,8 @@ const pickDate = ref(TODAY)
 const cfg = computed(function () { return ADD_KINDS[ADD.kind] || ADD_KINDS.todo })
 
 const isTodo = computed(function () { return ADD.kind === 'todo' })
+
+const isHabit = computed(function () { return ADD.kind === 'habit' })
 
 const metaK = computed(function () {
   return ADD.kind === 'habit' ? '频率，选填' : '说明，选填'
@@ -108,7 +121,7 @@ const spaceName = computed(function () {
 watch(() => ADD.on, function (v) {
   if (!v) return
   name.value = ''
-  meta.value = ''
+  meta.value = ADD.kind === 'habit' ? '每天' : ''
   err.value = ''
   when.value = 'today'
   pickDate.value = TODAY

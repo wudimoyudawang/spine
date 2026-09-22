@@ -246,26 +246,9 @@ function exportText() {
 }
 
 
-.seg {
-  display: flex;
-  flex-direction: row;
-  padding: 3px;
-  margin-bottom: 10px;
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: 10px;
-}
-.seg-b {
-  display: flex;
-  flex: 1 1 0;
-  align-items: center;
-  justify-content: center;
-  min-height: 34px;
-  border-radius: 8px;
-}
-.seg-b.is-on { background: var(--accent); }
-.seg-t { font-size: 13px; color: var(--sub); }
-.seg-b.is-on .seg-t { color: #fff; }
+/* .seg / .seg-b / .seg-t 搬到 styles/base.scss 了 —— 今日页头也用同一份。
+   这里只留这一页特有的外边距。 */
+.seg { margin-bottom: 10px; }
 
 .range {
   display: flex;
