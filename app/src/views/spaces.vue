@@ -463,15 +463,20 @@ function cancelImport() { pending.value = null }
    两种环境走两条路，都从这一个函数出去：
    1. **装进原生壳里**（Capacitor）—— 宿主会注入 `window.SPINE_SAVE_FILE`，
       由它写进 App 目录再调系统分享面板。WebView 里 `a[download]` 不生效，
-      这条路是必须的。
+      这条路是必须的。见 `shell/web-shim.js`。
    2. **浏览器里** —— Blob + `a[download]`。
-   页面自己不判断环境，只认「有没有那个钩子」，所以它不会被某个壳绑死。 */
+   页面自己不判断环境，只认「有没有那个钩子」，所以它不会被某个壳绑死。
+   钩子**返回 Promise**：壳那边注入的时候 `uni` 还没加载，它自己弹不出 app 风格的提示，
+   所以失败的实情要传回这里、由这一层说 —— 否则只能掉回原生 alert。 */
 function saveFile() {
   const name = exportFileName()
   const text = exportText()
   // #ifdef H5
   if (typeof window !== 'undefined' && typeof window.SPINE_SAVE_FILE === 'function') {
-    window.SPINE_SAVE_FILE(name, text)
+    /* 兜一层 Promise.resolve：壳要是旧版（不返回 Promise）也不会在这里炸 */
+    Promise.resolve(window.SPINE_SAVE_FILE(name, text))
+      .then(function () { toast('已导出，选个地方存') })
+      .catch(function (e) { toast('导出失败：' + ((e && e.message) || e)) })
     return
   }
   try {

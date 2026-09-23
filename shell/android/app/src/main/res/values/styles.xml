@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
 
     <!-- Base application theme. -->
     <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
@@ -9,14 +9,34 @@
         <item name="colorAccent">@color/colorAccent</item>
     </style>
 
-    <style name="AppTheme.NoActionBar" parent="Theme.AppCompat.DayNight.NoActionBar">
+    <!-- **运行时真正生效的是这一个**：Capacitor 的 BridgeActivity.onCreate 里会
+         `setTheme(R.style.AppTheme_NoActionBar)`（见 @capacitor/android 源码）。
+
+         parent 必须是 **Light** 而不是 DayNight：DayNight 会跟随系统深色模式，
+         在深色模式的手机上把状态栏（以及对话框一类的系统组件）染成深色，
+         而 app 的页面是写死的浅色 —— 于是状态栏一条深灰、下面全是浅色，看着就割裂。
+         这个应用目前就是「先做浅色」，跟着系统变没有好处。
+
+         状态栏显式指定成页面底色 + 深色图标（windowLightStatusBar），
+         这样无论系统处于深色还是浅色模式，看起来都一样。
+
+         windowLightStatusBar 要 API 23（本项目 minSdk 是 22），低版本会忽略它。
+         Android 5.1 的设备现在基本不存在，为它单独维护一套 values-v23 不划算，
+         所以用 tools:targetApi 抑制 Lint 而不是拆文件。 -->
+    <style name="AppTheme.NoActionBar" parent="Theme.AppCompat.Light.NoActionBar">
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
         <item name="android:background">@null</item>
+        <item name="android:statusBarColor">@color/spineBg</item>
+        <item name="android:windowLightStatusBar" tools:targetApi="m">true</item>
     </style>
 
-
+    <!-- 冷启动那一瞬间（启动屏）用的主题，状态栏也跟着一起调 —— 否则会先闪一条深色再变浅。
+         BridgeActivity 是在 super.onCreate 之后才切到上面那个 NoActionBar 的，
+         所以启动屏期间生效的是这一个。 -->
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
         <item name="android:background">@drawable/splash</item>
+        <item name="android:statusBarColor">@color/spineBg</item>
+        <item name="android:windowLightStatusBar" tools:targetApi="m">true</item>
     </style>
 </resources>

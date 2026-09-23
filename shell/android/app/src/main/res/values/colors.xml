@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 与 app 的页面底色一致：前端 styles/base.scss 里的背景变量是 #F5F6F8，
+         capacitor.config.json 的 android.backgroundColor 用的也是这个值。
+         状态栏用它，跟页头连成一片，不再出现「上面一条深灰、下面浅色」的割裂。
+         改这里的话，上面两处要一起改。
+
+         注意：XML 注释里不许出现两个连续的 ASCII 减号，Gradle 会直接报
+         「not permitted within comments」。所以这里没法照抄 CSS 那种以
+         双横线开头的变量名，只能写成「背景变量」。 -->
+    <color name="spineBg">#F5F6F8</color>
+</resources>
