@@ -120,6 +120,8 @@ storepass / keypass : 见 shell/keystore.properties
 ```
 prototype/index.html   行为参照物。重构前定稿的单文件原型（零依赖，双击即开）
 app/                   uni-app + Vue3 工程 —— 当前施工落点，页面都在这儿
+  ├ src/               源码：stores/（数据层）· views/（9 个页面）· components/ · lib/ui.js
+  └ test/              回归验证（对拍 / 组件交互 / 端到端），npm test。见 test/README.md
 shell/                 Android 壳：把 app 的 H5 产物包成 APK
   ├ make-apk.cjs       一键出包
   ├ android/           Capacitor 生成的 Android 工程（Gradle + SDK 34）
@@ -272,6 +274,7 @@ Java properties 当转义符吃掉，`C:\workbuddy` 会变成 `C:workbuddy`—�
 
 | 文档 | 用途 |
 |---|---|
+| [`AGENTS.md`](AGENTS.md) | **改代码前必读。** 工程标准：硬约束、跨模块契约、编码纪律、验证标准、提交规范。**AI 助手也按这份来** |
 | [`PROMPT.md`](PROMPT.md) | **当前最新的项目状态**。进度、约定、踩过的坑、待办，新会话先读它 |
 | [`HANDOFF.md`](HANDOFF.md) | 项目由来与早期决策记录 |
 | [`docs/开工方案.md`](docs/开工方案.md) | 数据模型、后端设计、施工顺序、验收标准 |
@@ -285,6 +288,10 @@ Java properties 当转义符吃掉，`C:\workbuddy` 会变成 `C:workbuddy`—�
 
 欢迎 Issue 和 PR。但请先读 [`CONTRIBUTING.md`](CONTRIBUTING.md) ——
 里面列了一串「看起来像缺陷、其实是刻意设计」的行为，能省下双方不少时间。
+
+**要动代码的（人或者 AI 助手），先读 [`AGENTS.md`](AGENTS.md)。** 它是这个仓库的工程标准：
+数据层是唯一的数据来源、重构不许改行为、改完要跑哪几套验证、怎么提交。
+这些规矩每一条都对应一次真实事故或一组实测数字（`AGENTS.md` 第 9 节列了出处）。
 
 三条硬约束，不接受折中：
 
