@@ -12900,5 +12900,127 @@
    "notes": 3,
    "records": 18
   }
- ]
+ ],
+ "seq.importReplace.partial": {
+  "before": {
+   "cats": 7,
+   "domains": 4,
+   "goals": 11,
+   "habits": 6,
+   "inbox": 3,
+   "items": 18,
+   "logs": 7,
+   "notes": 3,
+   "records": 18
+  },
+  "counts": {
+   "cats": 0,
+   "domains": 0,
+   "goals": 0,
+   "habits": 0,
+   "inbox": 0,
+   "items": 0,
+   "logs": 0,
+   "notes": 0,
+   "records": 0
+  },
+  "err": "",
+  "shape": {
+   "AUTO_RULES": "array:0",
+   "CAPTURE_MODES": "array:0",
+   "CAP_CFG": "object:2",
+   "CATS": "array:0",
+   "CAT_WORDS": "object:0",
+   "DOMAINS": "array:0",
+   "HABIT_LOGS": "array:0",
+   "INBOX": "array:0",
+   "ITEMS": "array:0",
+   "LOGS": "array:0",
+   "NOTES": "array:0",
+   "NOTE_PROMPTS": "array:0",
+   "QUAD_COLORS": "object:0",
+   "RECORD_TYPES": "array:0",
+   "REV_TRENDS": "array:0",
+   "TODAY_LOGS": "array:0"
+  }
+ },
+ "seq.importReplace.selfExport": {
+  "before": {
+   "cats": 7,
+   "domains": 4,
+   "goals": 11,
+   "habits": 6,
+   "inbox": 3,
+   "items": 18,
+   "logs": 7,
+   "notes": 3,
+   "records": 18
+  },
+  "counts": {
+   "cats": 7,
+   "domains": 4,
+   "goals": 11,
+   "habits": 6,
+   "inbox": 3,
+   "items": 18,
+   "logs": 7,
+   "notes": 3,
+   "records": 18
+  },
+  "err": "",
+  "keys": "AUTO_RULES,CAPTURE_MODES,CAP_CFG,CATS,CAT_WORDS,DOMAINS,HABIT_LOGS,INBOX,ITEMS,LOGS,NOTES,NOTE_PROMPTS,RECORD_TYPES,REV_TRENDS,TODAY_LOGS"
+ },
+ "seq.importSnapshot.bad": {
+  "before": {
+   "cats": 7,
+   "domains": 4,
+   "goals": 11,
+   "habits": 6,
+   "inbox": 3,
+   "items": 18,
+   "logs": 7,
+   "notes": 3,
+   "records": 18
+  },
+  "counts": {
+   "cats": 7,
+   "domains": 4,
+   "goals": 11,
+   "habits": 6,
+   "inbox": 3,
+   "items": 18,
+   "logs": 7,
+   "notes": 3,
+   "records": 18
+  },
+  "r": [
+   "这不是 JSON",
+   "不是这个应用导出的文件",
+   "这个文件里没有任何数据"
+  ]
+ },
+ "seq.importSnapshot.keepsPage": {
+  "a": "review",
+  "b": "spaces",
+  "err1": "",
+  "err2": ""
+ },
+ "seq.importReplace.malformed": {
+  "catWordsIsObject": true,
+  "counts": {
+   "cats": 0,
+   "domains": 0,
+   "goals": 0,
+   "habits": 0,
+   "inbox": 0,
+   "items": 0,
+   "logs": 0,
+   "notes": 0,
+   "records": 0
+  },
+  "domainsIsArray": true,
+  "err": "",
+  "itemsIsArray": true,
+  "logsIsArray": true
+ }
 }

@@ -414,6 +414,82 @@ async function collect(M) {
     return [a, list.length, r, localCounts()]
   })
 
+  /* ============ 导入的语义：**整体替换**（不是合并）============
+     档案里缺哪一项，本机那一项就清空 —— 档案是一份完整快照，缺什么就是没有。
+     改动前是「缺了就保留本机」，所以这一组在改动前会全线不一致，那正是它存在的意义。
+     （原来对拍**没有覆盖导入路径**，只有备份和清空 —— 这批改动顺手补上。） */
+
+  cap('seq.importReplace.partial', () => {
+    loadSeed()
+    const before = localCounts()
+    /* 只有两样的残缺档案，而且两样都是空的；其余 14 项一个字没提 */
+    const archive = { app: 'spine', fmt: 2, at: 0, v: { ITEMS: [], LOGS: [] }, s: {} }
+    const err = M.importSnapshot(JSON.stringify(archive))
+    const shape = {}
+    for (const k of M.DATA_KEYS) {
+      const val = db[k]
+      shape[k] = Array.isArray(val) ? 'array:' + val.length : 'object:' + Object.keys(val || {}).length
+    }
+    return { err, shape, counts: localCounts(), before }
+  })
+
+  cap('seq.importReplace.selfExport', () => {
+    loadSeed()
+    const text = M.exportText()
+    /* 导出范围必须与导入范围一致 —— 不一致的话，导入自己刚导出的文件都会丢东西 */
+    const keys = Object.keys(JSON.parse(text).v).sort().join(',')
+    const before = localCounts()
+    const err = M.importSnapshot(text)
+    return { err, keys, counts: localCounts(), before }
+  })
+
+  cap('seq.importSnapshot.bad', () => {
+    loadSeed()
+    const before = localCounts()
+    /* 三种坏文件都必须被挡住，而且**本机数据一动不动** ——
+       「换到一半才报错」是这里最坏的一种失败（屏幕上是新数据、存储里是旧的）。 */
+    const r = [
+      M.importSnapshot('这不是 JSON'),
+      M.importSnapshot('{}'),
+      M.importSnapshot(JSON.stringify({ app: 'spine', fmt: 2, v: { ITEMS: 'x' } }))
+    ]
+    return { r, counts: localCounts(), before }
+  })
+
+  cap('seq.importSnapshot.keepsPage', () => {
+    loadSeed()
+    const archive = JSON.stringify({
+      app: 'spine', fmt: 2, at: 0,
+      v: { ITEMS: [] }, s: { CURRENT: 'spaces', DOMAIN_ID: 'nope' }
+    })
+    db.CURRENT = 'review'
+    const err1 = M.importSnapshot(archive)
+    const a = db.CURRENT          /* 导入的是数据，不该把人从当前这一页踢走 */
+    db.CURRENT = 'domain'
+    const err2 = M.importSnapshot(archive)
+    return { err1, a, err2, b: db.CURRENT }   /* 领域页是唯一例外：那个领域可能不在了 */
+  })
+
+  cap('seq.importReplace.malformed', () => {
+    loadSeed()
+    /* 形态非法的项当空处理：不该把应用带崩，也不该留下「换了但补不齐 id」的半死状态。
+       注意档案里得**留一项合法数组**（ITEMS）才过得了 checkArchive ——
+       否则它会在更早一步被当成「没有任何数据」拒掉，测的就成了另一件事。 */
+    const archive = {
+      app: 'spine', fmt: 2, at: 0,
+      v: { ITEMS: [], LOGS: 42, DOMAINS: 'x', CAT_WORDS: 'y' }, s: {}
+    }
+    const err = M.importSnapshot(JSON.stringify(archive))
+    return {
+      err,
+      itemsIsArray: Array.isArray(db.ITEMS),
+      logsIsArray: Array.isArray(db.LOGS),
+      domainsIsArray: Array.isArray(db.DOMAINS),
+      catWordsIsObject: !!(db.CAT_WORDS && typeof db.CAT_WORDS === 'object' && !Array.isArray(db.CAT_WORDS)),
+      counts: localCounts()
+    }
+  })
+
   return out
 }
 

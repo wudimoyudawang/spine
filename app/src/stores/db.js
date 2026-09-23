@@ -144,7 +144,13 @@ export const DATA_KEYS = ['ITEMS', 'HABIT_LOGS', 'INBOX', 'NOTES', 'NOTE_PROMPTS
   'DOMAINS', 'RECORD_TYPES', 'CAPTURE_MODES', 'AUTO_RULES', 'TODAY_LOGS', 'CAT_WORDS', 'CATS',
   'CAP_CFG', 'REV_TRENDS', 'QUAD_COLORS']
 
-/* 界面状态：跟着设备走，不进导出文件 */
+/* 界面状态：跟着设备走。
+ *
+ * 注意**导出文件里其实是带着它们的**（exportText 把快照整份写出去，s 也在里面）——
+ * 但导入时**不采用**：真正决定「当前在哪一页」的始终是本机
+ * （importSnapshot 里把 CURRENT 显式还原回去了）。
+ * 所以「跟着设备走」是**结果**，不是「没写进文件」——原来那句注释说的是前者、写成了后者。
+ * 另外 replaceAll（导入的整体替换）只换 DATA_KEYS，不碰这 4 项。 */
 export const UI_KEYS = ['CURRENT', 'DOMAIN_ID', 'CAPTURE_MODE', 'CAP_AUTO_CLOSE']
 
 export function loadSeed() {
@@ -249,6 +255,13 @@ export function peekArchive(raw) {
 /* 本机现在有多少东西。和上面对照，人才看得出「导进去是变多还是变少」。 */
 export function localCounts() { return countsOf(db) }
 
+/* 把一份快照**合并**进本机：档案里有哪一项就覆盖哪一项，没有的保留本机现值。
+ *
+ * 它服务的是「本机自己的数据」这条路：
+ *   loadState()      从 localStorage 读 —— 老版本存的可能天生缺新加的 key
+ *   restoreBackup()  从本机备份读 —— 同上
+ * 这两处「缺就保留」是必须的：在那里缺项意味着「那一项当时还不存在」，
+ * 清掉它反而是数据丢失。**导入不要用它**，导入用 replaceAll（见下）。 */
 export function restore(raw) {
   const s = JSON.parse(raw)
   if (s && s.v) DATA_KEYS.forEach(k => { if (s.v[k] !== undefined) db[k] = s.v[k] })
@@ -257,7 +270,44 @@ export function restore(raw) {
   ensureIds()
 }
 
-/* 导入 = 用文件里那份**整体换掉**本机这份。所以先把文本验一遍再换：
+/* 导入 = 用档案里那份**整体换掉**本机这份：档案里缺哪一项，本机那一项就清空。
+ *
+ * 为什么是这样：档案是一份完整快照（导出时就是整份写的），缺什么就是没有。
+ * 「缺了就保留本机」会让一份残缺档案看起来导入成功了、实际留下两边的混合数据 ——
+ * 那是更坏的一种失败，因为人不会发现。**档案的完整性由用户自己负责。**
+ *
+ * 「整体」的范围 = DATA_KEYS 全部 16 项，与 snapshot() / exportText() 的范围严格一致
+ * （不一致的话，导入一份自己刚导出的文件都会丢东西）。
+ * **不碰 UI_KEYS**：那是「我在哪一页」，跟着设备走 —— 导入的是数据，不该顺手把人踢走
+ * （importSnapshot 另外还把 CURRENT 显式还原了一次，见那里的说明）。
+ *
+ * 和 restore 分成两个函数（而不是加一个布尔参数）是有意的：
+ * 这两种语义的差别是「漏一项就丢数据」级别的，藏在参数里迟早被误用。
+ * 但两者共用 DATA_KEYS 这一份清单，范围不会分叉。 */
+export function replaceAll(archive) {
+  const v = (archive && archive.v) || {}
+  /* 先把 16 项的新值全算出来，再一次性赋值：算的过程中抛错也不会留下
+     「换了一半」的中间状态（屏幕上看着新、存储里是旧的那种最坏失败）。 */
+  const next = {}
+  for (const k of DATA_KEYS) {
+    const mk = EMPTY_VALUE_OF[k]
+    const empty = mk ? mk() : (Array.isArray(db[k]) ? [] : {})
+    const given = Object.prototype.hasOwnProperty.call(v, k) && v[k] !== undefined
+    /* 以「空值的形态」为基准：档案给的值形态对得上才用，对不上当空 —— 不然一个
+       `ITEMS: null` 会让赋值之后的补 id 那一步抛错，留下「数据换了、id 没补」的半死状态。
+       注意这只挡**形态非法**，不挡**缺项**：缺项就是清空，那是导入该有的语义。 */
+    if (!given) { next[k] = empty; continue }
+    const val = v[k]
+    next[k] = Array.isArray(empty)
+      ? (Array.isArray(val) ? val : [])
+      : (val && typeof val === 'object' && !Array.isArray(val) ? val : {})
+  }
+  for (const k of DATA_KEYS) db[k] = next[k]
+  dropHabitIndex()      /* 整份数据换过，打卡索引必须作废 */
+  ensureIds()
+}
+
+/* 导入 = 用文件里那份整体换掉本机这份。先把文本验一遍再换：
    换到一半才报错是最坏的一种失败 —— 屏幕上看着是新数据，存储里却是旧的。
    返回空串 = 成功；否则返回一句人话，给界面直接显示。 */
 export function importSnapshot(raw) {
@@ -267,8 +317,11 @@ export function importSnapshot(raw) {
   if (bad) return bad
   /* 导入的是数据，不该顺手把人从当前这一页踢走（领域页除外：那个领域可能不在了） */
   const back = db.CURRENT === 'domain' ? 'spaces' : db.CURRENT
+  /* 换之前先把本机现状留一份备份。导入是单向的破坏动作，和「恢复」一样该能反悔 ——
+     而自动备份是「每天第一份」，未必覆盖得住此刻的最新改动。 */
+  keepBackupAs(TODAY + ' 导入前')
   try {
-    restore(JSON.stringify(s))
+    replaceAll(s)
   } catch (e) { return '文件内容读不出来' }
   db.CURRENT = back
   saveState(true)
@@ -430,14 +483,29 @@ export function backupList() {
   })
 }
 
+/* 把**现在这份**留成一份备份。返回写入后的清单。
+ *
+ * 抽出来是因为有两个调用方，而这两个都是单向的破坏动作：
+ *   恢复（restoreBackup）把本机换成某天旧的样子；
+ *   导入（importSnapshot）把本机换成档案里那份。
+ * 两处都该能反悔，不然「恢复」和「导入」就是两个不能回头的按钮。
+ * 抽成一份还有个好处：「只留最近 7 份」这条规则只写一次。 */
+function keepBackupAs(date) {
+  const list = readBackups()
+  list.unshift({ date: date, at: Date.now(), counts: localCounts(), raw: snapshot() })
+  const kept = list.slice(0, BACKUP_KEEP)
+  writeBackups(kept)
+  return kept
+}
+
 /* 恢复到某一天。**恢复前先把现在这份也留成备份** ——
    恢复这件事本身应该可以反悔，不然「恢复」就成了另一个单向的破坏动作。 */
 export function restoreBackup(date) {
   const hit = readBackups().filter(function (x) { return x.date === date })[0]
   if (!hit) return { error: '那份备份已经不在了' }
-  const list = readBackups()
-  list.unshift({ date: TODAY + ' 恢复前', at: Date.now(), counts: localCounts(), raw: snapshot() })
-  writeBackups(list.slice(0, BACKUP_KEEP))
+  keepBackupAs(TODAY + ' 恢复前')
+  /* 上面那一存可能把最老的一份挤出 7 份之外 —— 目标恰好是那一份的话，
+     它现在已经没了。所以重新读一遍再确认，别拿着一个已经不存在的引用去恢复。 */
   const again = readBackups().filter(function (x) { return x.date === date })[0]
   if (!again) return { error: '那份备份已经不在了' }
   try { restore(again.raw) } catch (e) { return { error: '那份备份读不出来' } }
