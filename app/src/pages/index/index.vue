@@ -72,7 +72,8 @@ onShow(function () {
 })
 
 onHide(function () {
-  saveState(true)
+  /* 落盘交给 App.vue 的 onHide —— 它同时也会触发，这里再存一次等于把同一份数据
+     同步写两遍存储。这一页只管把自己的兜盘定时器停掉。 */
   if (timer) { clearInterval(timer); timer = null }
 })
 </script>

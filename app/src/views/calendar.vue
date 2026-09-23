@@ -169,6 +169,7 @@ import PageHead from '../components/PageHead.vue'
 import ViewSeg from '../components/ViewSeg.vue'
 import DoneBox from '../components/DoneBox.vue'
 import BillBar from '../components/BillBar.vue'
+import { toast } from '../lib/ui'
 
 /* 周一起头 —— 和 startOfWeek 一个口径。周日开头的话，「这一周」在最常看的那两天
    会显得短一截（见 db.js 里 startOfWeek 那段）。 */
@@ -308,7 +309,7 @@ function dayNote(d) {
 
 function edit(spec) {
   const r = openEdit(spec)
-  if (r && r.error) uni.showToast({ title: r.error, icon: 'none' })
+  if (r && r.error) toast(r.error)
 }
 
 /* 勾选：点一下完成，再点一下取消。和今日页同一条 —— 能反悔是有意做的。 */
@@ -318,15 +319,11 @@ function toggleDone(it) {
   let rolled = null
   if (!wasDone) rolled = rollRepeat(it)
   saveState()
-  uni.showToast({
-    title: wasDone ? '取消完成' : (rolled ? '完成了 · 下一次已排到 ' + rolled.due : '完成了'),
-    icon: 'none'
-  })
+  toast(wasDone ? '取消完成' : (rolled ? '完成了 · 下一次已排到 ' + rolled.due : '完成了'))
 }
 </script>
 
 <style scoped>
-.page { padding: 14px 14px calc(76px + env(safe-area-inset-bottom)); }
 
 /* ---- 月/周 与 翻页 ---- */
 .topbar {
@@ -502,21 +499,8 @@ function toggleDone(it) {
   justify-content: space-between;
   padding-bottom: 6px;
 }
-.tag { font-size: 14px; font-weight: 500; color: var(--text); }
-.block-note { font-size: 12px; color: var(--muted); }
-
-.row {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  min-height: 46px;
-  border-top: 1px solid var(--line);
-}
 .row:active { background: var(--bg); }
-.row-main { flex: 1 1 auto; min-width: 0; padding: 6px 0; }
-.row-t { display: block; font-size: 14px; color: var(--text); }
 .row-t.is-done { color: var(--muted); text-decoration: line-through; }
-.row-m { display: block; font-size: 12px; color: var(--muted); margin-top: 1px; }
 .row-m.is-late { color: var(--warn); }
 
 /* ---- 那一天里的小节 ----

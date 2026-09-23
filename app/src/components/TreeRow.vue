@@ -116,7 +116,6 @@ function loseFocus() {
 .qbar.is-2 { background: var(--q2); }
 .qbar.is-3 { background: var(--q3); }
 .qbar.is-4 { background: var(--q4); }
-.row-main { flex: 1 1 auto; min-width: 0; padding: 6px 0; }
 
 .caret {
   flex: none;
@@ -169,22 +168,8 @@ function loseFocus() {
   color: var(--sub);
 }
 .nodebtn:active { background: var(--bg); }
-
-.delbtn {
-  flex: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 32px;
-  min-height: 32px;
-  margin-left: 4px;
-  padding: 0 6px;
-  border-radius: 8px;
-}
-.delbtn-t { font-size: 15px; color: var(--muted); }
 /* 第一下只武装，第二下才真删 */
 .delbtn.is-armed { background: var(--danger-bg); }
-.delbtn-t.is-armed { font-size: 12px; color: var(--danger); }
 
 .subin {
   display: flex;

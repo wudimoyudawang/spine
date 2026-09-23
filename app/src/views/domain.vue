@@ -24,29 +24,13 @@
           <text class="empty-t">这个领域还没有习惯。</text>
           <text class="empty-t">点上面的「新增」加一个。</text>
         </view>
-        <TreeRow
-          v-for="r in habRows"
-          :key="r.node.id"
-          :depth="r.depth"
-          :kids="r.kids"
-          :closed="r.closed"
-          :add-on="subOn === r.spec"
-          :armed="armed === r.spec"
-          @fold="fold(r.node.id)"
-          @open="edit(r.spec)"
-          @add="armAdd(r.spec)"
-          @sub="(t) => commitSub(r.spec, t)"
-          @del="del(r.spec, r.node)"
-        >
-          <text class="row-t">{{ label(r.node) }}</text>
-          <text class="row-m">{{ pathPre(r) }}{{ r.node.m }}</text>
-          <text v-if="streak(r.node.id)" class="row-st" :class="{ 'is-on': streak(r.node.id).on }">{{ streak(r.node.id).s }}</text>
-          <template #tail>
-            <view class="tick" :class="{ 'is-on': habitDoneOn(r.node.id, TODAY) }" @click.stop="tick(r.node.id)">
-              <text class="tick-t">{{ habitDoneOn(r.node.id, TODAY) ? '已打卡' : '打卡' }}</text>
-            </view>
+        <TreeList :rows="habRows" tickable @open="edit">
+          <template #default="{ row }">
+            <text class="row-t">{{ label(row.node) }}</text>
+            <text class="row-m">{{ pathPrefix(row) }}{{ row.node.m }}</text>
+            <text v-if="row.streak" class="row-st" :class="{ 'is-on': row.streak.on }">{{ row.streak.s }}</text>
           </template>
-        </TreeRow>
+        </TreeList>
       </view>
 
       <!-- 待办 -->
@@ -62,23 +46,12 @@
           <text class="empty-t">这个领域还没有待办。</text>
           <text class="empty-t">点上面的「新增」加一项。</text>
         </view>
-        <TreeRow
-          v-for="r in todoRows"
-          :key="r.node.id"
-          :depth="r.depth"
-          :kids="r.kids"
-          :closed="r.closed"
-          :add-on="subOn === r.spec"
-          :armed="armed === r.spec"
-          @fold="fold(r.node.id)"
-          @open="edit(r.spec)"
-          @add="armAdd(r.spec)"
-          @sub="(t) => commitSub(r.spec, t)"
-          @del="del(r.spec, r.node)"
-        >
-          <text class="row-t" :class="{ 'is-done': r.node.status === 'done' }">{{ label(r.node) }}</text>
-          <text class="row-m">{{ pathPre(r) }}{{ dueText(r.node) }}</text>
-        </TreeRow>
+        <TreeList :rows="todoRows" @open="edit">
+          <template #default="{ row }">
+            <text class="row-t" :class="{ 'is-done': row.node.status === 'done' }">{{ label(row.node) }}</text>
+            <text class="row-m">{{ pathPrefix(row) }}{{ dueText(row.node) }}</text>
+          </template>
+        </TreeList>
       </view>
 
       <!-- 长期目标。进度在这页直接改：滑杆、+1/+2/+5 都在行上，
@@ -95,47 +68,39 @@
           <text class="empty-t">这个领域还没有长期目标。</text>
           <text class="empty-t">点上面的「新增」加一个。</text>
         </view>
-        <TreeRow
-          v-for="r in goalRows"
-          :key="r.node.id"
-          :depth="r.depth"
-          :kids="r.kids"
-          :closed="r.closed"
-          :add-on="subOn === r.spec"
-          :armed="armed === r.spec"
-          :add-ph="'「' + label(r.node) + '」的子项，拆成几步走'"
-          @fold="fold(r.node.id)"
-          @open="editGoal(r.spec)"
-          @add="armAdd(r.spec)"
-          @sub="(t) => commitSub(r.spec, t)"
-          @del="del(r.spec, r.node)"
+        <TreeList
+          :rows="goalRows"
+          :add-ph="(row) => '「' + label(row.node) + '」的子项，拆成几步走'"
+          @open="editGoal"
         >
-          <text class="row-t">{{ label(r.node) }}</text>
-          <text class="row-m">{{ pathPre(r) }}{{ r.node.m || '长期目标' }}</text>
-          <!-- 进度那一排单独占一行。整行还要容下加号和删除，
-               五样塞进同一行的话 430 宽里名字会被挤成一列一个字。
-               @click.stop：拖滑杆不算「点开这条」，不该顺带弹出弹窗。 -->
-          <view class="goal-prog" @click.stop>
-            <slider
-              class="gbar"
-              :value="progressOf(r.spec)"
-              min="0"
-              max="100"
-              step="1"
-              :block-size="16"
-              activeColor="#2F6FEB"
-              backgroundColor="#E6E8EE"
-              @changing="slide(r.spec, $event)"
-              @change="slide(r.spec, $event)"
-            />
-            <text class="goal-val">{{ progressOf(r.spec) }}%</text>
-            <view class="goal-btns">
-              <view v-for="s in GOAL_STEPS" :key="s" class="gbtn" @click.stop="bump(r.spec, s)">
-                <text class="gbtn-t">+{{ s }}</text>
+          <template #default="{ row }">
+            <text class="row-t">{{ label(row.node) }}</text>
+            <text class="row-m">{{ pathPrefix(row) }}{{ row.node.m || '长期目标' }}</text>
+            <!-- 进度那一排单独占一行。整行还要容下加号和删除，
+                 五样塞进同一行的话 430 宽里名字会被挤成一列一个字。
+                 @click.stop：拖滑杆不算「点开这条」，不该顺带弹出弹窗。 -->
+            <view class="goal-prog" @click.stop>
+              <slider
+                class="gbar"
+                :value="progressOf(row.spec)"
+                min="0"
+                max="100"
+                step="1"
+                :block-size="16"
+                activeColor="#2F6FEB"
+                backgroundColor="#E6E8EE"
+                @changing="slide(row.spec, $event)"
+                @change="slide(row.spec, $event)"
+              />
+              <text class="goal-val">{{ progressOf(row.spec) }}%</text>
+              <view class="goal-btns">
+                <view v-for="s in GOAL_STEPS" :key="s" class="gbtn" @click.stop="bump(row.spec, s)">
+                  <text class="gbtn-t">+{{ s }}</text>
+                </view>
               </view>
             </view>
-          </view>
-        </TreeRow>
+          </template>
+        </TreeList>
       </view>
 
       <!-- 记录项：名称 / 方式 / 单位都由用户自己定。
@@ -227,15 +192,16 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
 import {
-  db, TODAY, go, flattenTree, toggleFold, specOf, labelOf, domainById,
-  habitDoneOn, streakText, toggleHabitLog, todosOf, topLevel,
-  openAdd, addSub, openEdit, openGoal, openGoalAdd, armDelete, delArmed,
+  db, TODAY, go, flattenTree, specOf, labelOf, domainById,
+  habitRowExtra, todosOf, topLevel, pathPrefix,
+  openAdd, openEdit, openGoal, openGoalAdd, delArmed,
   progressOf, setGoalP, bumpGoal, GOAL_STEPS, recordTypesOf, saveState,
   saveRecordType, addRecord, renameDomain, domainContentCount
 } from '../stores/db'
+import { confirmDelete, toast } from '../lib/ui'
 import PageHead from '../components/PageHead.vue'
 import PlusIcon from '../components/PlusIcon.vue'
-import TreeRow from '../components/TreeRow.vue'
+import TreeList from '../components/TreeList.vue'
 import RtForm from '../components/RtForm.vue'
 
 const d = computed(function () {
@@ -253,7 +219,15 @@ const rts = computed(function () {
 function rows(list, kind) {
   if (!d.value) return []
   return flattenTree(list, null, 0).map(function (r) {
-    return { node: r.node, depth: r.depth, kids: r.kids, closed: r.closed, path: r.path, spec: specOf(kind, r.node.id) }
+    const row = { node: r.node, depth: r.depth, kids: r.kids, closed: r.closed, path: r.path, spec: specOf(kind, r.node.id) }
+    /* 习惯行带上「连续/累计」和「今天打没打」两个字段 —— 和今日页同一处算法
+       （见 db.js 的 habitRowExtra），模板里就不用重复调函数了。 */
+    if (kind === 'habit') {
+      const ex = habitRowExtra(r.node, TODAY)
+      row.streak = ex.streak
+      row.doneToday = ex.doneToday
+    }
+    return row
   })
 }
 const habRows = computed(function () { return d.value ? rows(d.value.habits, 'habit') : [] })
@@ -270,17 +244,8 @@ function dueText(it) {
 }
 
 const label = labelOf
-const fold = toggleFold
+/* 领域删除按钮的武装态（模板里那个 is-armed）—— 和别处共用全局那一份 */
 const armed = delArmed
-
-function pathPre(r) {
-  return r.path ? r.path + ' · ' : ''
-}
-
-/* 这句在数据层，和今日页共用一份措辞 */
-function streak(id) {
-  return streakText(id, TODAY)
-}
 
 function latest(rt) {
   const logs = rt.logs || []
@@ -308,10 +273,10 @@ function openRt(id) {
 }
 function saveRt(rec) {
   const r = saveRecordType(rec)
-  if (r.error) { uni.showToast({ title: r.error, icon: 'none' }); return }
+  if (r.error) { toast(r.error); return }
   rtOn.value = ''
   saveState(true)
-  uni.showToast({ title: r.was === 'new' ? '已加上「' + r.rt.name + '」' : '已保存', icon: 'none' })
+  toast(r.was === 'new' ? '已加上「' + r.rt.name + '」' : '已保存')
 }
 
 function armEntry(rt) {
@@ -322,10 +287,10 @@ function armEntry(rt) {
 }
 function commitEntry(rt) {
   const raw = String(entryVal.value || '').trim()
-  if (!raw) { uni.showToast({ title: '先写点什么', icon: 'none' }); return }
+  if (!raw) { toast('先写点什么'); return }
   if (rt.mode === 'number') {
     const n = Number(raw)
-    if (!isFinite(n)) { uni.showToast({ title: '数值型只能填数字', icon: 'none' }); return }
+    if (!isFinite(n)) { toast('数值型只能填数字'); return }
     addRecord(rt.id, Math.round(n * 100) / 100)
   } else {
     addRecord(rt.id, raw)
@@ -333,17 +298,16 @@ function commitEntry(rt) {
   entryOn.value = ''
   entryVal.value = ''
   saveState(true)
-  uni.showToast({ title: '已记入「' + rt.name + '」', icon: 'none' })
+  toast('已记入「' + rt.name + '」')
 }
 
 function delRt(rt) {
-  const r = armDelete('rt:' + rt.id)
-  if (!r) return
-  if (r.error) { uni.showToast({ title: r.error, icon: 'none' }); return }
+  const r = confirmDelete('rt:' + rt.id)
+  if (r.armed) return
+  if (r.error) { toast(r.error); return }
   if (rtOn.value === rt.id) rtOn.value = ''
   if (entryOn.value === rt.id) entryOn.value = ''
-  saveState(true)
-  uni.showToast({ title: '已收起「' + r.label + '」', icon: 'none' })
+  toast('已收起「' + r.done.label + '」')
 }
 
 /* ---- 领域本身 ---- */
@@ -359,34 +323,17 @@ watch(function () { return db.DOMAIN_ID }, function () {
 
 function rename() {
   const r = renameDomain(db.DOMAIN_ID, nameDraft.value)
-  if (r.error) { uni.showToast({ title: r.error, icon: 'none' }); return }
+  if (r.error) { toast(r.error); return }
   saveState(true)
-  uni.showToast({ title: '已改名为「' + r.name + '」', icon: 'none' })
+  toast('已改名为「' + r.name + '」')
 }
 
 function delSelf() {
-  const r = armDelete('domain:' + db.DOMAIN_ID)
-  if (!r) { uni.showToast({ title: '再点一次才算删', icon: 'none' }); return }
-  if (r.error) { uni.showToast({ title: r.error, icon: 'none' }); return }
-  saveState(true)
+  const r = confirmDelete('domain:' + db.DOMAIN_ID)
+  if (r.armed) { toast('再点一次才算删'); return }
+  if (r.error) { toast(r.error); return }
   go('spaces')
-  uni.showToast({ title: '已删「' + r.label + '」· 内容回收件箱', icon: 'none' })
-}
-
-/* ---- 就地加子项 ---- */
-const subOn = ref('')
-function armAdd(spec) {
-  subOn.value = subOn.value === spec ? '' : spec
-}
-function commitSub(spec, text) {
-  if (subOn.value !== spec) return
-  subOn.value = ''
-  const t = String(text || '').trim()
-  if (!t) return
-  const r = addSub(spec, t)
-  if (r.error) { uni.showToast({ title: r.error, icon: 'none' }); return }
-  saveState(true)
-  uni.showToast({ title: '已加上「' + t + '」', icon: 'none' })
+  toast('已删「' + r.done.label + '」· 内容回收件箱')
 }
 
 /* ---- 新增 ----
@@ -395,7 +342,7 @@ function commitSub(spec, text) {
 function addTop(kind) {
   if (kind === 'goal') {
     const r = openGoalAdd(d.value.id, null, '')
-    if (r.error) uni.showToast({ title: r.error, icon: 'none' })
+    if (r.error) toast(r.error)
     return
   }
   openAdd(kind, { space: d.value.id })
@@ -404,11 +351,11 @@ function addTop(kind) {
 /* ---- 编辑：整行点开 ---- */
 function edit(spec) {
   const r = openEdit(spec)
-  if (r && r.error) uni.showToast({ title: r.error, icon: 'none' })
+  if (r && r.error) toast(r.error)
 }
 function editGoal(spec) {
   const r = openGoal(spec)
-  if (r.error) uni.showToast({ title: r.error, icon: 'none' })
+  if (r.error) toast(r.error)
 }
 
 /* ---- 进度 ---- */
@@ -420,26 +367,9 @@ function bump(spec, s) {
   if (bumpGoal(spec, s) === null) return
   saveState(true)
 }
-
-/* ---- 删除：两段确认 ---- */
-function del(spec, node) {
-  const r = armDelete(spec)
-  if (!r) { uni.showToast({ title: '再点一次「确认删」', icon: 'none' }); return }
-  saveState(true)
-  uni.showToast({ title: '已删除「' + labelOf(node) + '」', icon: 'none' })
-}
-
-function tick(id) {
-  const on = toggleHabitLog(id, TODAY)
-  saveState()
-  uni.showToast({ title: on ? '已打卡' : '已取消今天的打卡', icon: 'none' })
-}
 </script>
 
 <style scoped>
-.page {
-  padding: 14px 14px calc(76px + env(safe-area-inset-bottom));
-}
 
 .back { padding: 2px 0 6px; }
 .back-t { font-size: 13px; color: var(--accent); }
@@ -458,8 +388,6 @@ function tick(id) {
   justify-content: space-between;
   padding-bottom: 6px;
 }
-.tag { font-size: 14px; font-weight: 500; color: var(--text); }
-.block-note { font-size: 12px; color: var(--muted); }
 .block-acts { display: flex; flex-direction: row; align-items: center; }
 
 /* .addbtn 那三行搬到 styles/base.scss 了 —— 今日 / 领域 / 空间三页共用一份。 */
@@ -471,29 +399,14 @@ function tick(id) {
   min-height: 46px;
   border-top: 1px solid var(--line);
 }
-.row-main { flex: 1 1 auto; min-width: 0; padding: 6px 0; }
-.row-t { display: block; font-size: 14px; color: var(--text); }
 /* 做完的待办划掉。这一页不过滤状态 —— 要的就是「这个领域一共有些什么事」，
    所以做完的留着，但得一眼看出来它做完了 */
 .row-t.is-done { color: var(--muted); text-decoration: line-through; }
-.row-m { display: block; margin-top: 1px; font-size: 12px; color: var(--muted); }
 .row-v { font-size: 12px; color: var(--sub); }
 
-.tick {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 32px;
-  padding: 6px 14px;
-  margin-left: 8px;
-  border: 1px solid var(--line2);
-  border-radius: 8px;
-  background: var(--card);
-}
-.tick-t { font-size: 13px; color: var(--sub); }
-.tick.is-on { background: var(--ok-bg); border-color: var(--ok); }
-.tick.is-on .tick-t { color: var(--ok); }
-.tick:active { background: var(--bg); }
+/* ---- 打卡按钮 ----
+   .tick 那一套搬进 components/TreeList.vue 了 —— 按钮现在由它渲染，
+   而 scoped 样式不跨组件生效。今日页和领域页原先各有一份逐字相同的。 */
 
 /* 进度排在名字下面一行：滑杆吃掉这一行剩下的宽度，
    百分比和快捷钮的尺寸沿用 modal.scss 里弹窗那一套，两处一个样子。 */

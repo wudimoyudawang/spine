@@ -38,8 +38,9 @@
 
 <script setup>
 import { computed, ref } from 'vue'
-import { db, fmtCN, addNote, armDelete, delArmed, saveState } from '../stores/db'
+import { db, fmtCN, addNote, delArmed, saveState } from '../stores/db'
 import PageHead from '../components/PageHead.vue'
+import { toast, confirmDelete } from '../lib/ui'
 
 const draft = ref('')
 const armed = delArmed
@@ -64,24 +65,18 @@ function save() {
   addNote(t)
   draft.value = ''
   saveState(true)
-  uni.showToast({ title: '存下了', icon: 'none' })
+  toast('存下了')
 }
 
 /* 删和别处同一套两段确认，不再弹系统对话框。 */
 function del(n) {
-  const r = armDelete('note:' + n.id)
-  if (!r) { uni.showToast({ title: '再点一次「确认删」', icon: 'none' }); return }
-  if (r.error) { uni.showToast({ title: r.error, icon: 'none' }); return }
-  saveState(true)
-  uni.showToast({ title: '已删除', icon: 'none' })
+  const r = confirmDelete('note:' + n.id)
+  if (r.armed || r.error) { if (r.msg) toast(r.msg); return }
+  toast('已删除')
 }
 </script>
 
 <style scoped>
-.page {
-  padding: 14px 14px calc(76px + env(safe-area-inset-bottom));
-}
-
 
 .block {
   margin-bottom: 14px;
@@ -122,8 +117,6 @@ function del(n) {
   justify-content: space-between;
   padding-bottom: 8px;
 }
-.tag { font-size: 14px; font-weight: 500; color: var(--text); }
-.block-note { font-size: 12px; color: var(--muted); }
 
 .noteitem {
   padding: 10px 0;
@@ -154,9 +147,6 @@ function del(n) {
   padding: 0 6px;
   border-radius: 8px;
 }
-.delbtn-t { font-size: 15px; color: var(--muted); }
-.delbtn.is-armed { background: var(--danger-bg); }
-.delbtn-t.is-armed { font-size: 12px; color: var(--danger); }
 .delbtn:active { background: var(--bg); }
 
 .empty { padding: 12px 0 4px; }

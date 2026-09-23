@@ -134,6 +134,7 @@ import {
   allCaptureOptions, commonCaptureOptions, moveCaptureOption, toggleCaptureCommon,
   resetCaptureConfig, saveState
 } from '../stores/db'
+import { toast } from '../lib/ui'
 
 const draft = ref('')
 const amount = ref('')
@@ -183,14 +184,14 @@ function canDown(i) {
 }
 
 function move(o, d) {
-  if (o.lock) { uni.showToast({ title: '「自动判断」固定在第一位', icon: 'none' }); return }
+  if (o.lock) { toast('「自动判断」固定在第一位'); return }
   if (!moveCaptureOption(o.k, d)) return
   /* 挪完立刻落盘，不等那个 2 秒的定时器 —— 人可能配完就切走 */
   saveState(true)
 }
 
 function toggle(o) {
-  if (o.lock) { uni.showToast({ title: '「自动判断」是默认项，一直都在', icon: 'none' }); return }
+  if (o.lock) { toast('「自动判断」是默认项，一直都在'); return }
   const on = toggleCaptureCommon(o.k)
   /* 关掉的正是当前选着的那个，就退回「自动判断」——
      不退的话，面板上会停在一个已经不在那排里的模式，看不出选中了什么。 */
@@ -204,7 +205,7 @@ function resetCfg() {
     mode.value = 'auto'
   }
   saveState(true)
-  uni.showToast({ title: '回到默认', icon: 'none' })
+  toast('回到默认')
 }
 
 function pickOption(o) {
@@ -252,12 +253,12 @@ function submit() {
 
 function submitMoney() {
   if (!picked.value) {
-    uni.showToast({ title: '先选个品类', icon: 'none' })
+    toast('先选个品类')
     return
   }
   const v = Number(amount.value)
   if (!v || v <= 0) {
-    uni.showToast({ title: '填个金额', icon: 'none' })
+    toast('填个金额')
     return
   }
   addMoney(v, picked.value, picked.value)
@@ -276,7 +277,7 @@ function submitQuick() {
 
   if (r.kind === 'rt') {
     if (r.rt.mode === 'number' && r.value === null) {
-      uni.showToast({ title: '「' + r.rt.name + '」要个数字', icon: 'none' })
+      toast('「' + r.rt.name + '」要个数字')
       return
     }
     addRecord(r.rt.id, r.rt.mode === 'number' ? r.value : r.text)
@@ -286,7 +287,7 @@ function submitQuick() {
   }
   if (r.kind === 'money') {
     if (r.value === null) {
-      uni.showToast({ title: '记支出要先写个金额', icon: 'none' })
+      toast('记支出要先写个金额')
       return
     }
     addMoney(r.value, r.text, r.category)
@@ -318,7 +319,7 @@ function submitQuick() {
    收起来时顺便把模式归回「记一笔」—— 下次点加号是重新开始，
    不该莫名其妙停在上次那个模式上。 */
 function done(msg) {
-  uni.showToast({ title: msg, icon: 'none' })
+  toast(msg)
   if (db.CAP_AUTO_CLOSE) {
     closeCapture()
     db.CAPTURE_KIND = 'quick'

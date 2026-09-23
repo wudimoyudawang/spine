@@ -63,6 +63,7 @@
  */
 import { computed, nextTick, ref, watch } from 'vue'
 import { searchAll, openEdit } from '../stores/db'
+import { toast } from '../lib/ui'
 
 const props = defineProps({
   on: { type: Boolean, default: false }
@@ -72,16 +73,30 @@ const emit = defineEmits(['close'])
 const q = ref('')
 const focusInput = ref(false)
 
+/* 输入防抖 150ms。
+   searchAll 是**全量遍历**（两年数据约 9ms 一次，见 test/README 的性能表），
+   连打几个字没必要每个字都算一遍。它只影响「什么时候算」，不影响算出来的东西。
+   空输入和清空**立刻**生效 —— 不然把字删光了还挂着上一次的结果，看着像搜索坏了。 */
+const qd = ref('')
+let qTimer = null
+watch(q, function (v) {
+  if (qTimer) { clearTimeout(qTimer); qTimer = null }
+  if (!v) { qd.value = ''; return }
+  qTimer = setTimeout(function () { qTimer = null; qd.value = v }, 150)
+})
+
 /* 每次打开都清掉上回的字：搜「报销」关掉，下回打开还停在那几个字上，
    看着像是搜索坏了 */
 watch(() => props.on, function (v) {
   if (!v) return
   q.value = ''
+  qd.value = ''
+  if (qTimer) { clearTimeout(qTimer); qTimer = null }
   focusInput.value = false
   nextTick(function () { focusInput.value = true })
 })
 
-const res = computed(function () { return searchAll(q.value) })
+const res = computed(function () { return searchAll(qd.value) })
 
 const GROUPS = [
   { k: 'todos', n: '待办' },
@@ -96,7 +111,7 @@ function openRow(r) {
   if (!r.spec) return
   emit('close')
   const x = openEdit(r.spec)
-  if (x && x.error) uni.showToast({ title: x.error, icon: 'none' })
+  if (x && x.error) toast(x.error)
 }
 </script>
 

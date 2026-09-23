@@ -9,7 +9,12 @@
     "dev:app": "uni -p app",
     "build:app": "uni build -p app",
     "dev:mp-weixin": "uni -p mp-weixin",
-    "build:mp-weixin": "uni build -p mp-weixin"
+    "build:mp-weixin": "uni build -p mp-weixin",
+    "test": "node test/equiv.cjs && node test/component.cjs",
+    "test:equiv": "node test/equiv.cjs",
+    "test:equiv:update": "node test/equiv.cjs --update",
+    "test:component": "node test/component.cjs",
+    "test:e2e": "node test/e2e.cjs"
   },
   "dependencies": {
     "@dcloudio/uni-app": "3.0.0-5020620260917001",

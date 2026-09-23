@@ -238,8 +238,8 @@
           <text class="srow-k">{{ bkLabel(b) }}</text>
           <text class="bk-sub">{{ countLine(b.counts) }}</text>
         </view>
-        <view class="mini" :class="{ 'mini-del': bkArmed === b.date }" @click="restoreGo(b)">
-          <text class="mini-t" :class="{ 'is-danger': bkArmed === b.date }">{{ bkArmed === b.date ? '确认恢复' : '恢复到这天' }}</text>
+        <view class="mini" :class="{ 'mini-del': bkArmedFor(b.date) }" @click="restoreGo(b)">
+          <text class="mini-t" :class="{ 'is-danger': bkArmedFor(b.date) }">{{ bkArmedFor(b.date) ? '确认恢复' : '恢复到这天' }}</text>
         </view>
       </view>
       <view class="note">
@@ -288,33 +288,35 @@
 <script setup>
 import { computed, ref } from 'vue'
 import {
-  db, go, money, TODAY, summaryOf, recordTypesOf, togglePin, newDomain,
+  db, go, money, TODAY, pad2, summaryOf, recordTypesOf, togglePin, newDomain,
+  monthMoney,
   storeFailed, importSnapshot, saveState, clearAllData,
   exportText, exportFileName, peekArchive, localCounts,
   backupList, restoreBackup,
   ruleName, ruleTargetLabel, ruleMatchLabel, ruleStats, ruleMatches, whyNot,
-  toggleRule, moveRule, saveRule, armDelete, delArmed, disarmDelete,
+  toggleRule, moveRule, saveRule, armConfirm, delArmed, disarmDelete,
   quadColorOf, setQuadColor, QUAD_COLOR_DEFAULT,
   resolveCapture, describeCapture
 } from '../stores/db'
 import PageHead from '../components/PageHead.vue'
 import PlusIcon from '../components/PlusIcon.vue'
 import RuleForm from '../components/RuleForm.vue'
+import { toast, confirmDelete } from '../lib/ui'
 
 function summary(d) {
   return summaryOf(d, recordTypesOf(db.RECORD_TYPES, d.id).length)
 }
 
 const moneySummary = computed(function () {
-  const m = TODAY.slice(0, 7)
-  const list = db.LOGS.filter(l => String(l.date).slice(0, 7) === m)
-  const sum = list.reduce((s, l) => s + Number(l.value || 0), 0)
-  return '本月 ' + money(sum) + ' · ' + list.length + ' 笔'
+  /* 和今日页的「本月」、记账页的合计读的是同一处（db.monthMoney）——
+     各自 filter+reduce 一遍的话，改口径时只会改到一处 */
+  const mm = monthMoney(TODAY.slice(0, 7))
+  return '本月 ' + money(mm.sum) + ' · ' + mm.count + ' 笔'
 })
 
 function pin(d) {
   const on = togglePin(d.id)
-  uni.showToast({ title: on ? '已加到顶部快捷' : '已取消顶部快捷', icon: 'none' })
+  toast(on ? '已加到顶部快捷' : '已取消顶部快捷')
 }
 
 function openDomain(d) {
@@ -338,14 +340,14 @@ function startAdd() {
 }
 function createDomain() {
   const r = newDomain(newName.value)
-  if (r.error) { uni.showToast({ title: r.error, icon: 'none' }); return }
+  if (r.error) { toast(r.error); return }
   adding.value = false
   saveState(true)
   /* 建完直接进那个领域：空领域里下一步就是加东西，
      把人留在卡片列表里等于让他再点一次自己刚建的那张。 */
   db.DOMAIN_ID = r.domain.id
   go('domain')
-  uni.showToast({ title: '已创建「' + r.name + '」', icon: 'none' })
+  toast('已创建「' + r.name + '」')
 }
 
 /* ---------------- 四象限配色 ----------------
@@ -365,69 +367,62 @@ const SWATCHES = [
 
 function pickQuad(k, hex) {
   const r = setQuadColor(k, hex)
-  if (r.error) { uni.showToast({ title: r.error, icon: 'none' }); return }
+  if (r.error) { toast(r.error); return }
   saveState(true)
 }
 function resetQuad() {
   for (const k of ['q1', 'q2', 'q3', 'q4']) setQuadColor(k, QUAD_COLOR_DEFAULT[k])
   saveState(true)
-  uni.showToast({ title: '已恢复默认配色', icon: 'none' })
+  toast('已恢复默认配色')
 }
 
 /* ---------------- 清空数据 ----------------
- * 两段确认，和别处的删除是同一个闸门（armDelete / delArmed）：
+ * 两段确认，和别处的删除走**同一个**闸门（db.armConfirm / delArmed）：
  * 第一下只武装（变红、文案变成「确认清空」），第二下才真清；几秒不动自动回退。
- * 这一颗清掉的是**全部**数据，所以那颗钮要和上面的导出离得远一点。 */
-const clearArmed = ref(false)
-let clearTimer = null
+ * 这一颗清掉的是**全部**数据，所以那颗钮要和上面的导出离得远一点。
+ *
+ * 原先这里自备了一个 armed ref 加一个定时器 —— 同一套手势三份实现，
+ * 而且脱离了「全局同时只可能有一个待确认」这条保证。 */
+const CLEAR_SPEC = 'action:clear-all'
+const clearArmed = computed(function () { return delArmed.value === CLEAR_SPEC })
 
 function clearGo() {
-  if (!clearArmed.value) {
-    clearArmed.value = true
-    if (clearTimer) clearTimeout(clearTimer)
-    clearTimer = setTimeout(function () { clearArmed.value = false }, 4000)
-    return
-  }
-  if (clearTimer) { clearTimeout(clearTimer); clearTimer = null }
-  clearArmed.value = false
-  disarmDelete()
-  clearAllData()
-  uni.showToast({ title: '已清空', icon: 'none' })
+  const res = armConfirm(CLEAR_SPEC, function () {
+    clearAllData()
+    return { ok: true }
+  })
+  if (res === null) return            /* 只是武装起来了 */
+  toast('已清空')
 }
 
 const armed = delArmed
 
 /* ---------------- 自动备份 ----------------
- * 恢复是两段确认（和别处的删除同一个思路），因为「恢复」覆盖的是全部。
+ * 恢复是两段确认（和别处的删除同一个闸门），因为「恢复」覆盖的是全部。
  * backupList() 读的是存储不是响应式，所以用 bkTick 逼它重算 ——
  * 恢复完列表本身也变了（多出一份「恢复前」），不逼一次就是旧清单。 */
 const bkTick = ref(0)
-const bkArmed = ref('')
-let bkTimer = null
-
 const backups = computed(function () {
   bkTick.value
   return backupList()
 })
+const bkSpec = function (date) { return 'action:restore:' + date }
+function bkArmedFor(date) { return delArmed.value === bkSpec(date) }
 
 function bkLabel(b) {
   if (b.date === TODAY) return '今天 · ' + b.date
   return b.date
 }
 function restoreGo(b) {
-  if (bkArmed.value !== b.date) {
-    bkArmed.value = b.date
-    if (bkTimer) clearTimeout(bkTimer)
-    bkTimer = setTimeout(function () { bkArmed.value = '' }, 4000)
-    return
-  }
-  if (bkTimer) { clearTimeout(bkTimer); bkTimer = null }
-  bkArmed.value = ''
-  const r = restoreBackup(b.date)
-  if (r.error) { uni.showToast({ title: r.error, icon: 'none' }); return }
-  bkTick.value++
-  disarmDelete()
-  uni.showToast({ title: '已恢复到 ' + b.date, icon: 'none' })
+  const res = armConfirm(bkSpec(b.date), function () {
+    const r = restoreBackup(b.date)
+    if (r.error) return { error: r.error }
+    bkTick.value++
+    return { ok: true }
+  })
+  if (res === null) return            /* 只是武装起来了 */
+  if (res.error) { toast(res.error); return }
+  toast('已恢复到 ' + b.date)
 }
 
 /* ---------------- 导入 / 导出 ----------------
@@ -449,17 +444,17 @@ const localLine = computed(function () { return countLine(localCounts()) })
 function whenText(at) {
   if (!at) return '没写导出时间'
   const d = new Date(at)
-  const p = n => (n < 10 ? '0' + n : '' + n)
+  /* 用数据层的 pad2，不再就地再写一份等价实现（原来这里有个 p(n)） */
   return '导出于 ' + (d.getMonth() + 1) + '月' + d.getDate() + '日 '
-    + p(d.getHours()) + ':' + p(d.getMinutes())
+    + pad2(d.getHours()) + ':' + pad2(d.getMinutes())
 }
 
 /* 两条通道最后都汇到这里：**先给摘要，不上来就换**。 */
 function takeArchive(raw, from) {
   const p = peekArchive(raw)
-  if (p.error) { uni.showToast({ title: p.error, icon: 'none' }); return }
+  if (p.error) { toast(p.error); return }
   pending.value = { raw: raw, when: whenText(p.at), line: countLine(p.counts) }
-  uni.showToast({ title: from + '读进来了，往下看一眼', icon: 'none' })
+  toast(from + '读进来了，往下看一眼')
 }
 
 function cancelImport() { pending.value = null }
@@ -489,16 +484,16 @@ function saveFile() {
     document.body.removeChild(a)
     /* 立刻 revoke 会把下载掐掉，等一拍再放 */
     setTimeout(function () { URL.revokeObjectURL(url) }, 4000)
-    uni.showToast({ title: '已存成 ' + name, icon: 'none' })
+    toast('已存成 ' + name)
   } catch (e) {
-    uni.showToast({ title: '这个浏览器存不了文件，用剪贴板', icon: 'none' })
+    toast('这个浏览器存不了文件，用剪贴板')
   }
   // #endif
   // #ifndef H5
   /* 官方的 DCloud 壳（HBuilderX 那条路）还没接：那边要 `plus.io` / `uni.saveFile`。
      装的是 Capacitor 壳的话走不到这里 —— 它用的是上面那个 H5 分支 +
      宿主注入的 SPINE_SAVE_FILE。 */
-  uni.showToast({ title: '这个壳还没接存文件，先用剪贴板', icon: 'none' })
+  toast('这个壳还没接存文件，先用剪贴板')
   // #endif
 }
 
@@ -509,10 +504,10 @@ function pickFile() {
     extension: ['json'],
     success: function (res) {
       const f = res.tempFiles && res.tempFiles[0]
-      if (!f) { uni.showToast({ title: '没选到文件', icon: 'none' }); return }
+      if (!f) { toast('没选到文件'); return }
       const rd = new FileReader()
       rd.onload = function () { takeArchive(String(rd.result || ''), '文件') }
-      rd.onerror = function () { uni.showToast({ title: '这个文件读不出来', icon: 'none' }) }
+      rd.onerror = function () { toast('这个文件读不出来') }
       rd.readAsText(f)
     },
     /* 用户自己点取消，不报错 */
@@ -523,8 +518,8 @@ function pickFile() {
 function copyAll() {
   uni.setClipboardData({
     data: exportText(),
-    success: function () { uni.showToast({ title: '已复制，贴到备忘录或发给自己', icon: 'none' }) },
-    fail: function () { uni.showToast({ title: '复制失败，试试存成文件', icon: 'none' }) }
+    success: function () { toast('已复制，贴到备忘录或发给自己') },
+    fail: function () { toast('复制失败，试试存成文件') }
   })
 }
 
@@ -532,21 +527,21 @@ function readClip() {
   uni.getClipboardData({
     success: function (res) {
       const v = String(res.data || '').trim()
-      if (!v) { uni.showToast({ title: '剪贴板里是空的', icon: 'none' }); return }
+      if (!v) { toast('剪贴板里是空的'); return }
       takeArchive(v, '剪贴板')
     },
-    fail: function () { uni.showToast({ title: '读不到剪贴板，试试从文件导入', icon: 'none' }) }
+    fail: function () { toast('读不到剪贴板，试试从文件导入') }
   })
 }
 
 function doImport() {
   if (!pending.value) return
   const err = importSnapshot(pending.value.raw)
-  if (err) { uni.showToast({ title: err, icon: 'none' }); return }
+  if (err) { toast(err); return }
   pending.value = null
   /* 导入换掉了全部数据：正在编辑的那张草稿表、武装待删的那颗按钮都不该留着 */
   disarmDelete()
-  uni.showToast({ title: '已导入，本机数据已换成这份', icon: 'none' })
+  toast('已导入，本机数据已换成这份')
 }
 
 /* 存储状态常驻在每一页的页头（saveStateText），这里不再重复一份。
@@ -567,7 +562,7 @@ function cancelRule() { editing.value = '' }
 function saveRuleFrom(rec) {
   const was = saveRule(rec)
   editing.value = ''
-  uni.showToast({ title: was === 'new' ? '规则已加上，排在最前面' : '规则已保存', icon: 'none' })
+  toast(was === 'new' ? '规则已加上，排在最前面' : '规则已保存')
 }
 
 function flip(ru) { toggleRule(ru.id) }
@@ -575,16 +570,17 @@ function flip(ru) { toggleRule(ru.id) }
 function shift(ru, d) {
   if (moveRule(ru.id, d)) return
   /* 到边了，或者那一头是另一组 —— 两种都不许，但没必要分两句说 */
-  uni.showToast({ title: '挪不动：到边或不能跨组', icon: 'none' })
+  toast('挪不动：到边或不能跨组')
 }
 
-/* 两段确认，和删一条待办同一套：第一下只是武装，4 秒内再点一下才算。 */
+/* 两段确认，和删一条待办同一套：第一下只是武装，4 秒内再点一下才算。
+   第一下不发提示（按钮自己会变成「确认删」），保持原样。 */
 function delRule(ru) {
-  const r = armDelete('rule:' + ru.id)
-  if (!r) return
-  if (r.error) { uni.showToast({ title: r.error, icon: 'none' }); return }
+  const r = confirmDelete('rule:' + ru.id)
+  if (r.armed) return
+  if (r.error) { toast(r.error); return }
   if (editing.value === ru.id) editing.value = ''
-  uni.showToast({ title: '规则已删掉', icon: 'none' })
+  toast('规则已删掉')
 }
 
 const testText = ref('')
@@ -609,12 +605,6 @@ const test = computed(function () {
 </script>
 
 <style scoped>
-.page {
-  /* 底部留白只要让开底部栏。「记一笔」已经进了栏里，
-     不再有浮在栏上方的那颗按钮，所以不用再多留 46px。 */
-  padding: 14px 14px calc(76px + env(safe-area-inset-bottom));
-}
-
 
 .grid {
   display: grid;
@@ -734,8 +724,6 @@ const test = computed(function () {
   justify-content: space-between;
   padding-bottom: 8px;
 }
-.tag { font-size: 14px; font-weight: 500; color: var(--text); }
-.block-note { font-size: 12px; color: var(--muted); }
 
 .srow {
   display: flex;

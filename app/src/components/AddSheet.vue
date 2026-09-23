@@ -91,6 +91,7 @@ import {
   db, TODAY, ADD, ADD_KINDS, closeAdd, pickAddSpace, commitAdd, domainById, saveState
 } from '../stores/db'
 import FreqField from './FreqField.vue'
+import { toast } from '../lib/ui'
 
 const name = ref('')
 const meta = ref('')
@@ -158,7 +159,7 @@ function submit() {
   if (r.error) { err.value = r.error; return }
   err.value = ''
   saveState(true)
-  uni.showToast({ title: '已新增「' + t + '」', icon: 'none' })
+  toast('已新增「' + t + '」')
 }
 </script>
 

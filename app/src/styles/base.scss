@@ -133,3 +133,84 @@ textarea {
 .seg-t { font-size: 13px; color: var(--sub); }
 .seg-b.is-on .seg-t { color: #fff; }
 .seg-b:active { background: var(--bg); }
+
+/* ================= 多个页面共用的骨架类 =================
+ * 下面这些类原先在 9 个视图里各写了一份**逐字相同**的声明：
+ *   .page 9 份、.tag 8 份、.block-note 9 份、.row* 5~6 份、.delbtn 系列各 4 份。
+ * 一致性本来是靠人手动抄并写注释提醒的（ledger.vue 里就有一句
+ * 「× 那颗和 TreeRow 里那颗同一尺寸」）—— 改一处得记得改九处。
+ *
+ * 挪到这里之后改一次全应用生效。base.scss 本来就是全局的
+ * （在 App.vue 里 import），.addbtn 和 .seg 早就是这么收的。
+ *
+ * 各页仍可以在自己的 scoped 样式里写同名的**修饰**（.row-t.is-done、
+ * .row-m.is-late、.wday .row 之类）—— scoped 编译后带属性选择器，
+ * 特异性高于这里，所以仍然赢。这是有意保留的：全局只放共性。 */
+
+.page {
+  padding: 14px 14px calc(76px + env(safe-area-inset-bottom));
+}
+
+.tag {
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.block-note {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.row {
+  align-items: center;
+  border-top: 1px solid var(--line);
+  display: flex;
+  flex-direction: row;
+  min-height: 46px;
+}
+
+.row-t {
+  color: var(--text);
+  display: block;
+  font-size: 14px;
+}
+
+.row-m {
+  color: var(--muted);
+  display: block;
+  font-size: 12px;
+  margin-top: 1px;
+}
+
+.row-main {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 6px 0;
+}
+
+.delbtn {
+  align-items: center;
+  border-radius: 8px;
+  display: flex;
+  flex: none;
+  justify-content: center;
+  margin-left: 4px;
+  min-height: 32px;
+  min-width: 32px;
+  padding: 0 6px;
+}
+
+.delbtn-t {
+  color: var(--muted);
+  font-size: 15px;
+}
+
+.delbtn.is-armed {
+  background: var(--danger-bg);
+}
+
+.delbtn-t.is-armed {
+  color: var(--danger);
+  font-size: 12px;
+}

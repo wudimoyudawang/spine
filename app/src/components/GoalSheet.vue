@@ -65,6 +65,7 @@ import {
   GOAL, GOAL_STEPS, closeGoal, commitGoal, setGoalP, progressOf,
   GOAL_DRAFT_ID, domainById, saveState
 } from '../stores/db'
+import { toast } from '../lib/ui'
 
 const err = ref('')
 const focused = ref(false)
@@ -106,7 +107,7 @@ function submit() {
   err.value = ''
   if (r.unchanged) return
   saveState(true)
-  uni.showToast({ title: r.created ? '已新增「' + t + '」' : '已更新「' + t + '」', icon: 'none' })
+  toast(r.created ? '已新增「' + t + '」' : '已更新「' + t + '」')
 }
 </script>
 

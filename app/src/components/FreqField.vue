@@ -7,7 +7,7 @@
         :key="u"
         class="ucell"
         :class="{ 'is-on': unit === u }"
-        @click="unit = u"
+        @click="setUnit(u)"
       >
         <text class="ucell-t">{{ u }}</text>
       </view>
@@ -30,7 +30,7 @@
         :key="q"
         class="mchip"
         :class="{ 'is-on': n === q }"
-        @click="n = q"
+        @click="setN(q)"
       >
         <text class="mchip-t">{{ q }} 次</text>
       </view>
@@ -67,7 +67,21 @@ watch(() => props.value, function (v) {
 function push() {
   emit('change', freqText(unit.value, n.value))
 }
-function setUnit(u) { unit.value = u; push() }
+/* 单位 / 次数这两个改动**必须走 push()**。
+   之前模板里写的是直接赋值（`@click="unit = u"`），赋值确实能生效、选中态也
+   会高亮，但 `emit('change')` 整条链断掉 —— 父组件的值保持原样。
+   表现出来就是「点了『每周』，保存下去还是『每天』」，而且再碰一下 ± 步进器
+   又正常了（那条路本来就走 push）。静默存错数据，比报错难查得多。 */
+function setUnit(u) {
+  if (unit.value === u) return
+  unit.value = u
+  push()
+}
+function setN(v) {
+  if (n.value === v) return
+  n.value = v
+  push()
+}
 function step(d) {
   const v = n.value + d
   if (v >= 1 && v <= 100) { n.value = v; push() }

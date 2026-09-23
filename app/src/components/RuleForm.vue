@@ -39,6 +39,7 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
 import { riskyRegex, ruleTarget, ruleTargetOptions, newRuleId } from '../stores/db'
+import { toast } from '../lib/ui'
 
 const props = defineProps({
   /* null = 新增；传规则进来就用它填表 */
@@ -91,19 +92,19 @@ function onPick(e) {
 
 function save() {
   const raw = condText.value.trim()
-  if (!raw) { uni.showToast({ title: '先写要匹配什么', icon: 'none' }); return }
+  if (!raw) { toast('先写要匹配什么'); return }
   if (cond.value === 're') {
     try { new RegExp(raw) } catch (e) {
-      uni.showToast({ title: '这个正则写错了，改一下', icon: 'none' })
+      toast('这个正则写错了，改一下')
       return
     }
     if (riskyRegex(raw)) {
-      uni.showToast({ title: '这个正则可能把页面卡死，换个写法', icon: 'none' })
+      toast('这个正则可能把页面卡死，换个写法')
       return
     }
   }
   const to = (opts.value[picked.value] || {}).v
-  if (!ruleTarget(to)) { uni.showToast({ title: '这个目标已经不存在了，重选一个', icon: 'none' }); return }
+  if (!ruleTarget(to)) { toast('这个目标已经不存在了，重选一个'); return }
 
   const rec = {
     id: isNew.value ? newRuleId() : props.rule.id,

@@ -36,6 +36,7 @@
 
 <script setup>
 import { computed, ref, watch } from 'vue'
+import { toast } from '../lib/ui'
 
 const props = defineProps({
   /* null = 新增；传记录项进来就用它填表 */
@@ -66,9 +67,9 @@ function setMode(m) {
 
 function save() {
   const n = name.value.trim()
-  if (!n) { uni.showToast({ title: '先起个名字', icon: 'none' }); return }
+  if (!n) { toast('先起个名字'); return }
   if (mode.value === 'number' && !unit.value.trim()) {
-    uni.showToast({ title: '数值型写个单位，没有就换纯文字', icon: 'none' })
+    toast('数值型写个单位，没有就换纯文字')
     return
   }
   emit('save', {

@@ -5,7 +5,7 @@
     <view class="block">
       <view class="block-h">
         <text class="tag">本月</text>
-        <text class="block-note">{{ monthLogs.length }} 笔</text>
+        <text class="block-note">{{ mm.count }} 笔</text>
       </view>
       <view class="stat">
         <text class="stat-v">{{ money(monthSum) }}</text>
@@ -44,7 +44,7 @@
       <view v-for="l in flow" :key="l.id" class="row">
         <view class="row-main" @click="edit(l)">
           <text class="row-t">{{ l.category || '未分类' }}</text>
-          <text class="row-m">{{ dayLabel(l.date) }}</text>
+          <text class="row-m">{{ fmtCN(l.date) }}</text>
         </view>
         <text class="row-v">{{ money(l.value) }}</text>
         <view class="delbtn" :class="{ 'is-armed': armed === 'money:' + l.id }" @click.stop="del(l)">
@@ -58,27 +58,27 @@
 <script setup>
 import { computed, ref } from 'vue'
 import {
-  db, TODAY, money, weekdayCN, sumByCategory,
-  openEdit, armDelete, delArmed, saveState
+  db, TODAY, money, fmtCN, sumByCategory, monthMoney,
+  openEdit, delArmed
 } from '../stores/db'
 import PageHead from '../components/PageHead.vue'
 import CatSheet from '../components/CatSheet.vue'
+import { toast, confirmDelete } from '../lib/ui'
 
 const month = TODAY.slice(0, 7)
 const armed = delArmed
 
-const monthLogs = computed(function () {
-  return db.LOGS.filter(l => String(l.date).slice(0, 7) === month)
-})
+/* 明细与合计都从数据层那一份来（见 db.js 的 monthMoney）。
+   这一页是唯一需要明细的地方（柱状图），所以它给的就是明细；
+   合计不再自己 reduce 一遍 —— 原先三处各扫一遍 db.LOGS 算同一个数。 */
+const mm = computed(function () { return monthMoney(month) })
 
-const monthSum = computed(function () {
-  return monthLogs.value.reduce((s, l) => s + Number(l.value || 0), 0)
-})
+const monthSum = computed(function () { return mm.value.sum })
 
 /* 分类柱状图：按金额从多到少排，最长的那根占满宽度，其余按比例缩。
    高度用百分比而不是算像素 —— 换台屏宽不同的手机不用重算。 */
 const bars = computed(function () {
-  const by = sumByCategory(monthLogs.value)
+  const by = sumByCategory(mm.value.list)
   const rows = Object.keys(by).map(function (k) { return { n: k, raw: by[k] } })
   rows.sort(function (a, b) { return b.raw - a.raw })
   const max = rows.length ? rows[0].raw : 0
@@ -93,24 +93,21 @@ const flow = computed(function () {
     .slice(0, 40)
 })
 
-function dayLabel(iso) {
-  const p = String(iso).split('-').map(Number)
-  return p[1] + '月' + p[2] + '日 周' + weekdayCN(iso)
-}
+/* 日期那行直接用数据层的 fmtCN —— 原来这里又拼了一遍
+   `p[1] + '月' + p[2] + '日 周' + weekdayCN(iso)`，和 fmtCN 逐字等价。
+   同一件事两处实现的代价：改格式时只会改一处，两页的日期就长得不一样了。 */
 
 function edit(l) {
   const r = openEdit('money:' + l.id)
-  if (r.error) uni.showToast({ title: r.error, icon: 'none' })
+  if (r.error) toast(r.error)
 }
 
-/* 删除：两段确认，和今日页、领域页那一套是同一个闸门（全局同时只有一处武装）。 */
+/* 删除：两段确认。闸门在数据层，这里只说「删掉了要说什么」。
+   以前这套「武装 → 删 → 存盘 → 说话」四步在 8 个删除入口各写了一遍。 */
 function del(l) {
-  const spec = 'money:' + l.id
-  const r = armDelete(spec)
-  if (!r) { uni.showToast({ title: '再点一次「确认删」', icon: 'none' }); return }
-  if (r.error) { uni.showToast({ title: r.error, icon: 'none' }); return }
-  saveState(true)
-  uni.showToast({ title: '已删除', icon: 'none' })
+  const r = confirmDelete('money:' + l.id)
+  if (r.armed || r.error) { if (r.msg) toast(r.msg); return }
+  toast('已删除')
 }
 
 /* 品类弹层开着没有。只有这一页用它，所以是个本地 ref，不进 db ——
@@ -119,10 +116,6 @@ const catOpen = ref(false)
 </script>
 
 <style scoped>
-.page {
-  padding: 14px 14px calc(76px + env(safe-area-inset-bottom));
-}
-
 
 .block {
   margin-bottom: 14px;
@@ -138,8 +131,6 @@ const catOpen = ref(false)
   justify-content: space-between;
   padding-bottom: 6px;
 }
-.tag { font-size: 14px; font-weight: 500; color: var(--text); }
-.block-note { font-size: 12px; color: var(--muted); }
 
 .stat { padding: 6px 0 14px; }
 .stat-v { display: block; font-size: 30px; font-weight: 500; color: var(--text); line-height: 1.2; }
@@ -162,17 +153,6 @@ const catOpen = ref(false)
 }
 .bar-fill { height: 100%; background: var(--accent); border-radius: 4px; }
 .barrow-v { width: 62px; text-align: right; font-size: 12px; color: var(--text); }
-
-.row {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  min-height: 46px;
-  border-top: 1px solid var(--line);
-}
-.row-main { flex: 1 1 auto; min-width: 0; padding: 6px 0; }
-.row-t { display: block; font-size: 14px; color: var(--text); }
-.row-m { display: block; margin-top: 1px; font-size: 12px; color: var(--muted); }
 .row-v { font-size: 14px; color: var(--text); }
 
 /* × 那颗和 TreeRow 里那颗同一尺寸：同一页面上不同地方的删除钮，
@@ -188,9 +168,6 @@ const catOpen = ref(false)
   padding: 0 6px;
   border-radius: 8px;
 }
-.delbtn-t { font-size: 15px; color: var(--muted); }
-.delbtn.is-armed { background: var(--danger-bg); }
-.delbtn-t.is-armed { font-size: 12px; color: var(--danger); }
 
 .empty { padding: 12px 0 16px; }
 .empty-t { font-size: 13px; color: var(--muted); }

@@ -91,6 +91,21 @@ console.log('')
 
 /* 自检：产物里该有什么、不该有什么 */
 function has(text, needle) { return text.indexOf(needle) >= 0 }
+
+/* 「App 专用提示」那句的探针串，**必须和 app/src/views/spaces.vue 里
+   `// #ifndef H5` 那一段的实际文案逐字一致**。
+   不一致会怎样：`!has(js, 探针)` 永远为真 —— 这条断言永远不失败，等于没有。
+   （它原来就是这样：文案早改成「这个壳还没接存文件，先用剪贴板」了，
+     探针还指着旧句子，于是一直在空转。）
+   所以先确认探针本身在源码里还在，再拿它去查产物。 */
+const APP_ONLY_HINT = '这个壳还没接存文件，先用剪贴板'
+const SPACES = path.join(APP, 'src', 'views', 'spaces.vue')
+const appSrc = fs.existsSync(SPACES) ? fs.readFileSync(SPACES, 'utf8') : ''
+if (!has(appSrc, APP_ONLY_HINT)) {
+  die('自检探针已失效：在 ' + SPACES + ' 里找不到\n     「' + APP_ONLY_HINT + '」\n'
+    + '   那条提示语可能又改过文案 —— 请把 build.cjs 里的 APP_ONLY_HINT 同步成现在的写法。')
+}
+
 const js = (function all(d, o) {
   for (const f of fs.readdirSync(d)) {
     const p = path.join(d, f)
@@ -100,8 +115,9 @@ const js = (function all(d, o) {
   return o
 })(WWW, []).join('')
 console.log('=== 自检 ===')
+console.log('  探针串在源码里还有效                   : ' + has(appSrc, APP_ONLY_HINT))
 console.log('  index.html 里有 SPINE_SAVE_FILE 定义 : ' + has(html, 'window.SPINE_SAVE_FILE ='))
-console.log('  H5 产物理里没有那句 App 专用提示     : ' + !has(js, 'App 端的存文件还没接'))
+console.log('  H5 产物理里没有那句 App 专用提示     : ' + !has(js, APP_ONLY_HINT))
 console.log('  H5 产物理有浏览器那套导出            : ' + has(js, '这个浏览器存不了文件'))
 console.log('')
 console.log('www 准备好了。下一步：npx cap sync android')

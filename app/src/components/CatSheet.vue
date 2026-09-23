@@ -82,8 +82,9 @@
  */
 import { nextTick, ref, watch } from 'vue'
 import {
-  db, money, addCat, renameCat, catUsed, armDelete, delArmed, saveState, commitMoneyText
+  db, money, addCat, renameCat, catUsed, delArmed, saveState, commitMoneyText
 } from '../stores/db'
+import { toast, confirmDelete } from '../lib/ui'
 
 const props = defineProps({
   on: { type: Boolean, default: false }
@@ -101,13 +102,13 @@ const focusRec = ref(false)
 
 function record() {
   const t = recDraft.value.trim()
-  if (!t) { uni.showToast({ title: '先写一句', icon: 'none' }); return }
+  if (!t) { toast('先写一句'); return }
   const r = commitMoneyText(t)
-  if (r.error) { uni.showToast({ title: r.error, icon: 'none' }); return }
+  if (r.error) { toast(r.error); return }
   recDraft.value = ''
   focusRec.value = false
   saveState(true)
-  uni.showToast({ title: '记下 ' + money(r.rec.value), icon: 'none' })
+  toast('记下 ' + money(r.rec.value))
 }
 
 /* 每次打开都收起输入框：上回没提交的字留在这儿，会被人当成已经建好了 */
@@ -139,25 +140,22 @@ function usedOf(c) { return catUsed(c) }
 
 function commit() {
   const v = draft.value.trim()
-  if (!v) { uni.showToast({ title: '先写个名字', icon: 'none' }); return }
+  if (!v) { toast('先写个名字'); return }
   const r = editOn.value === 'new' ? addCat(v) : renameCat(editOn.value, v)
-  if (r.error) { uni.showToast({ title: r.error, icon: 'none' }); return }
+  if (r.error) { toast(r.error); return }
   editOn.value = ''
   focusInput.value = false
   saveState(true)
-  uni.showToast({
-    title: r.moved === undefined ? '已加「' + r.name + '」' : '已改名，' + r.moved + ' 笔也跟着改过来了',
-    icon: 'none'
-  })
+  toast(r.moved === undefined ? '已加「' + r.name + '」' : '已改名，' + r.moved + ' 笔也跟着改过来了')
 }
 
 function delGo(c) {
-  const r = armDelete('cat:' + c)
-  if (!r) return
-  if (r.error) { uni.showToast({ title: r.error, icon: 'none' }); return }
+  /* 第一下不发提示（按钮自己会变成「确认删」），保持原样 */
+  const r = confirmDelete('cat:' + c)
+  if (r.armed) return
+  if (r.error) { toast(r.error); return }
   if (editOn.value === c) editOn.value = ''
-  saveState(true)
-  uni.showToast({ title: '已去掉「' + r.name + '」· 已记的没改', icon: 'none' })
+  toast('已去掉「' + r.done.name + '」· 已记的没改')
 }
 </script>
 

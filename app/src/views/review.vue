@@ -133,13 +133,14 @@
 import { computed, ref } from 'vue'
 import {
   db, TODAY, fmtCN, habitDaysInRange, addTodo,
-  armDelete, delArmed, saveState,
+  delArmed, saveState,
   reviewRange, prevRange, rangeLabel, setRevMode, setRevEnd,
   reviewData, metricLine, metricKey, trendRows, trendCandidates, addTrend,
   habitTree, streakText
 } from '../stores/db'
 import PageHead from '../components/PageHead.vue'
 import PlusIcon from '../components/PlusIcon.vue'
+import { toast, confirmDelete } from '../lib/ui'
 
 const MODES = [{ k: 'week', n: '本周' }, { k: 'month', n: '本月' }, { k: 'custom', n: '自定义' }]
 
@@ -177,27 +178,28 @@ function onFrom(e) { setRevEnd('from', e.detail.value); touch() }
 function onTo(e) { setRevEnd('to', e.detail.value); touch() }
 
 function addRow(c) {
-  if (!addTrend(metricKey(c))) { uni.showToast({ title: '这一项已经在了', icon: 'none' }); return }
+  if (!addTrend(metricKey(c))) { toast('这一项已经在了'); return }
   touch()
-  uni.showToast({ title: '已加进这一期的趋势', icon: 'none' })
+  toast('已加进这一期的趋势')
 }
 
 function delRow(r) {
-  const res = armDelete('trend:' + r.key)
-  if (!res) return
-  if (res.error) { uni.showToast({ title: res.error, icon: 'none' }); return }
-  touch()
-  uni.showToast({ title: '已去掉「' + res.label + '」', icon: 'none' })
+  /* 趋势没有独立数据，只是不再单独看它 —— 所以文案说的是「去掉」不是「删除」。
+     第一下不发提示（那颗按钮自己会变成「确认删」），这一点和别处不同，保持原样。 */
+  const res = confirmDelete('trend:' + r.key)
+  if (res.armed) return
+  if (res.error) { toast(res.error); return }
+  toast('已去掉「' + res.done.label + '」')
 }
 
 function touch() { saveState(true) }
 
 function toItem() {
   const t = conclusion.value.trim()
-  if (!t) { uni.showToast({ title: '先写一句结论', icon: 'none' }); return }
+  if (!t) { toast('先写一句结论'); return }
   addTodo(t, '')
   conclusion.value = ''
-  uni.showToast({ title: '已写成今天的待办', icon: 'none' })
+  toast('已写成今天的待办')
 }
 
 /* 导出跟着屏幕上那份清单走：这里没在看的项目，不必出现在文本里。 */
@@ -235,16 +237,12 @@ function exportText() {
      而下载在 App 的 WebView 里还得单独接原生文件写入。 */
   uni.setClipboardData({
     data: text,
-    success: function () { uni.showToast({ title: '已复制', icon: 'none' }) }
+    success: function () { toast('已复制') }
   })
 }
 </script>
 
 <style scoped>
-.page {
-  padding: 14px 14px calc(76px + env(safe-area-inset-bottom));
-}
-
 
 /* .seg / .seg-b / .seg-t 搬到 styles/base.scss 了 —— 今日页头也用同一份。
    这里只留这一页特有的外边距。 */
@@ -291,8 +289,6 @@ function exportText() {
   justify-content: space-between;
   padding-bottom: 8px;
 }
-.tag { font-size: 14px; font-weight: 500; color: var(--text); }
-.block-note { font-size: 12px; color: var(--muted); }
 
 .trend-row {
   display: flex;

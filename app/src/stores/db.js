@@ -10,7 +10,7 @@
  *   · 界面状态 —— 停在哪一页、选了哪个速记模式；只活在这台设备上，不导出去
  *      （在手机上导出的档案，导进另一台机器后「停在哪一页」跟着跑过去，只会让人莫名其妙）
  */
-import { reactive, ref } from 'vue'
+import { reactive, ref, watch } from 'vue'
 import { SEED_DATA, SEED_UI } from './seed'
 
 /* ---------------- 日期 ---------------- */
@@ -36,6 +36,15 @@ export function weekdayCN(iso) {
 export function fmtCN(iso) {
   const p = String(iso).split('-').map(Number)
   return p[1] + '月' + p[2] + '日 周' + weekdayCN(iso)
+}
+/* 宽一档的中文日期：'9 月 17 日 · 周四'。今日页页头用这个。
+ *
+ * 它以前是 today.vue 里现拼的一串（`p[1] + ' 月 ' + p[2] + ' 日 · 周' + …`）——
+ * 和 fmtCN 长得像又不完全一样，读代码的人会以为是同一个函数、改了一个另一个没改。
+ * 抽成具名函数之后，「中文日期有两种宽度」这件事就写在脸上了。 */
+export function fmtCNWide(iso) {
+  const p = String(iso).split('-').map(Number)
+  return p[1] + ' 月 ' + p[2] + ' 日 · 周' + weekdayCN(iso)
 }
 /* 一期从哪天算起。一周以**周一**为头（周日算上一周的末尾）——
    以周日开头的话，「本周」在最常看的那两天里会显得短一截。 */
@@ -75,6 +84,14 @@ function shiftCN(s) {
 
 function deepCopy(o) { return JSON.parse(JSON.stringify(o)) }
 
+/* ---------------- 默认值常量 ----------------
+ * 放在 db 之前声明：db 的初始值就要用它们，而 const 在初始化之前取不到（TDZ）。
+ * 原来这些色表和清单是**在 db 里写一遍、在下面又写一遍**，改一处忘一处就会出现
+ * 「清空数据之后四象限配色没回默认」「恢复默认后颜色和初始色不一样」这类问题。 */
+export const QUAD_COLOR_DEFAULT = { q1: '#D64545', q2: '#E08E2B', q3: '#3B7DD8', q4: '#8A8F99' }
+export const QUAD_KEYS = ['q1', 'q2', 'q3', 'q4']
+export const DEFAULT_REV_TRENDS = [{ k: 'money' }, { k: 'rt', id: 'rt_weight' }, { k: 'rt', id: 'rt_kcal_in' }]
+
 /* ---------------- 状态 ---------------- */
 export const db = reactive({
   ITEMS: [], HABIT_LOGS: [], INBOX: [], NOTES: [], NOTE_PROMPTS: [],
@@ -108,7 +125,7 @@ export const db = reactive({
      宇从四组候选里选的。颜色在根节点上以 CSS 变量注入（见 quadVarStyle），
      四象限页的卡片、待办行左缘的色条、编辑弹窗里的 2×2 选择器读的是同一份 ——
      改一个颜色三处一起变。它进 DATA_KEYS：换设备不该重新调一遍颜色。 */
-  QUAD_COLORS: { q1: '#D64545', q2: '#E08E2B', q3: '#3B7DD8', q4: '#8A8F99' },
+  QUAD_COLORS: deepCopy(QUAD_COLOR_DEFAULT),
   /* 复盘页：看哪一段、以及那一段里盯着哪几项数值。
      REV_MODE / REV_FROM / REV_TO 是「这次打开想看到什么」，切走再切回来不该回到本周，
      所以放在这儿而不是组件里；它们**不进 UI_KEYS** —— 隔一天再打开还停在昨天那个
@@ -117,7 +134,7 @@ export const db = reactive({
   REV_MODE: 'week',
   REV_FROM: '',
   REV_TO: '',
-  REV_TRENDS: [{ k: 'money' }, { k: 'rt', id: 'rt_weight' }, { k: 'rt', id: 'rt_kcal_in' }]
+  REV_TRENDS: deepCopy(DEFAULT_REV_TRENDS)
 })
 
 /* 进快照、进导出文件的就是这 15 项。前 13 项和原型的 DATA_VARS 一字不差，
@@ -139,6 +156,7 @@ export function loadSeed() {
   d.LOGS.forEach(x => { x.date = shiftDays(x.date, SHIFT) })
   d.RECORD_TYPES.forEach(t => (t.logs || []).forEach(l => { l.d = shiftCN(l.d) }))
   DATA_KEYS.forEach(k => { db[k] = d[k] })
+  dropHabitIndex()      /* 整份数据换过，打卡索引必须作废（长度可能碰巧相同） */
   ensureIds()
   db.CURRENT = 'today'
   db.DOMAIN_ID = ''
@@ -149,7 +167,7 @@ export function loadSeed() {
   db.CAP_CFG = { order: [], common: {} }
   /* 这一项不在种子数据里（它是偏好不是数据），不显式给一份的话
      上面那句 DATA_KEYS.forEach 会把它写成 undefined */
-  db.REV_TRENDS = [{ k: 'money' }, { k: 'rt', id: 'rt_weight' }, { k: 'rt', id: 'rt_kcal_in' }]
+  db.REV_TRENDS = deepCopy(DEFAULT_REV_TRENDS)
   db.REV_MODE = 'week'
   db.REV_FROM = ''
   db.REV_TO = ''
@@ -182,8 +200,8 @@ export function exportText() {
 /* 文件名带日期。同一天导两次会盖掉，但那两次内容本来就一样；隔天导不会混。 */
 export function exportFileName() {
   const d = new Date()
-  const p = n => (n < 10 ? '0' + n : '' + n)
-  return '书脊-' + d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + '.json'
+  /* 用本文件自己的 pad2，不再就地再写一份等价实现 */
+  return '书脊-' + d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()) + '.json'
 }
 
 /* 「这份档案能不能读」只在这一处判断。
@@ -235,6 +253,7 @@ export function restore(raw) {
   const s = JSON.parse(raw)
   if (s && s.v) DATA_KEYS.forEach(k => { if (s.v[k] !== undefined) db[k] = s.v[k] })
   if (s && s.s) UI_KEYS.forEach(k => { if (s.s[k] !== undefined) db[k] = s.s[k] })
+  dropHabitIndex()      /* 整份数据换过，打卡索引必须作废 */
   ensureIds()
 }
 
@@ -265,15 +284,24 @@ export function importSnapshot(raw) {
  * 界面状态（CURRENT / DOMAIN_ID …）不在这里动：清数据不该把人踢到别的页面去。
  * 四象限配色也回到默认 —— 它也算数据，而且跟着导出文件走。
  */
+/* 「清成空」每一项长什么样。清单**从 DATA_KEYS 派生**，不再手抄一份 ——
+   手抄的代价是「往 DATA_KEYS 里加了新字段、忘了加进那份清单」，后果是那个字段
+   清不掉，而「清空数据」是个不可逆操作，静默失败最难发现。
+   （原来这里内联了 13 项，另外 3 项分散在下面几行单独赋值。） */
+const EMPTY_VALUE_OF = {
+  CAT_WORDS: function () { return {} },
+  CAP_CFG: function () { return { order: [], common: {} } },
+  REV_TRENDS: function () { return [] },
+  QUAD_COLORS: function () { return {} }
+}
 export function clearAllData() {
-  for (const k of ['ITEMS', 'HABIT_LOGS', 'INBOX', 'NOTES', 'NOTE_PROMPTS', 'LOGS',
-    'DOMAINS', 'RECORD_TYPES', 'CAPTURE_MODES', 'AUTO_RULES', 'TODAY_LOGS', 'CATS', 'REV_TRENDS']) {
-    db[k] = []
+  for (const k of DATA_KEYS) {
+    const mk = EMPTY_VALUE_OF[k]
+    if (mk) { db[k] = mk(); continue }
+    db[k] = Array.isArray(db[k]) ? [] : {}
   }
-  db.CAT_WORDS = {}
-  db.CAP_CFG = { order: [], common: {} }
-  db.QUAD_COLORS = {}
   db.CLOSED_NODES = {}
+  dropHabitIndex()
   saveState(true)
   return { ok: true }
 }
@@ -299,6 +327,26 @@ function ensureLogIds() {
 }
 
 let LAST_SAVED = ''
+/* 自上次存盘以来是否有改动。
+ *
+ * 为什么需要它：saveState 每 2 秒被叫一次，而它原来的第一件事是把**整份数据**
+ * 序列化成字符串、再和上一份做字符串全文比较。实测数据量上来之后这一步要 53ms
+ * —— 优化（不变就不写）发生在付代价**之后**，静态时也照烧不误，
+ * 常驻约 2.7% 的 CPU 外加一次 300KB 级字符串的分配。
+ *
+ * 现在改成先看这个标记，没改就直接返回，序列化那一步根本不走。
+ * 标记由一个深度 watcher 置位：它只在真的发生变更时才跑一趟遍历，
+ * 静态时一次都不跑。
+ *
+ * flush 用默认的**异步**：批量写入（载入种子、导入档案、给老档案补 id）
+ * 会连发成百上千次变更，同步 flush 会把整份数据遍历成百上千遍；
+ * 异步只是合并到下一拍跑一次。
+ * 代价（已评估）：非 force 的 saveState 调用如果紧跟在变更之后、且 watcher
+ * 还没跑，这次会跳过 —— 最坏情况下由 2 秒的兜盘定时器和退后台时的
+ * saveState(true) 兜住。这是「每 2 秒兜一次盘」这个既有设计本来就接受的窗口。 */
+let DIRTY = true
+watch(db, function () { DIRTY = true })
+
 /* 存不下的时候要有人管。用户以为存住了、其实没存，是这个应用最不能出的一种错 ——
    所以这里不是一个 console.error 就算了，UI 会读这个标志把实情显示出来。 */
 export const storeFailed = ref(false)
@@ -327,12 +375,15 @@ export function loadState() {
 }
 
 export function saveState(force) {
+  /* 没改动就直接返回 —— 判断在序列化之前（见上面 DIRTY 那段）。 */
+  if (!force && !DIRTY) return
   const snap = snapshot()
-  /* 没变化就不写。这个函数每 2 秒被叫一次，次次都写会把存储写爆 */
-  if (!force && snap === LAST_SAVED) return
+  /* 改过、但内容又变回原样（比如拖了滑杆再拖回来）：这一趟白算了，但别白写盘 */
+  if (!force && snap === LAST_SAVED) { DIRTY = false; return }
   try {
     uni.setStorageSync(LS_KEY, snap)
     LAST_SAVED = snap
+    DIRTY = false
     storeFailed.value = false
     lastSavedAt.value = Date.now()
   } catch (e) {
@@ -413,16 +464,6 @@ export function habitById(id) {
   }
   return null
 }
-export function goalById(id) {
-  for (const d of db.DOMAINS) {
-    const g = (d.goals || []).filter(x => x.id === id)[0]
-    if (g) return g
-  }
-  return null
-}
-export function kidsOf(list, parent) {
-  return (list || []).filter(x => (x.parent || null) === (parent || null))
-}
 
 /* 今日页要显示的待办。分**三**组，不是两组：
    overdue = 逾期没做的，due = 今天到期的，done = 今天做完的。
@@ -446,22 +487,51 @@ export function pickToday(items, today) {
   return { overdue: over, due: due, done: done }
 }
 
-/* ---------------- 打卡 ---------------- */
-export function habitDates(id) {
-  const out = []
-  for (const h of db.HABIT_LOGS) {
-    if (h.key === id && out.indexOf(h.date) < 0) out.push(h.date)
+/* ---------------- 打卡 ----------------
+ * 打卡记录的一次性索引：习惯 id → { dates: 升序去重, set: O(1) 查某天 }。
+ *
+ * 为什么要有它：这一份记录被问得极其频繁 —— 一个习惯行的「连续/累计」要问一次、
+ * 「今天打没打卡」要问一次，而今日页/领域页的模板里各自还要重复问好几遍。
+ * 不建索引的话每次都要扫全表 HABIT_LOGS 再排序：106 个习惯、每行 5 次调用
+ * 实测 1.2 秒（一个页面）。建索引之后是「整趟构建一次 + 每次只看该习惯那几天」。
+ *
+ * 失效：**长度变了就重建**（本应用里增删打卡都会改长度）。但整体换数据的地方
+ * （loadSeed / restore / clearAllData）长度可能碰巧相同，所以那几处显式
+ * dropHabitIndex()，不能只靠长度判断 —— 否则会拿旧表算。 */
+const EMPTY_DATES = []
+let HABIT_IDX = null, HABIT_IDX_LEN = -1
+function dropHabitIndex() { HABIT_IDX = null; HABIT_IDX_LEN = -1 }
+function habitIndex() {
+  const L = db.HABIT_LOGS || []
+  if (HABIT_IDX && HABIT_IDX_LEN === L.length) return HABIT_IDX
+  const acc = {}
+  for (const h of L) {
+    if (!h) continue
+    /* 空日期（''）也照收，不跳过 —— 旧实现就是把它当成一个「天」算进累计的。
+       这里不是「顺手修个脏数据」的地方：改了会让老档案的「累计 N 天」当场变小，
+       而用户没有任何办法知道为什么。行为一致性优先。 */
+    const s = acc[h.key] || (acc[h.key] = new Set())
+    s.add(h.date)
   }
-  return out.sort()
+  const out = {}
+  for (const k in acc) out[k] = { dates: Array.from(acc[k]).sort(), set: acc[k] }
+  HABIT_IDX = out
+  HABIT_IDX_LEN = L.length
+  return out
 }
+function datesOf(id) { const e = habitIndex()[id]; return e ? e.dates : EMPTY_DATES }
+
+/* 返回的是副本：调用方一直可以随便改（原来也是每次现建一个数组） */
 export function habitDoneOn(id, date) {
-  return db.HABIT_LOGS.some(h => h.key === id && h.date === date)
+  const e = habitIndex()[id]
+  return !!(e && e.set.has(date))
 }
-export function habitTotalDays(id) { return habitDates(id).length }
 /* 某一个区间里打过几天卡。复盘那张表要的就是这个数 ——
    它和「累计」不是一回事：累计是全时段，这个只看这一期。 */
 export function habitDaysInRange(id, from, to) {
-  return habitDates(id).filter(function (d) { return d >= from && d <= to }).length
+  let n = 0
+  for (const d of datesOf(id)) { if (d >= from && d <= to) n++ }
+  return n
 }
 
 /* 连续打卡天数：从今天往回数，遇到第一个没打卡的日子就停。
@@ -510,28 +580,22 @@ function prevPeriodKey(key, unit) {
   return shiftDays(key, -1)
 }
 
-export function habitStreakDays(id, today) {
-  const m = habitById(id)
-  const unit = habitUnit(m ? m.m : '')
+/* 一个习惯的「期 → 有打卡」表。索引只有那一份，单位只决定怎么折算成期。
+   连续和累计都从这一张表算 —— 原来这两个函数各自建一遍同样的表，
+   于是 habitStat 里那两行代码跑了两遍全量扫描。 */
+function periodsOf(id, unit) {
   const has = {}
-  habitDates(id).forEach(d => { has[periodKey(d, unit)] = 1 })
+  for (const d of datesOf(id)) has[periodKey(d, unit)] = 1
+  return has
+}
+/* 从 has 往回数连续期数。今天还没打卡**不算断**（这一天还没过完）。 */
+function streakOfHas(has, unit, today) {
   let k = periodKey(today || TODAY, unit)
   if (!has[k]) k = prevPeriodKey(k, unit)
   let n = 0
   const cap = unit === 'day' ? 3660 : 600   /* 十年 / 五十年封顶，防数据坏了转不出来 */
   while (has[k] && n < cap) { n++; k = prevPeriodKey(k, unit) }
   return n
-}
-
-/* 一次拿全：界面上「连续/累计」这两个数到处要，别让每处各算一遍。
-   total 里有打卡记录的**期数**：按周算就是「打卡过的周数」，按天就是天数 ——
-   单位换了，两个数都换，不然「连续 3 周 · 累计 40 天」会让人对不上。 */
-export function habitStat(id, today) {
-  const m = habitById(id)
-  const unit = habitUnit(m ? m.m : '')
-  const has = {}
-  habitDates(id).forEach(d => { has[periodKey(d, unit)] = 1 })
-  return { cur: habitStreakDays(id, today), total: Object.keys(has).length, unit }
 }
 
 /* 「连续 N 天 · 累计 M 天」这句**只在这里说一次**。
@@ -544,11 +608,27 @@ export function habitStat(id, today) {
  * 一周里只要打过一次那周就算数 —— 不按「每周 N 次」的次数卡达标，
  * 卡达标的话每周头几天永远显示「断了」，比真断了还劝退。 */
 const UNIT_WORD = { day: '天', week: '周', month: '个月' }
-export function streakText(id, today) {
-  const st = habitStat(id, today)
-  if (!st.total) return null
-  const u = UNIT_WORD[st.unit] || '天'
-  return { s: '连续 ' + st.cur + ' ' + u + ' · 累计 ' + st.total + ' ' + u, on: st.cur > 0 }
+/* node 是可选的：调用方手上已经有习惯对象时（今日页/领域页的行对象）
+   直接传进来，省掉一次 habitById —— 它要扫遍所有领域桶。 */
+function streakLine(node, id, today) {
+  const m = node || habitById(id)
+  const unit = habitUnit(m ? m.m : '')
+  const has = periodsOf(id, unit)
+  const total = Object.keys(has).length
+  if (!total) return null
+  const cur = streakOfHas(has, unit, today)
+  const u = UNIT_WORD[unit] || '天'
+  return { s: '连续 ' + cur + ' ' + u + ' · 累计 ' + total + ' ' + u, on: cur > 0 }
+}
+export function streakText(id, today) { return streakLine(null, id, today) }
+export function streakTextOf(node, today) { return node ? streakLine(node, node.id, today) : null }
+
+/* 习惯行上那两个随行字段：连续/累计那句、今天打没打卡。
+ * **一处定义** —— 今日页（crossTree）和领域页（domain.vue）都从这里取。
+ * 两处各拼一遍的话，哪天改了一处，另一页就会不一致。 */
+export function habitRowExtra(node, today) {
+  const t = today || TODAY
+  return { streak: streakTextOf(node, t), doneToday: habitDoneOn(node.id, t) }
 }
 
 export function toggleHabitLog(id, date) {
@@ -1381,7 +1461,6 @@ function delDomain(id) {
    记账的数据（LOGS / CATS / RECORD_TYPES 里的钱那部分）本来就不是领域的那套结构，
    硬塞进 DOMAINS 得处处判空。 */
 export const MONEY_SPACE = { id: 'money', name: '记账', fixed: true }
-export function isMoneySpace(id) { return id === MONEY_SPACE.id }
 
 /* 面板开合。
    kind 是面板里的模式：'quick' = 记一笔（写什么都行，规则自己判），
@@ -1396,16 +1475,30 @@ export function closeCapture() {
 
 /* ---------------- 今日页要用的几项 ---------------- */
 
-/* 某个月的支出合计。传 '2026-09' 这样的前缀（原型的 sumByCategory 就是这个用法） */
-export function moneyTotalOf(prefix) {
-  let t = 0
+/* 某个月的支出：明细 + 合计 + 笔数。传 '2026-09' 这样的前缀
+   （原型的 sumByCategory 就是这个用法）。
+ *
+ * 三个地方都在要这同一个数：今日页的「本月」（只要合计）、记账页的柱状图与合计
+ * （还要明细）、空间页记账卡的摘要。原先各自 filter + reduce 扫一遍，
+ * 改口径（比如某类算不算）就得改三处，漏一处两个页面就对不上 ——
+ * 而这两个数并排显示在同一屏上，对不上会很难看。
+ *
+ * 记账页要明细画柱状图，所以 list 一并给出去，免得它为了明细再扫一遍。 */
+export function monthMoney(prefix) {
+  const p = String(prefix || '')
+  const list = []
+  let sum = 0
   for (const l of db.LOGS) {
     if (l.kind !== 'money') continue
-    if (String(l.date).slice(0, 7) !== prefix) continue
-    t += Number(l.value || 0)
+    if (String(l.date).slice(0, 7) !== p) continue
+    list.push(l)
+    sum += Number(l.value || 0)
   }
-  return Math.round(t * 100) / 100
+  return { list: list, sum: Math.round(sum * 100) / 100, count: list.length }
 }
+
+/* 只要合计的走这里。moneyTotalOf 这个名字保留 —— 它对外的语义没变。 */
+export function moneyTotalOf(prefix) { return monthMoney(prefix).sum }
 
 /* 把一棵子项树展平成能直接 v-for 的数组。
  *
@@ -1416,15 +1509,62 @@ export function moneyTotalOf(prefix) {
  * 没有子项的也要占住那个位置，否则同一列的名字会左右跳；
  * path 是上级路径，今日页不铺整棵树，子项那行得知道它挂在谁下面。
  * 折叠状态存在 db.CLOSED_NODES 里，和原型是同一份。 */
-export function flattenTree(list, parentId, depth, out) {
+/* 展平要用的两张表，一趟建好、整趟递归共用：
+ *   byParent —— 父项 id → 直接子项（根节点归在键 '' 下）
+ *   byId     —— id → 节点
+ *
+ * 不预建会怎样：原来每个节点都要 filter 一遍找子项、再为它单独建一张全量 id 表
+ * 去反查上级路径，合起来是 **O(n²)**。800 条待办时展平一趟要 40ms，
+ * 而今日页 / 领域页 / 四象限每次重渲染都要展平。实测（200 条 200ms 级 → 800 条 340ms）
+ * 就是这条曲线。预建之后是 O(n)。 */
+function indexById(list) {
+  const m = {}
+  for (const x of (list || [])) { if (x && x.id) m[x.id] = x }
+  return m
+}
+function groupByParent(list) {
+  const m = {}
+  for (const x of (list || [])) {
+    const k = (x.parent || '')
+    if (m[k]) m[k].push(x)
+    else m[k] = [x]
+  }
+  return m
+}
+function treeIndex(list) { return { byParent: groupByParent(list), byId: indexById(list) } }
+
+/* 从预建好的 byId 表上取上级路径 —— 路径是「知识库项目上线 / 周三前」这个形状，
+   今日页不铺整棵树，所以子项那行必须写清它挂在谁下面（只读展示，不是入口）。
+   调用方负责「把表建一次」：这条路总是被批量使用（展平一棵树、给一列行算路径），
+   表建在循环里就是 O(n²)。 */
+function pathIn(byId, node) {
+  const names = []
+  let id = node && node.parent, guard = 0
+  while (id && guard++ < 12) {
+    const p = byId[id]
+    if (!p) break
+    names.unshift(labelOf(p))
+    id = p.parent
+  }
+  return names.join(' / ')
+}
+
+export function flattenTree(list, parentId, depth, out, idx, prefix) {
   out = out || []
   const src = list || []
-  const level = src.filter(function (x) { return (x.parent || null) === (parentId || null) })
+  /* idx 整趟递归共用（不传就现建一次，外部调用方不用管）；
+     prefix 是祖先路径，由父层往下带 —— 祖先链在递归里本来就在手上，
+     没必要回头再查一遍，pathIn 那套反查只在非递归场合（quadRows）用。 */
+  const c = idx || treeIndex(src)
+  const level = c.byParent[parentId || ''] || []
   for (const node of level) {
-    const kids = src.filter(function (x) { return (x.parent || null) === node.id })
+    const kids = c.byParent[node.id] || []
     const closed = !!db.CLOSED_NODES[node.id]
-    out.push({ node: node, depth: depth, kids: kids.length, closed: closed, path: nodePath(src, node) })
-    if (kids.length && !closed) flattenTree(src, node.id, depth + 1, out)
+    out.push({ node: node, depth: depth, kids: kids.length, closed: closed, path: prefix || '' })
+    if (kids.length && !closed) {
+      const name = labelOf(node)
+      flattenTree(src, node.id, depth + 1, out, c, prefix ? prefix + ' / ' + name : name)
+    }
   }
   return out
 }
@@ -1436,6 +1576,27 @@ export function topLevel(rows) {
   let n = 0
   for (const r of (rows || [])) if (!r.depth) n++
   return n
+}
+
+/* 子项那行的灰字前面补一句上级路径。
+ * 今日 / 领域 / 日历 / 四象限四处都在用它 —— 各写一遍的话，
+ * 哪天改成「‹ 上级」这样的样式就只会改到一处，四处立刻不一致。 */
+export function pathPrefix(row) {
+  return (row && row.path) ? row.path + ' · ' : ''
+}
+
+/* 逾期与否**按这一条自己的到期日**算，不看它在哪一组里出现。
+ * 一条子项挂在逾期的父项下面（子项跟着父项走），但它自己的到期日可能是今天 ——
+ * 那种情况不该在它那行写「逾期」。今日页和日历共用这一份判断。 */
+export function isLateRow(row) {
+  const n = row && row.node
+  return !!(n && n.due && n.status !== 'done' && n.due < TODAY)
+}
+/* 「· 09-16 到期 · 逾期 7 天」这半句。今日页和日历共用一份措辞。 */
+export function lateNote(row) {
+  if (!isLateRow(row)) return ''
+  const n = row.node
+  return ' · ' + n.due.slice(5) + ' 到期 · 逾期 ' + dayCount(n.due, TODAY) + ' 天'
 }
 
 export function toggleFold(id) {  if (!db.CLOSED_NODES) db.CLOSED_NODES = {}
@@ -1510,30 +1671,28 @@ export function resolveNode(spec) {
   return null
 }
 
-/* 一条的上级路径，如「知识库项目上线 / 周三前」。没有上级就是空串。
- * 今日页不铺整棵树，所以子项那行必须写清它挂在谁下面 —— 这是只读展示，不是入口。 */
-export function nodePath(list, node) {
-  const byId = {}
-  for (const x of (list || [])) byId[x.id] = x
-  const names = []
-  let id = node && node.parent, guard = 0
-  while (id && guard++ < 12) {
-    const p = byId[id]
-    if (!p) break
-    names.unshift(labelOf(p))
-    id = p.parent
-  }
-  return names.join(' / ')
-}
-
 /* 跨领域的两棵树：今日页的习惯块和计划块。
- * 一份构建处 —— 今日页和领域页读的是同一批行对象，只是这里多带一个 dom。 */
+ * 一份构建处 —— 今日页和领域页读的是同一批行对象，只是这里多带一个 dom。
+ *
+ * 习惯行额外带上「连续/累计」和「今天打没打卡」两个字段。理由是模板里那两个值
+ * 原来是这样取的：streak(r.node.id) 出现 3 次（v-if + :class + 插值）、
+ * habitDoneOn(r.node.id, TODAY) 出现 2 次 —— 5 次调用、每次都要扫一遍
+ * HABIT_LOGS 并排序，实测 106 个习惯行要 1.2 秒。算一次挂上来，模板直接读。 */
 function crossTree(k) {
   const out = []
   for (const d of db.DOMAINS) {
     const list = domainBucket(d, k)
     for (const r of flattenTree(list, null, 0)) {
-      out.push({ node: r.node, depth: r.depth, kids: r.kids, closed: r.closed, path: r.path, dom: d, list, spec: specOf(k, r.node.id) })
+      const row = {
+        node: r.node, depth: r.depth, kids: r.kids, closed: r.closed, path: r.path,
+        dom: d, list: list, spec: specOf(k, r.node.id)
+      }
+      if (k === 'habit') {
+        const ex = habitRowExtra(r.node, TODAY)
+        row.streak = ex.streak
+        row.doneToday = ex.doneToday
+      }
+      out.push(row)
     }
   }
   return out
@@ -1551,15 +1710,18 @@ export function todayTree(today) {
   const picked = {}
   r.overdue.forEach(x => { picked[x.id] = 1 })
   r.due.forEach(x => { picked[x.id] = 1 })
+  /* 整棵树的索引建一次，递归里共用 —— 原来每个节点都要 filter 一遍找子项、
+     再单独建一张全量 id 表反查上级路径，是这一页最贵的地方。 */
+  const idx = treeIndex(db.ITEMS)
   /* kids 数的是**可见的子项**，不是全部。待办这一组不显示已完成的子项，
      那个「N 项」徽标就得按同一口径数 —— 写着 2 项却只数得出 1 条，
      人会以为有一条被藏起来了（它确实被藏起来了，但在另一个视图里）。 */
   function rowObject(node, depth, over, kidCount) {
     return {
       node, depth, over,
-      kids: kidCount === undefined ? kidsOf(db.ITEMS, node.id).length : kidCount,
+      kids: kidCount === undefined ? (idx.byParent[node.id] || []).length : kidCount,
       closed: !!db.CLOSED_NODES[node.id],
-      path: nodePath(db.ITEMS, node),
+      path: pathIn(idx.byId, node),
       spec: specOf('item', node.id)
     }
   }
@@ -1573,7 +1735,7 @@ export function todayTree(today) {
     function emit(node, depth) {
       if (seen[node.id]) return
       seen[node.id] = 1
-      const live = kidsOf(db.ITEMS, node.id).filter(function (k) { return k.status !== 'done' })
+      const live = (idx.byParent[node.id] || []).filter(function (k) { return k.status !== 'done' })
       out.push(rowObject(node, depth, over, live.length))
       if (db.CLOSED_NODES[node.id]) return
       for (const k of live) emit(k, depth + 1)
@@ -1662,8 +1824,8 @@ export function quadTone(k) {
 }
 
 /* ---------------- 四象限配色 ---------------- */
-export const QUAD_COLOR_DEFAULT = { q1: '#D64545', q2: '#E08E2B', q3: '#3B7DD8', q4: '#8A8F99' }
-const QUAD_KEYS = ['q1', 'q2', 'q3', 'q4']
+/* QUAD_COLOR_DEFAULT / QUAD_KEYS 在文件上方声明 —— db 的初始值要用它们，
+   而 const 在初始化之前取不到，所以不能放在这儿。 */
 
 function hexOf(v, fallback) {
   const p = /^#?([0-9a-f]{6})$/i.exec(String(v || ''))
@@ -1718,11 +1880,14 @@ export function quadColorOf(k) {
  */
 export function quadRows() {
   const g = { '1': [], '2': [], '3': [], '4': [] }
+  /* id 表建一次。原来每一条都单独走一遍「现建一张全量 id 表再去反查上级路径」，
+     800 条待办时要 220ms，全花在这上面。 */
+  const byId = indexById(db.ITEMS)
   for (const it of (db.ITEMS || [])) {
     if (it.status === 'done') continue
     g[quadOf(it)].push({
       node: it,
-      path: nodePath(db.ITEMS, it),
+      path: pathIn(byId, it),
       spec: specOf('item', it.id),
       kids: 0, depth: 0, closed: false
     })
@@ -1817,11 +1982,14 @@ export function monthView(anchorIso) {
    日历是按日子在看的，把跨天的一棵树缩进铺出来，反而看不出哪些是那天的。 */
 export function dayRows(iso) {
   const out = []
+  /* id 表建一次 —— 原来每条命中的待办都要单独重建一张全量 id 表去反查路径。
+     命中 k 条时是 O(k·n)。 */
+  const byId = indexById(db.ITEMS)
   for (const it of (db.ITEMS || [])) {
     if (it.due !== iso) continue
     out.push({
       node: it, depth: 0, kids: 0, closed: false,
-      path: nodePath(db.ITEMS, it),
+      path: pathIn(byId, it),
       spec: specOf('item', it.id)
     })
   }
@@ -1870,27 +2038,76 @@ export function shiftWeeks(iso, n) { return shiftDays(iso, n * 7) }
  * 为什么不是「一天一页左右翻」：那样看不出这一周整体的节奏，
  * 而周视图存在的理由恰恰就是看节奏。
  *
- * 这里是 7 天各扫一遍全量数据（dayRows + dayMarks），不像 monthView 那样先摊平成表。
- * 7 遍和 42 遍不是一回事，为省这 7 遍把取数拆成两套写法不值得。
- */
+ * 取数和 monthView 同一个做法：**这一周只扫一遍全量数据**，把有东西的日子摊成
+ * 按天索引的表，再读 7 格。
+ * （原来是 7 天各调一次 dayRows + dayMarks —— 各扫一遍全量、而且 dayRows 里
+ *   每条还要算一次上级路径，实测 800 条待办时整周要 130ms。当初的注释说
+ *   「7 遍和 42 遍不是一回事，不值得拆成两套写法」，实测下来这一页是要撑住的，
+ *   所以顺手把 dayRows 本身也改成 O(n) 了。） */
 export function weekView(anchorIso) {
   const lead = startOfWeek(anchorIso || TODAY)
+
+  const byId = indexById(db.ITEMS)
+  const itemsByDay = {}
+  for (const it of (db.ITEMS || [])) {
+    if (!it.due) continue
+    const b = itemsByDay[it.due] || (itemsByDay[it.due] = { open: [], done: 0 })
+    if (it.status === 'done') b.done++
+    else b.open.push(it)
+  }
+
+  /* 打卡那一格数的是「那天打过卡的习惯**名字**数」，不是流水条数 ——
+     口径必须和 dayMarks 一致（一天给两个子习惯打卡算 1 个名字）。
+     习惯 id → 名字的表建一次，免得每条流水都去 habitById 扫一遍领域桶。 */
+  const habitLabel = {}
+  for (const d of (db.DOMAINS || [])) {
+    for (const h of (d.habits || [])) habitLabel[h.id] = labelOf(h)
+  }
+  const habitNamesByDay = {}
+  for (const h of (db.HABIT_LOGS || [])) {
+    if (!h.date) continue
+    const n = habitLabel[h.key]
+    if (!n) continue
+    const arr = habitNamesByDay[h.date] || (habitNamesByDay[h.date] = [])
+    if (arr.indexOf(n) < 0) arr.push(n)
+  }
+
+  const moneyByDay = {}
+  for (const l of (db.LOGS || [])) {
+    if (!l.date || l.kind !== 'money') continue
+    moneyByDay[l.date] = (moneyByDay[l.date] || 0) + Number(l.value || 0)
+  }
+
+  const rtByDay = {}
+  for (const t of (db.RECORD_TYPES || [])) {
+    if (t.retired) continue
+    for (const l of (t.logs || [])) {
+      const iso = isoOfCnDate(l.d, TODAY)
+      if (iso) rtByDay[iso] = (rtByDay[iso] || 0) + 1
+    }
+  }
+
   const days = []
   for (let i = 0; i < 7; i++) {
     const iso = shiftDays(lead, i)
-    const all = dayRows(iso)
-    const live = all.filter(function (r) { return r.node.status !== 'done' })
-    const m = dayMarks(iso)
+    const b = itemsByDay[iso]
+    const live = b ? b.open : []
     days.push({
       iso,
       d: Number(iso.slice(8)),
       w: weekdayCN(iso),
       today: iso === TODAY,
-      rows: live,
-      done: all.length - live.length,
-      habit: m.habits.length,
-      moneySum: m.moneySum,
-      rt: m.rts.length
+      /* 平铺、且顺序和 db.ITEMS 里的先后一致（dayRows 排完后非完成的就是这个顺序） */
+      rows: live.map(function (it) {
+        return {
+          node: it, depth: 0, kids: 0, closed: false,
+          path: pathIn(byId, it), spec: specOf('item', it.id)
+        }
+      }),
+      done: b ? b.done : 0,
+      habit: (habitNamesByDay[iso] || []).length,
+      moneySum: Math.round((moneyByDay[iso] || 0) * 100) / 100,
+      rt: rtByDay[iso] || 0
     })
   }
   return { lead, days, last: days[6].iso }
@@ -1905,26 +2122,28 @@ export function weekView(anchorIso) {
 export function moneyBrief(from, to, pf, pt) {
   const cats = {}
   let sum = 0, count = 0
+  let prev = 0, prevCount = 0
+  /* 本期和上期在**同一次遍历**里分别累（原来是扫两遍）。
+     两个 if 是独立的、不是 else if：区间是可以重叠的（自定义区间可能压到上一期上），
+     而这两个数是分开的两个指标，重叠的那几笔本来就该各算一次。 */
   for (const l of (db.LOGS || [])) {
-    if (l.kind !== 'money' || !inRange(l.date, from, to)) continue
+    if (l.kind !== 'money') continue
     const v = Number(l.value || 0)
-    sum += v
-    count++
-    const k = l.category || '未分类'
-    cats[k] = (cats[k] || 0) + v
+    if (inRange(l.date, from, to)) {
+      sum += v
+      count++
+      const k = l.category || '未分类'
+      cats[k] = (cats[k] || 0) + v
+    }
+    if (pf && pt && inRange(l.date, pf, pt)) {
+      prev += v
+      prevCount++
+    }
   }
   const list = []
   for (const k in cats) list.push({ name: k, sum: Math.round(cats[k] * 100) / 100 })
   list.sort(function (a, b) { return b.sum - a.sum })
 
-  let prev = 0, prevCount = 0
-  if (pf && pt) {
-    for (const l of (db.LOGS || [])) {
-      if (l.kind !== 'money' || !inRange(l.date, pf, pt)) continue
-      prev += Number(l.value || 0)
-      prevCount++
-    }
-  }
   return {
     sum: Math.round(sum * 100) / 100,
     count,
@@ -2265,13 +2484,32 @@ export function metricLine(def, d) {
 export function reviewData() {
   const r = reviewRange()
   const p = prevRange(r)
+  /* 这一期和上一期要的数**一次遍历**累出来。
+     原来是分头扫：moneyIn(本期) / moneyIn(上期) / captureCount ，加上
+     textLogsIn 内部的 rtLogsIn，db.LOGS 被扫了三四遍。
+     两个区间判断必须**独立**（不能 else if）—— 自定义区间可以压到上一期上，
+     重叠的那几笔在两个指标里本来就该各算一次。
+     口径要和被替掉的那几个函数一字不差：captureCount 数的是**全部** LOGS 条数，
+     而 money 只认 kind==='money'。 */
+  let moneyNow = 0, moneyPrev = 0, captures = 0
+  for (const l of db.LOGS) {
+    if (inRange(l.date, r.from, r.to)) {
+      captures++
+      if (l.kind === 'money') moneyNow += Number(l.value || 0)
+    }
+    if (l.kind === 'money' && inRange(l.date, p.from, p.to)) moneyPrev += Number(l.value || 0)
+  }
+  for (const t of db.RECORD_TYPES) {
+    if (t.retired) continue
+    captures += rtLogsIn(t, r.from, r.to).length
+  }
   return {
     range: r, prev: p, days: dayCount(r.from, r.to) + 1,
     todos: todosIn(r.from, r.to),
     habit: habitDaysIn(r.from, r.to),
-    money: moneyIn(r.from, r.to),
-    moneyPrev: moneyIn(p.from, p.to),
-    captures: captureCount(r.from, r.to),
+    money: Math.round(moneyNow * 100) / 100,
+    moneyPrev: Math.round(moneyPrev * 100) / 100,
+    captures: captures,
     texts: textLogsIn(r.from, r.to)
   }
 }
@@ -2383,7 +2621,10 @@ export function addSub(spec, text) {
       id: newId('it'), title: t, dom: p.dom || null, due: p.due || null,
       status: 'todo', parent: p.id, imp: !!p.imp, urg: !!p.urg
     }
-    db.ITEMS.push(node)
+    /* 排最前。要和下面习惯/计划那条路一致 —— 原来是 push 到末尾，
+       于是同一个动作在三处表现不一样（注释写的是「新加的排最前」，待办那条没照做）。
+       排最前的好处是刚加的那条立刻看得见，不用在一串同级里找。 */
+    db.ITEMS.unshift(node)
   } else {
     node = newNode(hit.kind, t, '')
     node.id = entryId(hit.kind, hit.domain)
@@ -2701,11 +2942,18 @@ export function disarmDelete() {
   if (delTimer) { clearTimeout(delTimer); delTimer = null }
 }
 
-/* 返回 null = 只是武装起来了；返回对象 = 真的删了 */
-export function armDelete(spec) {
+/* 两段确认的**通用**闸门：第一下只武装，第二下才执行 onConfirm。
+ *
+ * 泛化出来是因为「清空数据」和「恢复备份」也要同一套手势，但它们执行的
+ * 不是什么 deleteNode 的 spec。原先那两个地方各自维护了一个 armed ref
+ * 加一个定时器（clearArmed / bkArmed）—— 同一套交互三份实现，
+ * 而且它们脱离了这里「全局同时只可能有一个待确认」的保证。
+ *
+ * 返回 null = 只是武装起来了；返回 onConfirm 的结果 = 真的执行了。 */
+export function armConfirm(spec, onConfirm) {
   if (delArmed.value === spec) {
     disarmDelete()
-    return deleteNode(spec)
+    return onConfirm()
   }
   disarmDelete()
   delArmed.value = spec
@@ -2713,6 +2961,9 @@ export function armDelete(spec) {
   delTimer = setTimeout(disarmDelete, 4000)
   return null
 }
+
+/* 返回 null = 只是武装起来了；返回对象 = 真的删了 */
+export function armDelete(spec) { return armConfirm(spec, function () { return deleteNode(spec) }) }
 
 /* 删一条只把它自己拿掉，直接子项上移一层接管它的位置。
    「分类可以错，数据不该丢」这条对子项同样成立。 */

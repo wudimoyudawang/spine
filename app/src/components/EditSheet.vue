@@ -111,6 +111,7 @@
 import { computed, ref, watch } from 'vue'
 import { db, ED, editFields, closeEdit, commitEdit, saveState, QUAD } from '../stores/db'
 import FreqField from './FreqField.vue'
+import { toast } from '../lib/ui'
 
 const err = ref('')
 
@@ -151,12 +152,12 @@ function submit() {
   err.value = ''
   if (r.removed) {
     saveState(true)
-    uni.showToast({ title: '已从今天的流水里移除', icon: 'none' })
+    toast('已从今天的流水里移除')
     return
   }
   if (!r.unchanged) {
     saveState(true)
-    uni.showToast({ title: '已更新', icon: 'none' })
+    toast('已更新')
   }
 }
 </script>

@@ -56,8 +56,9 @@
 
 <script setup>
 import { computed, ref } from 'vue'
-import { db, fmtCN, addInbox, classifyInbox, armDelete, delArmed, saveState } from '../stores/db'
+import { db, fmtCN, addInbox, classifyInbox, delArmed, saveState } from '../stores/db'
 import PageHead from '../components/PageHead.vue'
+import { toast, confirmDelete } from '../lib/ui'
 
 const draft = ref('')
 const open = ref('')
@@ -78,7 +79,7 @@ function save() {
   addInbox(t)
   draft.value = ''
   saveState(true)
-  uni.showToast({ title: '存下了', icon: 'none' })
+  toast('存下了')
 }
 
 function toggle(id) {
@@ -89,28 +90,23 @@ function classify(it, to) {
   if (!to) { open.value = ''; return }
   const r = classifyInbox(it.id, to)
   open.value = ''
-  if (r.error) { uni.showToast({ title: r.error, icon: 'none' }); return }
+  if (r.error) { toast(r.error); return }
   saveState(true)
-  uni.showToast({ title: '已归到 ' + r.where, icon: 'none' })
+  toast('已归到 ' + r.where)
 }
 
-/* 删和别处同一套两段确认。以前这里弹一个系统对话框 —— 两种删除手势混在一个应用里，
+/* 删和别处同一套两段确认（闸门在数据层，提示与存盘走 lib/ui 那一处）。
+   以前这里弹一个系统对话框 —— 两种删除手势混在一个应用里，
    人会以为自己点错了地方。 */
 function del(it) {
-  const r = armDelete('inbox:' + it.id)
-  if (!r) { uni.showToast({ title: '再点一次「确认删」', icon: 'none' }); return }
-  if (r.error) { uni.showToast({ title: r.error, icon: 'none' }); return }
+  const r = confirmDelete('inbox:' + it.id)
+  if (r.armed || r.error) { if (r.msg) toast(r.msg); return }
   if (open.value === it.id) open.value = ''
-  saveState(true)
-  uni.showToast({ title: '已删除', icon: 'none' })
+  toast('已删除')
 }
 </script>
 
 <style scoped>
-.page {
-  padding: 14px 14px calc(76px + env(safe-area-inset-bottom));
-}
-
 
 .quick {
   display: flex;
@@ -147,19 +143,6 @@ function del(it) {
   justify-content: space-between;
   padding-bottom: 6px;
 }
-.tag { font-size: 14px; font-weight: 500; color: var(--text); }
-.block-note { font-size: 12px; color: var(--muted); }
-
-.row {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  min-height: 46px;
-  border-top: 1px solid var(--line);
-}
-.row-main { flex: 1 1 auto; min-width: 0; padding: 6px 0; }
-.row-t { display: block; font-size: 14px; color: var(--text); }
-.row-m { display: block; margin-top: 1px; font-size: 12px; color: var(--muted); }
 
 .chip {
   display: flex;
@@ -188,21 +171,6 @@ function del(it) {
 }
 .cls-k { font-size: 12px; color: var(--muted); }
 .clsbox .chip { margin: 6px 0 0 6px; min-height: 26px; padding: 4px 10px; }
-
-.delbtn {
-  flex: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 32px;
-  min-height: 32px;
-  margin-left: 4px;
-  padding: 0 6px;
-  border-radius: 8px;
-}
-.delbtn-t { font-size: 15px; color: var(--muted); }
-.delbtn.is-armed { background: var(--danger-bg); }
-.delbtn-t.is-armed { font-size: 12px; color: var(--danger); }
 .delbtn:active { background: var(--bg); }
 
 .note { padding-top: 10px; }

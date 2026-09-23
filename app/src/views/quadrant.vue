@@ -50,6 +50,7 @@ import { TODAY, QUAD, quadRows, domainName, saveState, openEdit, rollRepeat } fr
 import PageHead from '../components/PageHead.vue'
 import ViewSeg from '../components/ViewSeg.vue'
 import DoneBox from '../components/DoneBox.vue'
+import { toast } from '../lib/ui'
 
 const rows = computed(function () { return quadRows() })
 
@@ -86,7 +87,7 @@ function dueNote(r) {
 
 function edit(spec) {
   const r = openEdit(spec)
-  if (r && r.error) uni.showToast({ title: r.error, icon: 'none' })
+  if (r && r.error) toast(r.error)
 }
 
 /* 勾上就直接离开这一页 —— 它不再是「没做完的」，四个格子里都不该有它。
@@ -96,12 +97,11 @@ function toggleDone(it) {
   it.status = 'done'
   rollRepeat(it)
   saveState()
-  uni.showToast({ title: '完成了，已从这里移走', icon: 'none' })
+  toast('完成了，已从这里移走')
 }
 </script>
 
 <style scoped>
-.page { padding: 14px 14px calc(76px + env(safe-area-inset-bottom)); }
 
 .grid2 {
   display: grid;
