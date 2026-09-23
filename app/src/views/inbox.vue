@@ -45,6 +45,21 @@
           >
             <text class="chip-t">{{ o.t }}</text>
           </view>
+          <!-- 归成待办时落到哪天：默认今天，可改到任意一天，也可以不限
+               （不限 = 不带日期，只躺在领域页，不进今日页）。
+               随心记没有日期，这两颗对它不起作用。 -->
+          <picker
+            mode="date"
+            :value="clsDate === 'none' ? TODAY : (clsDate || TODAY)"
+            @change="pickDate"
+          >
+            <view class="chip chip-sm chip-date">
+              <text class="chip-t">落到 {{ dateLabel }}</text>
+            </view>
+          </picker>
+          <view class="chip chip-sm" @click="toggleNone">
+            <text class="chip-t" :class="{ 'is-none': clsDate === 'none' }">{{ clsDate === 'none' ? '选个日子' : '不限' }}</text>
+          </view>
         </view>
       </view>
       <view v-if="db.INBOX.length" class="note">
@@ -56,7 +71,7 @@
 
 <script setup>
 import { computed, ref } from 'vue'
-import { db, fmtCN, addInbox, classifyInbox, delArmed, saveState } from '../stores/db'
+import { db, fmtCN, TODAY, addInbox, classifyInbox, delArmed, saveState } from '../stores/db'
 import PageHead from '../components/PageHead.vue'
 import { toast, confirmDelete } from '../lib/ui'
 
@@ -65,13 +80,33 @@ const open = ref('')
 const armed = delArmed
 
 /* 去处：两个固定的 + 每个领域一格。领域改名、加领域都跟着这份走。
-   「先留着」不算去处，它只是把这一排收起来 —— 所以单独一颗，不混在里面。 */
+   「先留着」不算去处，它只是把这一排收起来 —— 所以单独一颗，不混在里面。
+   原来那格叫「今天待办」—— 日期放开成可选之后它就叫「待办」了，
+   落到哪天由下面那颗日期说了算（默认还是今天）。 */
 const places = computed(function () {
-  const out = [{ v: 'todo', t: '今天待办' }, { v: 'note', t: '随心记' }]
+  const out = [{ v: 'todo', t: '待办' }, { v: 'note', t: '随心记' }]
   for (const d of db.DOMAINS) out.push({ v: d.id, t: d.name })
   out.push({ v: '', t: '先留着' })
   return out
 })
+
+/* 归类落到哪天：'' = 今天（默认），具体日期 = 那一天，'none' = 不限。
+   面板每打开一次就回到今天 —— 上一次选的日子不该偷偷沿用，
+   「归到今天」永远是这一栏最常见的目的地。 */
+const clsDate = ref('')
+
+const dateLabel = computed(function () {
+  if (clsDate.value === 'none') return '不限'
+  if (!clsDate.value || clsDate.value === TODAY) return '今天'
+  return fmtCN(clsDate.value)
+})
+function pickDate(e) {
+  const v = e && e.detail ? e.detail.value : ''
+  clsDate.value = !v || v === TODAY ? '' : v
+}
+function toggleNone() {
+  clsDate.value = clsDate.value === 'none' ? '' : 'none'
+}
 
 function save() {
   const t = draft.value.trim()
@@ -83,12 +118,16 @@ function save() {
 }
 
 function toggle(id) {
-  open.value = open.value === id ? '' : id
+  if (open.value === id) { open.value = ''; return }
+  open.value = id
+  clsDate.value = ''
 }
 
 function classify(it, to) {
   if (!to) { open.value = ''; return }
-  const r = classifyInbox(it.id, to)
+  /* 'none' → null（明确不限）；'' → undefined（数据层的老行为：待办今天、领域不限） */
+  const d = clsDate.value === 'none' ? null : (clsDate.value || undefined)
+  const r = classifyInbox(it.id, to, d)
   open.value = ''
   if (r.error) { toast(r.error); return }
   saveState(true)
@@ -171,6 +210,10 @@ function del(it) {
 }
 .cls-k { font-size: 12px; color: var(--muted); }
 .clsbox .chip { margin: 6px 0 0 6px; min-height: 26px; padding: 4px 10px; }
+/* 日期那颗：底色跟别的 chip 区分开 —— 它不是「归到哪」，是「落到哪天」，
+   是归到待办时的一个修饰。虚线边框也是这个意思。 */
+.chip-date { background: var(--accent-bg); border: 1px dashed var(--accent); }
+.chip-t.is-none { color: var(--muted); }
 .delbtn:active { background: var(--bg); }
 
 .note { padding-top: 10px; }

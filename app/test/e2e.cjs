@@ -213,6 +213,46 @@ async function main() {
     check('那一行没有落成默认的「每天」', rowText.indexOf('· 每天') < 0 ? 'ok' : rowText, 'ok')
 
     console.log('')
+    console.log('=== 端到端：多次打卡与长按撤销（CDP 派发真实触摸）===')
+    /* 开触摸模拟：桌面 Edge 没有触摸输入，而 uni 的 longpress 只监听 touchstart。
+       这个用例同时检验两件事：±1 的计数，和**长按后紧跟的 click 有没有被拦住** ——
+       拦不住的话长按会变成 −1 +1 = 原地踏步，下面那条断言就会挂。 */
+    await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 })
+    const tickAt = async () => await cdp.eval(`(() => {
+      const r = Array.from(document.querySelectorAll('.trow')).find(x => x.innerText.indexOf('端到端测试习惯') >= 0);
+      if (!r) return null;
+      const t = r.querySelector('.tick');
+      if (!t) return null;
+      const b = t.getBoundingClientRect();
+      return { x: b.x + b.width / 2, y: b.y + b.height / 2, label: t.innerText.trim() };
+    })()`)
+    const tickLabel = async () => {
+      const t = await tickAt()
+      return t ? t.label : 'NOT_FOUND'
+    }
+    const touch = async (kind, x, y) => {
+      await cdp.send('Input.dispatchTouchEvent', {
+        type: kind,
+        touchPoints: kind === 'touchStart' ? [{ x, y }] : []
+      })
+    }
+    let tk = await tickAt()
+    check('多次型按钮显示本期进度 0/3', tk ? tk.label : 'NOT_FOUND', '0/3')
+
+    await touch('touchStart', tk.x, tk.y)
+    await touch('touchEnd')
+    await cdp.wait(300)
+    check('点一下 = 本期 +1（0/3 → 1/3）', await tickLabel(), '1/3')
+
+    tk = await tickAt()
+    await touch('touchStart', tk.x, tk.y)
+    await cdp.wait(500)          /* 按住超过 uni 的 350ms 阈值 */
+    await touch('touchEnd')
+    await cdp.wait(300)
+    check('长按 = 撤销一次（1/3 → 0/3，且 click 没有跟着 +1）', await tickLabel(), '0/3')
+    await cdp.shot('11-habit-tick', SHOTS)
+
+    console.log('')
     console.log('=== 逐页冒烟 + 截图（' + SHOTS + '）===')
     const clickTab = async (i) => { await cdp.eval(`(()=>{const e=document.querySelectorAll('.tabbar .navi')[${i}];if(e)e.click();return !!e})()`); await cdp.wait(350) }
     const shotCheck = async (file, want) => {

@@ -53,12 +53,13 @@ async function collect(M) {
     todayTree, habitTree, goalTree, quadRows,
     monthView, dayRows, dayMarks, weekView, moneyBrief,
     habitDaysInRange, streakText, habitRowExtra,
+      habitDoneOn, habitCountOn, habitCountInRange, bumpHabitLog, toggleHabitLog, replaceAll,
     reviewData, searchAll, localCounts,
     allCaptureOptions, commonCaptureOptions, catList, metricDefs, metricLine,
     trendRows, trendCandidates,
     ruleStats, ruleTargetOptions, pickRule, ruleTargetLabel,
     isoOfCnDate, cnDateOf, exportFileName, saveStateText, backupList,
-    clearAllData, commitAdd, addSub, rollRepeat, deleteNode,
+    clearAllData, commitAdd, addSub, rollRepeat, deleteNode, classifyInbox,
     openEdit, closeEdit, editFields, ED,
     money, fmtCN, fmtCNWide, weekdayCN, dayCount, shiftDays, startOfWeek, startOfMonth, endOfMonth, pad2: pad,
     monthMoney,
@@ -149,7 +150,10 @@ async function collect(M) {
   }
 
   const stripRowExtras = rows => {
-    for (const r of (rows || [])) { delete r.streak; delete r.doneToday }
+    for (const r of (rows || [])) {
+      delete r.streak; delete r.doneToday
+      delete r.todayCount; delete r.periodCount; delete r.target; delete r.unit
+    }
     return rows
   }
 
@@ -163,18 +167,25 @@ async function collect(M) {
   cap('habitTree', () => stripRowExtras(habitTree()))
   cap('goalTree', () => stripRowExtras(goalTree()))
 
-  /* 习惯行上那两个便捷字段：必须和单独算出来的一模一样 */
+  /* 习惯行上的便捷字段：必须和单独算出来的一模一样，且一个不少 ——
+     TreeList 的打卡按钮直接读它们，少一个按钮就退化成单次的样子。 */
   cap('habitTree.extrasMatch', () => habitTree().map(r => ({
     id: r.node.id,
     hasStreakKey: Object.prototype.hasOwnProperty.call(r, 'streak'),
     hasDoneKey: Object.prototype.hasOwnProperty.call(r, 'doneToday'),
+    hasTargetKey: Object.prototype.hasOwnProperty.call(r, 'target'),
+    hasPeriodKey: Object.prototype.hasOwnProperty.call(r, 'periodCount'),
+    hasTodayKey: Object.prototype.hasOwnProperty.call(r, 'todayCount'),
     streakEq: JSON.stringify(r.streak) === JSON.stringify(streakText(r.node.id)),
-    doneEq: r.doneToday === habitRowExtra(r.node).doneToday
+    doneEq: r.doneToday === habitRowExtra(r.node).doneToday,
+    targetEq: r.target === habitRowExtra(r.node).target,
+    periodEq: r.periodCount === habitRowExtra(r.node).periodCount
   })))
-  /* 计划行不该带这两个字段 */
+  /* 计划行不该带这些字段 */
   cap('goalTree.noExtras', () => goalTree().map(r => [
     Object.prototype.hasOwnProperty.call(r, 'streak'),
-    Object.prototype.hasOwnProperty.call(r, 'doneToday')
+    Object.prototype.hasOwnProperty.call(r, 'doneToday'),
+    Object.prototype.hasOwnProperty.call(r, 'target')
   ]))
 
   cap('quadRows', () => quadRows())
@@ -488,6 +499,99 @@ async function collect(M) {
       catWordsIsObject: !!(db.CAT_WORDS && typeof db.CAT_WORDS === 'object' && !Array.isArray(db.CAT_WORDS)),
       counts: localCounts()
     }
+  })
+
+  /* ============ 打卡的「多次」与撤销 ============
+     n 是可选字段：{key,date} = 1 次（老档案全部长这样），{key,date,n:3} = 3 次。
+     这一组钉住五件事：计数、±1 的边界、**索引失效**（改 n 时长度不变，
+     不显式作废就会拿到旧表）、老档案（无 n）读出来的次数、以及带 n 的档案
+     导出再导入后 n 还在。 */
+
+  cap('seq.habitBump', () => {
+    loadSeed()
+    const node = db.DOMAINS[0].habits[0]
+    const id = node.id
+    const todayEntries = () => db.HABIT_LOGS.filter(h => h.key === id && h.date === TODAY)
+    const r = {}
+    r.countBefore = habitCountOn(id, TODAY)
+    r.bumpFromZero = bumpHabitLog(id, 1)
+    r.countAfter1 = habitCountOn(id, TODAY)
+    r.entriesAfter1 = todayEntries().length
+    r.entryAfter1 = { ...todayEntries()[0] }          /* {key,date} —— 1 次不写 n。存摊平快照，不是活引用 */
+    bumpHabitLog(id, 1)
+    bumpHabitLog(id, 1)
+    r.countAfter3 = habitCountOn(id, TODAY)
+    r.entryAfter3 = { ...todayEntries()[0] }          /* {key,date,n:3} —— 同一天还是一条 */
+    r.rowExtra = habitRowExtra(node, TODAY)           /* todayCount / periodCount / target / unit */
+    r.undo1 = bumpHabitLog(id, -1)
+    r.countAfterUndo = habitCountOn(id, TODAY)
+    bumpHabitLog(id, -1)
+    r.undoToZero = bumpHabitLog(id, -1)               /* 再撤销一次：n 摘掉，条目回到 1 次 */
+    r.countAfterZero = habitCountOn(id, TODAY)
+    r.entriesAfterZero = todayEntries().length
+    r.doneOnAfterZero = habitDoneOn(id, TODAY)        /* set 和 count 不分家 */
+    r.undoWhenEmpty = bumpHabitLog(id, -1)            /* 本来就没打：无事发生 */
+    return r
+  })
+
+  cap('seq.habitBump.legacy', () => {
+    loadSeed()
+    const id = db.DOMAINS[0].habits[0].id
+    const entry = () => db.HABIT_LOGS.filter(h => h.key === id && h.date === '2026-01-05')[0]
+    db.HABIT_LOGS.push({ key: id, date: '2026-01-05' })        /* 老档案的样子：没有 n */
+    const r = {}
+    r.legacyCount = habitCountOn(id, '2026-01-05')             /* 1 */
+    r.bump = bumpHabitLog(id, 1, '2026-01-05')                 /* → 2，带上 n */
+    /* 存**摊平后的快照**，不是活引用 —— 下面 undo 会 `delete h.n`，而 cap 的
+       stable 化在 fn 返回之后才跑，活引用会被那一步「追溯」改掉
+       （这个捕获点的第一版就栽在这里：bump 之后明明有 n，存出来却没有）。 */
+    r.entryAfterBump = { ...entry() }                          /* {key,date,n:2} */
+    r.undo = bumpHabitLog(id, -1, '2026-01-05')                /* → 1 */
+    r.entryAfterUndo = { ...entry() }                          /* n 被摘掉，回到老档案的样子 */
+    r.toggleOn = toggleHabitLog(id, '2026-01-06')              /* 全有或全无那个还在 */
+    r.toggleCount = habitCountOn(id, '2026-01-06')
+    r.toggleOff = toggleHabitLog(id, '2026-01-06')
+    r.toggleCountAfter = habitCountOn(id, '2026-01-06')
+    return r
+  })
+
+  cap('seq.habitBump.roundTrip', () => {
+    loadSeed()
+    const node = db.DOMAINS[0].habits[0]
+    const id = node.id
+    bumpHabitLog(id, 1)
+    bumpHabitLog(id, 1)                                /* 今天 2 次（带 n:2） */
+    const before = habitCountOn(id, TODAY)
+    const snap = snapshot()
+    clearAllData()
+    replaceAll(JSON.parse(snap))                       /* 整体替换回来 */
+    return {
+      before,
+      after: habitCountOn(id, TODAY),                  /* n 在序列化往返后还在 */
+      entry: { ...db.HABIT_LOGS.filter(h => h.key === id && h.date === TODAY)[0] },
+      rowTarget: habitRowExtra(node, TODAY).target
+    }
+  })
+
+  /* ============ 收件箱归类的日期 ============
+     classifyInbox 的第三个参数是尾部可选：不传 = 老行为（待办落今天、领域不限），
+     传日期 = 落到那天，传 null = 明确不限。随心记忽略日期。 */
+  cap('seq.classifyDate', () => {
+    loadSeed()
+    db.INBOX.push({ id: 'inX1', text: '归类·默认' })
+    db.INBOX.push({ id: 'inX2', text: '归类·指定日子' })
+    db.INBOX.push({ id: 'inX3', text: '归类·领域不限' })
+    db.INBOX.push({ id: 'inX4', text: '归类·领域带日子' })
+    const r = {}
+    r.defaultTodo = classifyInbox('inX1', 'todo')
+    r.datedTodo = classifyInbox('inX2', 'todo', '2026-10-08')
+    r.noneDomain = classifyInbox('inX3', db.DOMAINS[0].id, null)
+    r.datedDomain = classifyInbox('inX4', db.DOMAINS[1].id, '2026-10-01')
+    const byTitle = t => db.ITEMS.filter(x => x.title === t)[0]
+    r.items = ['归类·默认', '归类·指定日子', '归类·领域不限', '归类·领域带日子']
+      .map(t => { const x = byTitle(t); return x ? { due: x.due, dom: x.dom } : null })
+    r.inboxLeft = db.INBOX.length
+    return r
   })
 
   return out

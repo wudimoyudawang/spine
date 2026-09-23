@@ -567,6 +567,7 @@ export function pickToday(items, today) {
  * （loadSeed / restore / clearAllData）长度可能碰巧相同，所以那几处显式
  * dropHabitIndex()，不能只靠长度判断 —— 否则会拿旧表算。 */
 const EMPTY_DATES = []
+const EMPTY_COUNT = {}
 let HABIT_IDX = null, HABIT_IDX_LEN = -1
 function dropHabitIndex() { HABIT_IDX = null; HABIT_IDX_LEN = -1 }
 function habitIndex() {
@@ -578,11 +579,16 @@ function habitIndex() {
     /* 空日期（''）也照收，不跳过 —— 旧实现就是把它当成一个「天」算进累计的。
        这里不是「顺手修个脏数据」的地方：改了会让老档案的「累计 N 天」当场变小，
        而用户没有任何办法知道为什么。行为一致性优先。 */
-    const s = acc[h.key] || (acc[h.key] = new Set())
-    s.add(h.date)
+    const e = acc[h.key] || (acc[h.key] = { set: new Set(), count: {} })
+    e.set.add(h.date)
+    /* 一条记录是「这一天完成了几次」：{key,date} 是 1 次（老档案都没有 n 字段），
+       {key,date,n:3} 是 3 次。**同一天永远只有一条**，再打卡是改 n 不是加条目 ——
+       「一条 = 一天」这个约定不能破，不然全项目好几处「遍历打卡记录、一条算一天」
+       的统计会悄悄变成按次数算，而且没人会发现。 */
+    e.count[h.date] = (e.count[h.date] || 0) + (Number(h.n) || 1)
   }
   const out = {}
-  for (const k in acc) out[k] = { dates: Array.from(acc[k]).sort(), set: acc[k] }
+  for (const k in acc) out[k] = { dates: Array.from(acc[k].set).sort(), set: acc[k].set, count: acc[k].count }
   HABIT_IDX = out
   HABIT_IDX_LEN = L.length
   return out
@@ -593,6 +599,20 @@ function datesOf(id) { const e = habitIndex()[id]; return e ? e.dates : EMPTY_DA
 export function habitDoneOn(id, date) {
   const e = habitIndex()[id]
   return !!(e && e.set.has(date))
+}
+/* 某一天打了几次。0 = 这天没打过。老档案没有 n 字段，一条就是 1 次。 */
+export function habitCountOn(id, date) {
+  const e = habitIndex()[id]
+  return (e && e.count[date]) || 0
+}
+/* 区间里累计打了多少**次** —— 注意不是天数，一天可以打好几次。
+   本期进度（「本周 2/4」）用的就是它。 */
+export function habitCountInRange(id, from, to) {
+  const e = habitIndex()[id]
+  if (!e) return 0
+  let n = 0
+  for (const d in e.count) { if (d >= from && d <= to) n += e.count[d] }
+  return n
 }
 /* 某一个区间里打过几天卡。复盘那张表要的就是这个数 ——
    它和「累计」不是一回事：累计是全时段，这个只看这一期。 */
@@ -691,14 +711,65 @@ function streakLine(node, id, today) {
 export function streakText(id, today) { return streakLine(null, id, today) }
 export function streakTextOf(node, today) { return node ? streakLine(node, node.id, today) : null }
 
-/* 习惯行上那两个随行字段：连续/累计那句、今天打没打卡。
+/* 习惯行上那几个随行字段：连续/累计那句、今天打没打卡、
+ * 以及多次打卡的进度（今天几次 / 本期几次 / 本期目标是几次）。
  * **一处定义** —— 今日页（crossTree）和领域页（domain.vue）都从这里取。
- * 两处各拼一遍的话，哪天改了一处，另一页就会不一致。 */
+ * 两处各拼一遍的话，哪天改了一处，另一页就会不一致。
+ *
+ * target 永远 ≥ 1：m 解析不出来（写坏了）就按「每天 1 次」算，
+ * 那种行的按钮还是老样子，不会因为一句写坏的频率把按钮显示弄没。 */
 export function habitRowExtra(node, today) {
   const t = today || TODAY
-  return { streak: streakTextOf(node, t), doneToday: habitDoneOn(node.id, t) }
+  const id = node ? node.id : ''
+  const pf = node ? parseFreq(node.m) : null
+  const unit = habitUnit(node ? node.m : '')
+  const target = pf ? pf.n : 1
+  /* 本期起点：天 = 今天；周 = 周一（和全应用的周口径一致）；月 = 本月 1 日。 */
+  const from = unit === 'week' ? startOfWeek(t) : unit === 'month' ? startOfMonth(t) : t
+  return {
+    streak: streakTextOf(node, t),
+    doneToday: habitDoneOn(id, t),
+    todayCount: habitCountOn(id, t),
+    periodCount: habitCountInRange(id, from, t),
+    target: target,
+    unit: unit
+  }
 }
 
+/* 打卡 +1 / 撤销一次 −1。返回这次操作之后**当天**的次数（0 = 已经没有记录）。
+ *
+ * 「多次」存在可选的 n 字段上：{key,date} 就是 1 次，{key,date,n:3} 是 3 次 ——
+ * 老档案没有 n，读出来还是 1 次，导出格式（fmt:2）一个字没变；
+ * 只有 >1 次的条目才带 n，所以老档案导出去也是原样。
+ *
+ * 减到 0 就把这条删掉：不存在「打了 0 次」的记录 —— 留着它，
+ * 「打过没有」（set）和「打了几次」（count）两套口径就会分家。
+ *
+ * **必须显式作废索引**：habitIndex 的失效判断是「长度变了就重建」，
+ * 而改 n 恰恰长度不变 —— 不作废的话，下一次读到的还是旧表。 */
+export function bumpHabitLog(id, delta, date) {
+  const d = date || TODAY
+  const step = delta < 0 ? -1 : 1
+  for (let i = 0; i < db.HABIT_LOGS.length; i++) {
+    const h = db.HABIT_LOGS[i]
+    if (h.key !== id || h.date !== d) continue
+    const n = (Number(h.n) || 1) + step
+    if (n <= 0) db.HABIT_LOGS.splice(i, 1)
+    else if (n === 1) delete h.n     /* 回到 1 次就把 n 摘掉 —— 条目回到老档案的样子，
+                                        撤销完再导出，文件跟从没多次打过一样 */
+    else h.n = n
+    dropHabitIndex()
+    return n > 0 ? n : 0
+  }
+  if (step < 0) return 0        /* 本来就没打过，撤销无事发生 */
+  db.HABIT_LOGS.push({ key: id, date: d })    /* 1 次不写 n，跟老格式一致 */
+  dropHabitIndex()
+  return 1
+}
+
+/* 全有或全无的打卡：没打过就记 1 次，打过就整条删掉（不管 n 是几）。
+ * 页面已改用 bumpHabitLog（那才能「撤销一次」而不是「撤销这一天」）；
+ * 这个保留是因为它是导出接口、等价性对拍还覆盖着。 */
 export function toggleHabitLog(id, date) {
   const d = date || TODAY
   for (let i = 0; i < db.HABIT_LOGS.length; i++) {
@@ -958,17 +1029,26 @@ export function addRecord(rtId, value) {
    收件箱只管先记下来，不留存。
    「今天的待办」钉在今天；给某个领域的**不带日期**（原型那句 m:'没有日期'）——
    扔进领域清单等着排期，比硬塞一个今天诚实。 */
-export function classifyInbox(id, to) {
+/* 收件箱归类。date 是**待办**去处的到期日（尾部可选参数，老调用方行为不变）：
+ *   不传（undefined）→ 维持老行为：待办落今天、领域落不限；
+ *   传具体日期       → 待办/领域都落到那天；
+ *   传 null          → 明确不限日期。
+ * 随心记没有日期可言，传了也忽略。 */
+export function classifyInbox(id, to, date) {
   const it = db.INBOX.filter(function (x) { return x.id === id })[0]
   if (!it) return { error: '这条已经不在了' }
+  const due = date === undefined ? undefined : (date || null)
   let where = ''
-  if (to === 'todo') { addTodo(it.text, '', TODAY); where = '今天 · 待办' }
-  else if (to === 'note') { addNote(it.text); where = '随心记' }
+  if (to === 'todo') {
+    const d = due === undefined ? TODAY : due
+    addTodo(it.text, '', d)
+    where = !d ? '待办 · 不限日期' : (d === TODAY ? '今天 · 待办' : fmtCN(d) + ' · 待办')
+  } else if (to === 'note') { addNote(it.text); where = '随心记' }
   else {
     const d = domainById(to)
     if (!d) return { error: '这个领域已经不在了' }
-    addTodo(it.text, d.id, null)
-    where = d.name + ' · 待办'
+    addTodo(it.text, d.id, due === undefined ? null : due)
+    where = d.name + ' · 待办' + (due ? ' · ' + fmtCN(due) : '')
   }
   const text = it.text
   db.INBOX.splice(db.INBOX.indexOf(it), 1)
@@ -1755,11 +1835,12 @@ function crossTree(k) {
         node: r.node, depth: r.depth, kids: r.kids, closed: r.closed, path: r.path,
         dom: d, list: list, spec: specOf(k, r.node.id)
       }
-      if (k === 'habit') {
-        const ex = habitRowExtra(r.node, TODAY)
-        row.streak = ex.streak
-        row.doneToday = ex.doneToday
-      }
+        if (k === 'habit') {
+          /* 把 habitRowExtra 的**全部**字段挂上行（streak/doneToday/target/periodCount/…）。
+             用 Object.assign 而不是逐个挑 —— 逐个挑的话，下次给行加字段这里就会漏：
+             多次打卡的进度第一版就是这么漏的，按钮永远显示单次的样子。 */
+          Object.assign(row, habitRowExtra(r.node, TODAY))
+        }
       out.push(row)
     }
   }

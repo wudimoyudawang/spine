@@ -220,13 +220,10 @@ function rows(list, kind) {
   if (!d.value) return []
   return flattenTree(list, null, 0).map(function (r) {
     const row = { node: r.node, depth: r.depth, kids: r.kids, closed: r.closed, path: r.path, spec: specOf(kind, r.node.id) }
-    /* 习惯行带上「连续/累计」和「今天打没打」两个字段 —— 和今日页同一处算法
-       （见 db.js 的 habitRowExtra），模板里就不用重复调函数了。 */
-    if (kind === 'habit') {
-      const ex = habitRowExtra(r.node, TODAY)
-      row.streak = ex.streak
-      row.doneToday = ex.doneToday
-    }
+    /* 习惯行带上 habitRowExtra 的全部字段（连续/累计、今天打没打、多次进度）——
+       和今日页同一处算法（见 db.js 的 habitRowExtra 与 crossTree），
+       模板里就不用重复调函数了。整包挂上，别逐个挑 —— 理由见 crossTree。 */
+    if (kind === 'habit') Object.assign(row, habitRowExtra(r.node, TODAY))
     return row
   })
 }

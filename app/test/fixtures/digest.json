@@ -4593,123 +4593,189 @@
   {
    "doneEq": true,
    "hasDoneKey": true,
+   "hasPeriodKey": true,
    "hasStreakKey": true,
+   "hasTargetKey": true,
+   "hasTodayKey": true,
    "id": "h-fit-1",
-   "streakEq": true
+   "periodEq": true,
+   "streakEq": true,
+   "targetEq": true
   },
   {
    "doneEq": true,
    "hasDoneKey": true,
+   "hasPeriodKey": true,
    "hasStreakKey": true,
+   "hasTargetKey": true,
+   "hasTodayKey": true,
    "id": "hDup1",
-   "streakEq": true
+   "periodEq": true,
+   "streakEq": true,
+   "targetEq": true
   },
   {
    "doneEq": true,
    "hasDoneKey": true,
+   "hasPeriodKey": true,
    "hasStreakKey": true,
+   "hasTargetKey": true,
+   "hasTodayKey": true,
    "id": "hDeep",
-   "streakEq": true
+   "periodEq": true,
+   "streakEq": true,
+   "targetEq": true
   },
   {
    "doneEq": true,
    "hasDoneKey": true,
+   "hasPeriodKey": true,
    "hasStreakKey": true,
+   "hasTargetKey": true,
+   "hasTodayKey": true,
    "id": "hDeep2",
-   "streakEq": true
+   "periodEq": true,
+   "streakEq": true,
+   "targetEq": true
   },
   {
    "doneEq": true,
    "hasDoneKey": true,
+   "hasPeriodKey": true,
    "hasStreakKey": true,
+   "hasTargetKey": true,
+   "hasTodayKey": true,
    "id": "hDeep3",
-   "streakEq": true
+   "periodEq": true,
+   "streakEq": true,
+   "targetEq": true
   },
   {
    "doneEq": true,
    "hasDoneKey": true,
+   "hasPeriodKey": true,
    "hasStreakKey": true,
+   "hasTargetKey": true,
+   "hasTodayKey": true,
    "id": "h-study-1",
-   "streakEq": true
+   "periodEq": true,
+   "streakEq": true,
+   "targetEq": true
   },
   {
    "doneEq": true,
    "hasDoneKey": true,
+   "hasPeriodKey": true,
    "hasStreakKey": true,
+   "hasTargetKey": true,
+   "hasTodayKey": true,
    "id": "hDup2",
-   "streakEq": true
+   "periodEq": true,
+   "streakEq": true,
+   "targetEq": true
   },
   {
    "doneEq": true,
    "hasDoneKey": true,
+   "hasPeriodKey": true,
    "hasStreakKey": true,
+   "hasTargetKey": true,
+   "hasTodayKey": true,
    "id": "h-work-1",
-   "streakEq": true
+   "periodEq": true,
+   "streakEq": true,
+   "targetEq": true
   },
   {
    "doneEq": true,
    "hasDoneKey": true,
+   "hasPeriodKey": true,
    "hasStreakKey": true,
+   "hasTargetKey": true,
+   "hasTodayKey": true,
    "id": "h-life-1",
-   "streakEq": true
+   "periodEq": true,
+   "streakEq": true,
+   "targetEq": true
   },
   {
    "doneEq": true,
    "hasDoneKey": true,
+   "hasPeriodKey": true,
    "hasStreakKey": true,
+   "hasTargetKey": true,
+   "hasTodayKey": true,
    "id": "h-life-2",
-   "streakEq": true
+   "periodEq": true,
+   "streakEq": true,
+   "targetEq": true
   },
   {
    "doneEq": true,
    "hasDoneKey": true,
+   "hasPeriodKey": true,
    "hasStreakKey": true,
+   "hasTargetKey": true,
+   "hasTodayKey": true,
    "id": "h-life-3",
-   "streakEq": true
+   "periodEq": true,
+   "streakEq": true,
+   "targetEq": true
   }
  ],
  "goalTree.noExtras": [
   [
    false,
-   false
-  ],
-  [
    false,
    false
   ],
   [
    false,
-   false
-  ],
-  [
    false,
    false
   ],
   [
    false,
-   false
-  ],
-  [
    false,
    false
   ],
   [
    false,
-   false
-  ],
-  [
    false,
    false
   ],
   [
    false,
-   false
-  ],
-  [
    false,
    false
   ],
   [
+   false,
+   false,
+   false
+  ],
+  [
+   false,
+   false,
+   false
+  ],
+  [
+   false,
+   false,
+   false
+  ],
+  [
+   false,
+   false,
+   false
+  ],
+  [
+   false,
+   false,
+   false
+  ],
+  [
+   false,
    false,
    false
   ]
@@ -10855,10 +10921,14 @@
  ],
  "habitRowExtra:h-fit-1": {
   "doneToday": false,
+  "periodCount": 0,
   "streak": {
    "on": false,
    "s": "连续 0 周 · 累计 7 周"
-  }
+  },
+  "target": 4,
+  "todayCount": 0,
+  "unit": "week"
  },
  "habitDaysInRange:hDup1": 26,
  "streakText:hDup1": [
@@ -10873,10 +10943,14 @@
  ],
  "habitRowExtra:hDup1": {
   "doneToday": false,
+  "periodCount": 0,
   "streak": {
    "on": false,
    "s": "连续 0 周 · 累计 6 周"
-  }
+  },
+  "target": 3,
+  "todayCount": 0,
+  "unit": "week"
  },
  "habitDaysInRange:hDeep": 0,
  "streakText:hDeep": [
@@ -10885,7 +10959,11 @@
  ],
  "habitRowExtra:hDeep": {
   "doneToday": false,
-  "streak": null
+  "periodCount": 0,
+  "streak": null,
+  "target": 1,
+  "todayCount": 0,
+  "unit": "day"
  },
  "habitDaysInRange:hDeep2": 26,
  "streakText:hDeep2": [
@@ -10900,10 +10978,14 @@
  ],
  "habitRowExtra:hDeep2": {
   "doneToday": false,
+  "periodCount": 0,
   "streak": {
    "on": false,
    "s": "连续 0 天 · 累计 34 天"
-  }
+  },
+  "target": 1,
+  "todayCount": 0,
+  "unit": "day"
  },
  "habitDaysInRange:hDeep3": 26,
  "streakText:hDeep3": [
@@ -10918,10 +11000,14 @@
  ],
  "habitRowExtra:hDeep3": {
   "doneToday": false,
+  "periodCount": 0,
   "streak": {
    "on": false,
    "s": "连续 0 天 · 累计 34 天"
-  }
+  },
+  "target": 1,
+  "todayCount": 0,
+  "unit": "day"
  },
  "habitDaysInRange:h-study-1": 0,
  "streakText:h-study-1": [
@@ -10930,7 +11016,11 @@
  ],
  "habitRowExtra:h-study-1": {
   "doneToday": false,
-  "streak": null
+  "periodCount": 0,
+  "streak": null,
+  "target": 1,
+  "todayCount": 0,
+  "unit": "day"
  },
  "habitDaysInRange:hDup2": 25,
  "streakText:hDup2": [
@@ -10945,10 +11035,14 @@
  ],
  "habitRowExtra:hDup2": {
   "doneToday": false,
+  "periodCount": 0,
   "streak": {
    "on": false,
    "s": "连续 0 个月 · 累计 2 个月"
-  }
+  },
+  "target": 2,
+  "todayCount": 0,
+  "unit": "month"
  },
  "habitDaysInRange:h-work-1": 26,
  "streakText:h-work-1": [
@@ -10963,10 +11057,14 @@
  ],
  "habitRowExtra:h-work-1": {
   "doneToday": false,
+  "periodCount": 0,
   "streak": {
    "on": false,
    "s": "连续 0 天 · 累计 35 天"
-  }
+  },
+  "target": 1,
+  "todayCount": 0,
+  "unit": "day"
  },
  "habitDaysInRange:h-life-1": 0,
  "streakText:h-life-1": [
@@ -10975,7 +11073,11 @@
  ],
  "habitRowExtra:h-life-1": {
   "doneToday": false,
-  "streak": null
+  "periodCount": 0,
+  "streak": null,
+  "target": 1,
+  "todayCount": 0,
+  "unit": "day"
  },
  "habitDaysInRange:h-life-2": 26,
  "streakText:h-life-2": [
@@ -10990,10 +11092,14 @@
  ],
  "habitRowExtra:h-life-2": {
   "doneToday": false,
+  "periodCount": 0,
   "streak": {
    "on": false,
    "s": "连续 0 天 · 累计 34 天"
-  }
+  },
+  "target": 1,
+  "todayCount": 0,
+  "unit": "day"
  },
  "habitDaysInRange:h-life-3": 26,
  "streakText:h-life-3": [
@@ -11008,10 +11114,14 @@
  ],
  "habitRowExtra:h-life-3": {
   "doneToday": false,
+  "periodCount": 0,
   "streak": {
    "on": false,
    "s": "连续 0 天 · 累计 34 天"
-  }
+  },
+  "target": 1,
+  "todayCount": 0,
+  "unit": "day"
  },
  "streakText.ghost": {
   "on": false,
@@ -11019,10 +11129,14 @@
  },
  "habitRowExtra.ghost": {
   "doneToday": false,
+  "periodCount": 0,
   "streak": {
    "on": false,
    "s": "连续 0 天 · 累计 1 天"
-  }
+  },
+  "target": 1,
+  "todayCount": 0,
+  "unit": "day"
  },
  "reviewData": {
   "captures": 3,
@@ -13022,5 +13136,105 @@
   "err": "",
   "itemsIsArray": true,
   "logsIsArray": true
+ },
+ "seq.habitBump": {
+  "bumpFromZero": 2,
+  "countAfter1": 2,
+  "countAfter3": 4,
+  "countAfterUndo": 3,
+  "countAfterZero": 1,
+  "countBefore": 1,
+  "doneOnAfterZero": true,
+  "entriesAfter1": 1,
+  "entriesAfterZero": 1,
+  "entryAfter1": {
+   "date": "2026-09-23",
+   "key": "h-fit-1",
+   "n": 2
+  },
+  "entryAfter3": {
+   "date": "2026-09-23",
+   "key": "h-fit-1",
+   "n": 4
+  },
+  "rowExtra": {
+   "doneToday": true,
+   "periodCount": 6,
+   "streak": {
+    "on": true,
+    "s": "连续 2 周 · 累计 2 周"
+   },
+   "target": 4,
+   "todayCount": 4,
+   "unit": "week"
+  },
+  "undo1": 3,
+  "undoToZero": 1,
+  "undoWhenEmpty": 0
+ },
+ "seq.habitBump.legacy": {
+  "bump": 2,
+  "entryAfterBump": {
+   "date": "2026-01-05",
+   "key": "h-fit-1",
+   "n": 2
+  },
+  "entryAfterUndo": {
+   "date": "2026-01-05",
+   "key": "h-fit-1"
+  },
+  "legacyCount": 1,
+  "toggleCount": 1,
+  "toggleCountAfter": 0,
+  "toggleOff": false,
+  "toggleOn": true,
+  "undo": 1
+ },
+ "seq.habitBump.roundTrip": {
+  "after": 3,
+  "before": 3,
+  "entry": {
+   "date": "2026-09-23",
+   "key": "h-fit-1",
+   "n": 3
+  },
+  "rowTarget": 4
+ },
+ "seq.classifyDate": {
+  "datedDomain": {
+   "text": "归类·领域带日子",
+   "where": "学习 · 待办 · 10月1日 周四"
+  },
+  "datedTodo": {
+   "text": "归类·指定日子",
+   "where": "10月8日 周四 · 待办"
+  },
+  "defaultTodo": {
+   "text": "归类·默认",
+   "where": "今天 · 待办"
+  },
+  "inboxLeft": 3,
+  "items": [
+   {
+    "dom": null,
+    "due": "2026-09-23"
+   },
+   {
+    "dom": null,
+    "due": "2026-10-08"
+   },
+   {
+    "dom": "fitness",
+    "due": null
+   },
+   {
+    "dom": "study",
+    "due": "2026-10-01"
+   }
+  ],
+  "noneDomain": {
+   "text": "归类·领域不限",
+   "where": "健身 · 待办"
+  }
  }
 }
