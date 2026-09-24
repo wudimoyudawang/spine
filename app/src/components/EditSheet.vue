@@ -53,6 +53,20 @@
           </view>
         </view>
 
+        <!-- 提醒时间。空 = 不提醒。**不用 <input type="time">**：各端渲染差得多，
+             App 上那个框会小到点不准，和上面日期那条一个理由 —— 走 uni 的 picker
+             弹系统的时间轮盘。 -->
+        <view v-else-if="f.type === 'time'" class="daterow">
+          <picker mode="time" :value="ED.draft[f.k] || '09:00'" @change="onDate(f.k, $event)">
+            <view class="datebtn">
+              <text class="datebtn-t">{{ ED.draft[f.k] || '不提醒' }}</text>
+            </view>
+          </picker>
+          <view v-if="ED.draft[f.k]" class="dateclear" @click="ED.draft[f.k] = ''">
+            <text class="dateclear-t">不提醒</text>
+          </view>
+        </view>
+
         <!-- 四象限：选择器**自己长成一个 2×2**，两个轴各占一边。
              一排平铺四个选项的话，得先读字才知道哪个挨着哪个；
              摆成矩阵就不用读 —— 形状本身就是说明。 -->

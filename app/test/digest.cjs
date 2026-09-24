@@ -54,6 +54,8 @@ async function collect(M) {
     monthView, dayRows, dayMarks, weekView, moneyBrief,
     habitDaysInRange, streakText, habitRowExtra,
       habitDoneOn, habitCountOn, habitCountInRange, bumpHabitLog, toggleHabitLog, replaceAll,
+      recentPhrases, addNote, addTodo,
+    remindTimeOf, setHabitRemind, remindPlan, remindStats, remindAtOf, remindIdOf,
     reviewData, searchAll, localCounts,
     allCaptureOptions, commonCaptureOptions, catList, metricDefs, metricLine,
     trendRows, trendCandidates,
@@ -592,6 +594,125 @@ async function collect(M) {
       .map(t => { const x = byTitle(t); return x ? { due: x.due, dom: x.dom } : null })
     r.inboxLeft = db.INBOX.length
     return r
+  })
+
+  /* ============ 打卡完成色（设置项） ============
+     TICK_DONE 在 UI_KEYS 里：跟着设备走（loadState 会恢复）、replaceAll 不碰它、
+     clearAllData 不清它。非法/空值回默认（空串）。 */
+  cap('seq.tickColor', () => {
+    loadSeed()
+    const r = {}
+    r.default = db.TICK_DONE                    /* '' */
+    r.set = M.setTickDone('#2F6FEB').hex
+    r.afterSet = db.TICK_DONE
+    r.inSnapshot = JSON.parse(M.snapshot()).s.TICK_DONE
+    r.badValue = M.setTickDone('不是颜色').hex    /* 回默认 */
+    r.afterBad = db.TICK_DONE
+    M.setTickDone('#7C5CC4')
+    const snap = M.snapshot()
+    M.clearAllData()
+    r.afterClear = db.TICK_DONE                 /* 清数据不清外观偏好 */
+    M.replaceAll(JSON.parse(snap))
+    r.afterReplace = db.TICK_DONE               /* replaceAll 不碰 UI_KEYS */
+    return r
+  })
+
+  /* ============ 习惯提醒 ============
+     rm 是习惯对象上的**可选字段**（'HH:MM'，缺失 = 不提醒）。
+     这一组钉住：设/清/非法值、老档案（无 rm）读出来不提醒、
+     remindPlan 的跳过规则（过去时刻、天口径已打卡、周月口径不跳）、
+     以及通知 id 的稳定性（同一天同一习惯永远同一个 id）。 */
+  cap('remindTimeOf', () => [
+    remindTimeOf({ rm: '08:30' }), remindTimeOf({ rm: '8:30' }),
+    remindTimeOf({ rm: '24:00' }), remindTimeOf({ rm: '08:60' }),
+    remindTimeOf({ rm: '' }), remindTimeOf({}), remindTimeOf(null)
+  ])
+  cap('remindAtOf', () => [remindAtOf('2026-09-23', '08:30'), remindAtOf('2026-09-23', '23:59')])
+  cap('remindIdOf.stable', () => [remindIdOf('2026-09-23', '08:30', 'h-fit-1'), remindIdOf('2026-09-23', '08:30', 'h-fit-1')])
+
+  cap('seq.habitRemind.setClear', () => {
+    loadSeed()
+    const h = db.DOMAINS[0].habits[0]              /* h-fit-1，每周 4 次 */
+    const r = {}
+    r.defaultNone = remindTimeOf(h)                /* 老档案没 rm = 不提醒 */
+    r.set = setHabitRemind(h.id, '08:30')
+    r.afterSet = { rm: h.rm, valid: remindTimeOf(h) }
+    r.bad = setHabitRemind(h.id, '25:00')
+    r.afterBad = h.rm                              /* 非法不落库，原值还在 */
+    r.clear = setHabitRemind(h.id, '')
+    r.afterClear = { rm: h.rm, valid: remindTimeOf(h) }   /* 清 = 字段被摘掉 */
+    r.missing = setHabitRemind('h-nope', '08:30')
+    return r
+  })
+
+  cap('seq.habitRemind.plan', () => {
+    loadSeed()
+    /* 冻在 2026-09-23 10:30（见 frozen-clock） */
+    const now = Date.now()
+    setHabitRemind('h-study-1', '08:30')           /* 每天：今天已打卡 → 今天那颗跳过 */
+    setHabitRemind('h-fit-1', '21:00')             /* 每周 4 次：不按天跳过 */
+    bumpHabitLog('h-study-1', 1)                   /* 给「每天」的打今天的卡 */
+    const plan = remindPlan(2, now)                /* 只看今明两天 */
+    return {
+      now: now,
+      list: plan.map(o => ({ key: o.key, date: o.date, time: o.time, id: o.id })),
+      /* h-study-1 今天已打卡 → 今天 08:30 那颗（已过时刻，本来也不排），明天那颗在 */
+      dailyTomorrow: plan.filter(o => o.key === 'h-study-1').map(o => o.date),
+      /* h-fit-1 周口径：今天 21:00 那颗照排（它今天没打，且 21:00 > 10:30） */
+      weeklyToday: plan.filter(o => o.key === 'h-fit-1' && o.date === '2026-09-23').length
+    }
+  })
+
+  cap('seq.habitRemind.planPast', () => {
+    loadSeed()
+    const now = Date.now()
+    setHabitRemind('h-study-1', '01:00')           /* 凌晨：今天的已过，不排 */
+    return remindPlan(1, now).map(o => ({ key: o.key, date: o.date, time: o.time }))
+  })
+
+  cap('seq.habitRemind.stats', () => {
+    loadSeed()
+    const r = {}
+    r.before = remindStats().on
+    setHabitRemind('h-fit-1', '08:00')
+    setHabitRemind('h-study-1', '21:00')
+    r.after = remindStats().on
+    return r
+  })
+
+  /* ============ 常用短语 ============
+     从已记内容里挖：待办标题 / 随心记 / 收件箱 / text 型记录。
+     前缀匹配重排、太长的（>40 字）不收、单字不收、纯数字型记录不收。 */
+  cap('recentPhrases.empty', () => recentPhrases('', 10))
+  cap('recentPhrases.nomatch', () => recentPhrases('不存在的词xyz', 10))
+  cap('seq.recentPhrases.match', () => {
+    loadSeed()
+    addNote('喝水 500ml')
+    addNote('喝蛋白粉一杯')
+    addTodo('喝咖啡提神', 'work', null)
+    const got = recentPhrases('喝', 10)
+    return {
+      /* 带「喝」的短语该顶到最前（前缀匹配重排） */
+      top3: got.slice(0, 3),
+      top3AllMatch: got.slice(0, 3).every(p => p.indexOf('喝') >= 0)
+    }
+  })
+  cap('seq.recentPhrases.afterAdd', () => {
+    loadSeed()
+    const before = recentPhrases('喝', 5)
+    addNote('喝蛋白粉一杯')            /* 新记一条，应该挤进候选 */
+    const after = recentPhrases('喝', 5)
+    return { before: before.slice(0, 3), after: after.slice(0, 3) }
+  })
+
+  /* 老档案缺 rm：remindPlan 一行都不排、remindStats 是 0。
+     这个用例会 importSnapshot 一份残缺档案（把共享状态清空），所以放**最后**，
+     不能插在 recentPhrases 那组只读捕获前面 —— 否则会污染它们读到的种子数据。 */
+  cap('seq.habitRemind.legacyArchive', () => {
+    loadSeed()
+    const archive = { app: 'spine', fmt: 2, at: 0, v: { ITEMS: [], LOGS: [] }, s: {} }
+    M.importSnapshot(JSON.stringify(archive))
+    return { plan: remindPlan(7, Date.now()).length, stats: remindStats().on }
   })
 
   return out

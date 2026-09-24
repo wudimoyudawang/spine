@@ -52,6 +52,18 @@
           confirm-type="done"
           @confirm="submit"
         />
+        <!-- 常用短语：记过的东西，点一下填进来。只在有候选时出现，
+             打一个字就会按「带这些字的」重排，空输入时给最近最常记的。 -->
+        <view v-if="phrases.length" class="phrases">
+          <view
+            v-for="p in phrases"
+            :key="p"
+            class="pchip"
+            @click="draft = p"
+          >
+            <text class="pchip-t">{{ p }}</text>
+          </view>
+        </view>
         <!-- 胶囊自动换行，不横滑。
              原来是横向滚动的一行：放不下的要滑了才看得到，
              而这一排就是「现在能记什么」的清单，藏起来一半等于没有。
@@ -130,7 +142,7 @@ import { computed, nextTick, ref, watch } from 'vue'
 import {
   db, money, fmtCN, catList, closeCapture,
   addMoney, addTodo, addInbox, addNote, addRecord,
-  resolveCapture, describeCapture, ruleName,
+  resolveCapture, describeCapture, ruleName, recentPhrases,
   allCaptureOptions, commonCaptureOptions, moveCaptureOption, toggleCaptureCommon,
   resetCaptureConfig, saveState
 } from '../stores/db'
@@ -151,6 +163,10 @@ const showAll = ref(false)
 /* 上面那排横滑的 = 在自定义里开着的那几个。
    顺序也来自那儿：列表里怎么排，这一排就怎么排，中间不做映射。 */
 const modes = computed(function () { return commonCaptureOptions() })
+
+/* 常用短语：跟着你当前打的字走。空输入给「最近最常记的」，打了字就给你
+   记过的、带这些字的短语。记下一条新内容后，它下次就会出现 —— 越用越准。 */
+const phrases = computed(function () { return recentPhrases(draft.value, 6) })
 
 /* 「自定义」里展开的全部：空间里所有能记的东西 */
 const allOptions = computed(function () { return allCaptureOptions() })
@@ -417,6 +433,24 @@ function done(msg) {
   border-radius: 10px;
 }
 .capin-first { margin-top: 2px; }
+
+/* 常用短语那排。小一号、可换行 —— 它是「给你填的提示」，不是主内容，
+   不能抢输入框的注意力；但也得一眼扫得到、点得到。 */
+.phrases {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+.pchip {
+  margin: 0 6px 6px 0;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+}
+.pchip-t { font-size: 12px; color: var(--sub); }
+.pchip:active { background: var(--line); }
 
 /* 预览那行。字比输入框小一档：它是说明，不是内容。 */
 .capres {

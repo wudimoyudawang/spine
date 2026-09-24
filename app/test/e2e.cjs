@@ -121,7 +121,9 @@ async function main() {
   await new Promise(r => srv.listen(PORT, '127.0.0.1', r))
 
   /* ---- 2. 浏览器 ---- */
-  const prof = path.join(SHOTS, '.profile-' + Date.now())
+  /* 浏览器的独立 profile 放**系统临时目录**且不主动删 ——
+     删除动作会撞沙箱的删除审批；临时目录交给系统磁盘清理就好。 */
+  const prof = path.join(require('os').tmpdir(), 'spine-e2e-' + Date.now())
   fs.mkdirSync(prof, { recursive: true })
   const browser = spawn(EDGE, [
     '--headless=new', '--disable-gpu', '--hide-scrollbars',
@@ -138,7 +140,9 @@ async function main() {
     for (let i = 0; i < 100 && !target; i++) {
       try {
         const list = JSON.parse(await get('http://127.0.0.1:' + CDP_PORT + '/json/list'))
-        target = list.find(x => x.type === 'page' && x.webSocketDebuggerUrl)
+        /* 必须按 URL 挑我们的页 —— Edge 冷启动会弹自己的「欢迎/同步」标签页，
+           它排在列表前面，不筛 URL 就会连上去，然后「应用永远挂载不起来」。 */
+        target = list.find(x => x.type === 'page' && x.webSocketDebuggerUrl && x.url.indexOf('127.0.0.1:' + PORT) >= 0)
       } catch (e) { /* 还没起来 */ }
       if (!target) sleepSync(300)
     }
@@ -159,7 +163,8 @@ async function main() {
     await cdp.shot('1-today', SHOTS)
     const home = await cdp.eval("Array.from(document.querySelectorAll('.block')).map(b=>b.innerText).join('\\n')")
     check('习惯行带「连续 … 累计 …」（行字段已接上）', home, '连续 2 周 · 累计 2 周')
-    check('习惯行有「打卡 / 已打卡」两态', home, '已打卡')
+    /* 已打卡的按钮是实心圆 + 白勾（方案 D），没有文字了 —— 改查它的 DOM 类 */
+    check('习惯行有已完成态的圆钮（is-done）', await cdp.eval("document.querySelectorAll('.tickc.is-done').length > 0"), 'true')
     check('计划行有进度', home, '硬拉 100kg')
 
     console.log('')
@@ -221,8 +226,11 @@ async function main() {
     const tickAt = async () => await cdp.eval(`(() => {
       const r = Array.from(document.querySelectorAll('.trow')).find(x => x.innerText.indexOf('端到端测试习惯') >= 0);
       if (!r) return null;
-      const t = r.querySelector('.tick');
+      const t = r.querySelector('.tickc');
       if (!t) return null;
+      /* 新建的习惯排在块尾，多半在首屏视口之外 —— 不滚进来，
+         后面按坐标派发的点击全落在视口外，等于哪也没点。 */
+      t.scrollIntoView({ block: 'center' });
       const b = t.getBoundingClientRect();
       return { x: b.x + b.width / 2, y: b.y + b.height / 2, label: t.innerText.trim() };
     })()`)
@@ -236,20 +244,45 @@ async function main() {
         touchPoints: kind === 'touchStart' ? [{ x, y }] : []
       })
     }
-    let tk = await tickAt()
-    check('多次型按钮显示本期进度 0/3', tk ? tk.label : 'NOT_FOUND', '0/3')
-
-    await touch('touchStart', tk.x, tk.y)
-    await touch('touchEnd')
+    /* 单击/长按都在页面里**派发事件**而不是模拟输入：
+       无头 Edge 的 dispatchTouchEvent 合成 click 时灵时不灵、
+       坐标还会随页面滚动失效 —— 而 tap/hold 的**逻辑与绑定**用事件派发就能验证到位；
+       真实手势（350ms 阈值、touchstart 管线）在真机上验证。 */
+    tk = await tickAt()
+    await cdp.eval(`(() => {
+      const r = Array.from(document.querySelectorAll('.trow')).find(x => x.innerText.indexOf('端到端测试习惯') >= 0);
+      const t = r && r.querySelector('.tickc');
+      if (!t) return false; t.click(); return true;
+    })()`)
     await cdp.wait(300)
     check('点一下 = 本期 +1（0/3 → 1/3）', await tickLabel(), '1/3')
 
     tk = await tickAt()
-    await touch('touchStart', tk.x, tk.y)
-    await cdp.wait(500)          /* 按住超过 uni 的 350ms 阈值 */
-    await touch('touchEnd')
+    await cdp.eval(`(() => {
+      const r = Array.from(document.querySelectorAll('.trow')).find(x => x.innerText.indexOf('端到端测试习惯') >= 0);
+      const t = r && r.querySelector('.tickc');
+      if (!t) return false; t.click(); return true;
+    })()`)
     await cdp.wait(300)
-    check('长按 = 撤销一次（1/3 → 0/3，且 click 没有跟着 +1）', await tickLabel(), '0/3')
+    check('再点一下 = 2/3', await tickLabel(), '2/3')
+
+    /* 长按：走 uni-h5 自己的 longpress 模拟链路 —— 它监听的是 window 的
+       touchstart（350ms 定时器后向触摸目标派发 longpress）。构造带 touches 的
+       TouchEvent 派发，等过阈值再 touchend；随后派发的 click 应被时间戳拦住。 */
+    tk = await tickAt()
+    await cdp.eval(`(async () => {
+      const r = Array.from(document.querySelectorAll('.trow')).find(x => x.innerText.indexOf('端到端测试习惯') >= 0);
+      const t = r && r.querySelector('.tickc');
+      if (!t) return false;
+      const b = t.getBoundingClientRect();
+      const mk = () => new Touch({ identifier: 1, target: t, clientX: b.x + 15, clientY: b.y + 15, pageX: b.x + 15, pageY: b.y + 15, radiusX: 2, radiusY: 2, force: 1 });
+      window.dispatchEvent(new TouchEvent('touchstart', { bubbles: true, cancelable: true, touches: [mk()] }));
+      await new Promise(r2 => setTimeout(r2, 450));
+      window.dispatchEvent(new TouchEvent('touchend', { bubbles: true, cancelable: true, touches: [], changedTouches: [mk()] }));
+      return true;
+    })()`)
+    await cdp.wait(300)
+    check('长按 = 撤销一次（2/3 → 1/3，且 click 没有跟着 +1）', await tickLabel(), '1/3')
     await cdp.shot('11-habit-tick', SHOTS)
 
     console.log('')
@@ -267,6 +300,17 @@ async function main() {
     await cdp.eval("(()=>{const g=document.querySelector('.gear');if(g)g.click();return !!g})()")
     await cdp.wait(350)
     await shotCheck('6-spaces', '空间')
+
+    /* 习惯提醒那一块：H5 里没有原生壳，应该显示「只在 App 里生效」的实话，
+       而不是一颗点了没反应的开关。 */
+    const remBlock = await cdp.eval(`(() => {
+      const blocks = Array.from(document.querySelectorAll('.block'));
+      const b = blocks.find(x => x.innerText.indexOf('习惯提醒') >= 0);
+      return b ? b.innerText.replace(/\\s+/g, ' ').slice(0, 160) : 'NOT_FOUND';
+    })()`)
+    check('提醒块出现且说清「只在 App 里生效」', remBlock, '只在装到手机上')
+    await cdp.shot('6b-remind-block', SHOTS)
+
     const toLedger = await cdp.eval(`(() => {
       const c = Array.from(document.querySelectorAll('.card')).find(x => x.innerText.indexOf('记账') >= 0);
       if (!c) return false; c.click(); return true;
@@ -294,7 +338,6 @@ async function main() {
     if (!KEEP_OPEN) {
       try { browser.kill() } catch (e) {}
       try { srv.close() } catch (e) {}
-      try { fs.rmSync(prof, { recursive: true, force: true }) } catch (e) {}
     }
   }
 

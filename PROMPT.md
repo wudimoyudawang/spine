@@ -62,7 +62,7 @@
 | 阶段 | **原型定稿（v0.12）· `app/` 重构进行中** —— 七个视图已搬完，行操作（新增/编辑/删除/子项）、计划进度、**自动判断的规则表**、**操作流水 + 记账改删 + 收件箱归类**、**领域 / 品类 / 记录项的增删改**、**导入导出走文件通道（选文件 / 存成文件，导入前先给摘要）**、**复盘的三档区间 + 上一期对比 + 可增删的趋势清单** 都已接上；剩下的尾巴见第 4 节 A0 |
 | 仓库内容 | `docs/` 是设计文档；`prototype/index.html` 是**行为参照物**；`app/` 是**当前施工落点**。曾经有一版 Windows 桌面版（Tauri 薄壳 + 便携版 exe），2026-09-20 按决定整个删掉了 |
 | 原型版本 | **v0.12**（2026-09-20），`prototype/index.html` 现 **4893 行 / 234KB**。行数变化不是重点 —— **它换过三次结构**：v0.8 把「多级目录」换成「条目子项」，v0.10 起加**手机形态**（底部 Tab 栏 + 底部中间那颗「记一笔」），v0.12 起**数据落本机**。见下面两节 |
-| 数据 | **落在本机**（`localStorage`，键 `spine.state.v2`；换过 key 是因为 v2 把「两套待办」合成了一份，不做旧档案兼容读取）：关掉再打开，记的东西还在。**数据 15 项**（`DATA_KEYS`）：`ITEMS` / `HABIT_LOGS` / `INBOX` / `NOTES` / `NOTE_PROMPTS` / `LOGS` / `DOMAINS` / `RECORD_TYPES` / `CAPTURE_MODES` / `AUTO_RULES` / `TODAY_LOGS` / `CAT_WORDS` / `CATS` / `CAP_CFG` / `REV_TRENDS`；**界面状态 4 项**（`UI_KEYS`）：`CURRENT` / `DOMAIN_ID` / `CAPTURE_MODE` / `CAP_AUTO_CLOSE`。这份清单是权威 —— **增减任何一项都要改 `DATA_KEYS`**，否则会出现「导出了，但少一半」。空间页可整份**存成文件**（`书脊-YYYY-MM-DD.json`）/ 复制到剪贴板，导入走**选文件**或读剪贴板 |
+| 数据 | **落在本机**（`localStorage`，键 `spine.state.v2`；换过 key 是因为 v2 把「两套待办」合成了一份，不做旧档案兼容读取）：关掉再打开，记的东西还在。**数据 16 项**（`DATA_KEYS`）：`ITEMS` / `HABIT_LOGS` / `INBOX` / `NOTES` / `NOTE_PROMPTS` / `LOGS` / `DOMAINS` / `RECORD_TYPES` / `CAPTURE_MODES` / `AUTO_RULES` / `TODAY_LOGS` / `CAT_WORDS` / `CATS` / `CAP_CFG` / `REV_TRENDS` / `QUAD_COLORS`；**界面状态 6 项**（`UI_KEYS`）：`CURRENT` / `DOMAIN_ID` / `CAPTURE_MODE` / `CAP_AUTO_CLOSE` / `TICK_DONE` / `NOTIFY_ON`。这份清单是权威 —— **增减任何一项都要改 `DATA_KEYS` / `UI_KEYS`**，否则会出现「导出了，但少一半」。空间页可整份**存成文件**（`书脊-YYYY-MM-DD.json`）/ 复制到剪贴板，导入走**选文件**或读剪贴板 |
 
 > **v0.12 起数据落本机**，存储这一层刻意做薄：全部接口就是 `snapshot()` / `restore()` 两个函数，
 > 调度也只有「改了就每 2 秒兜一次 + 页面隐藏/卸载时各一次」这一条路
@@ -303,6 +303,20 @@
 ### 4. 待办（按建议优先级）
 
 **A0. `app/` 侧的尾巴**（重构欠下的，优先于下面那组）
+
+0. ~~习惯打卡提醒（App 壳的本地通知）~~ —— **已了结（2026-09-24）**：
+   每条习惯可设一个提醒时刻（`rm`，可选字段 `'HH:MM'`，编辑弹窗里「提醒我」那一行），
+   设置页有总开关 `NOTIFY_ON`（UI_KEYS，**默认关**）。
+   - **为什么是「预排未来 7 天的定点通知」而不是原生重复**：插件的 `repeats: true` 拿
+     `at - now` 当固定间隔，跨月会漂；`every: 'day'` 同病。定点一批 + 每次打开重排，
+     行为可预测，且「今天已经打过卡就不再响」能实现（打卡后立刻重排）。
+   - **已知天花板**：连着 7 天不打开应用，提醒会断 —— 第 8 天打开才会续上。
+     设置页写明了这一点。要做常驻就得后台任务，那不是本应用要的东西。
+   - **分层**：数据层 `remindPlan()` 是纯函数（对拍钉着）；`lib/notify.js` 只管
+     「交给原生」；原生桥 `window.SPINE_NOTIFY` 由 `shell/web-shim.js` 注入 ——
+     和 `SPINE_SAVE_FILE` 同一个套路，页面不认 Capacitor，H5 里如实说「只在 App 生效」。
+   - 插件 `@capacitor/local-notifications`（Android），通知走自建渠道 `habit-reminders`。
+   - 对拍 `181/181`（新增 8 个捕获点：setClear / plan / planPast / stats / legacyArchive 等）。
 
 1. ~~收件箱归类还欠加个日期~~ —— **已了结（2026-09-23）**：
    去处排下面多了一颗日期（默认今天，可改任意一天，也可点「不限」= 不带日期、

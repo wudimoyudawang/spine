@@ -103,10 +103,22 @@ export const db = reactive({
   CAPTURE_MODE: 'auto',
   CAPTURE_CAT: '',
   CLOSED_NODES: {},
-  /* 提交完面板自己收不收。默认收（宇定的）——
-     连着记几笔的时候，把面板右上角那个开关打开就不必每次重新点加号。
-     它同时是设置页里的一条，两处改的是同一个值。 */
-  CAP_AUTO_CLOSE: true,
+    /* 提交完面板自己收不收。默认收（宇定的）——
+       连着记几笔的时候，把面板右上角那个开关打开就不必每次重新点加号。
+       它同时是设置页里的一条，两处改的是同一个值。 */
+    CAP_AUTO_CLOSE: true,
+    /* 打卡按钮「完成态」的颜色（hex），设置页里选（2026-09-23 加）。
+       空串 = 用内置的绿。跟着设备走（UI_KEYS），清数据不清它 ——
+       清的是记录，不该连外观偏好一起抹掉。 */
+    TICK_DONE: '',
+    /* 习惯提醒的总开关（2026-09-24 加）。默认**关**。
+       跟着设备走（UI_KEYS），**不进 DATA_KEYS**：提醒能不能响取决于
+       **这台设备有没有给通知权限**，是设备的事，不是数据的事。
+       跟着档案走的话，导入一份别处导出的档案会在新手机上悄悄打开它 ——
+       而那台手机可能根本没授权，看着像「开着但不响」。
+       默认关的理由：这个应用的气质是「安静地记」，通知是唯一会主动打扰人的东西，
+       必须由人自己打开（装完就弹权限申请也是同一件事的反面）。 */
+    NOTIFY_ON: false,
   /* 面板开着没有、现在是哪个模式。
      瞬时状态，**不进 UI_KEYS** —— 重开 App 时不该一进来就弹着个面板。
      放在 db 里而不是组件内部，是因为底栏和面板是两个组件，
@@ -150,8 +162,8 @@ export const DATA_KEYS = ['ITEMS', 'HABIT_LOGS', 'INBOX', 'NOTES', 'NOTE_PROMPTS
  * 但导入时**不采用**：真正决定「当前在哪一页」的始终是本机
  * （importSnapshot 里把 CURRENT 显式还原回去了）。
  * 所以「跟着设备走」是**结果**，不是「没写进文件」——原来那句注释说的是前者、写成了后者。
- * 另外 replaceAll（导入的整体替换）只换 DATA_KEYS，不碰这 4 项。 */
-export const UI_KEYS = ['CURRENT', 'DOMAIN_ID', 'CAPTURE_MODE', 'CAP_AUTO_CLOSE']
+ * 另外 replaceAll（导入的整体替换）只换 DATA_KEYS，不碰 UI_KEYS 里这些。 */
+export const UI_KEYS = ['CURRENT', 'DOMAIN_ID', 'CAPTURE_MODE', 'CAP_AUTO_CLOSE', 'TICK_DONE', 'NOTIFY_ON']
 
 export function loadSeed() {
   const d = deepCopy(SEED_DATA)
@@ -170,6 +182,9 @@ export function loadSeed() {
   db.CAPTURE_CAT = ''
   db.CLOSED_NODES = deepCopy(SEED_UI.CLOSED_NODES) || {}
   db.CAP_AUTO_CLOSE = true
+  /* 提醒总开关不在种子数据里（它是设备偏好，且默认关）——
+     不显式给一份的话，换过种子之后它可能留着上一次的值。 */
+  db.NOTIFY_ON = false
   db.CAP_CFG = { order: [], common: {} }
   /* 这一项不在种子数据里（它是偏好不是数据），不显式给一份的话
      上面那句 DATA_KEYS.forEach 会把它写成 undefined */
@@ -780,6 +795,127 @@ export function toggleHabitLog(id, date) {
   return true
 }
 
+/* ---------------- 习惯提醒 ----------------
+ * 提醒时间存在习惯对象上的**可选字段 `rm`**（'HH:MM'，缺失 = 不提醒）。
+ * 和 `n` 一样属于「给既有条目加一个可选字段」：老档案没有 `rm`，读出来就是
+ * 「这个习惯不提醒」—— 语义不变，`fmt:2` 不用动，老档案导出去一个字节都不多。
+ *
+ * **为什么不进 DATA_KEYS 单开一张表**：提醒是习惯自己的一个属性，
+ * 拆成独立表就得处理「习惯删了、提醒还在」这种孤儿状态（全项目已经有一条
+ * 同类的教训：打卡记录是独立表，删习惯要记得 dropHabitLogs）。
+ * 挂在对象上，删除习惯时它自然跟着走。
+ *
+ * 提醒的**开关**在 db.NOTIFY_ON（UI_KEYS，跟设备走），不在字段里 ——
+ * 见 db 那段注释：能不能响是设备权限的事，和「这个习惯想不想被提醒」是两回事。 */
+
+/* 时间串的规范形：'HH:MM'，24 小时制、两位补零。
+   不规范的一律当「没设」—— 宁可这条不提醒，也不要拿一个解析不出的时间
+   去算下一次触发（算出来的是错的时刻，比不响更难查）。 */
+const RM_RE = /^([01]\d|2[0-3]):([0-5]\d)$/
+export function remindTimeOf(node) {
+  const v = node ? String(node.rm || '') : ''
+  return RM_RE.test(v) ? v : ''
+}
+/* 设/清一个习惯的提醒时间。传空 = 不提醒（把字段摘掉，条目回到老档案的样子）。 */
+export function setHabitRemind(id, hhmm) {
+  const h = habitById(id)
+  if (!h) return { error: '这个习惯已经不在了' }
+  const v = String(hhmm || '').trim()
+  if (!v) { delete h.rm; return { ok: true, rm: '' } }
+  if (!RM_RE.test(v)) return { error: '时间要写成 HH:MM（比如 08:30）' }
+  h.rm = v
+  return { ok: true, rm: v }
+}
+
+/* 未来一段日子里，该响的那几颗通知。**纯函数**（除了读 db），
+   算出来的东西直接交给原生层排 —— 这样「哪天该响」这件事可以被对拍钉住，
+   而不用真机装一遍才知道。
+ *
+ * 为什么是「预排未来 N 天的定点通知」而不是让原生做「每天重复」：
+ * 插件的 `repeats: true` 拿 `at - now` 当**固定间隔**，跨过夏令时/月份长度
+ * 都会漂（今天 08:00 排的，一个月后可能变成 07:59）；`every: 'day'` 同病。
+ * 定点排一批、每次打开重排，行为是完全可预测的：
+ *   ① 到点响不响只取决于那一刻有没有这条通知，没有别的时间算术在跑；
+ *   ② 「今天已经打过卡了就别再响」这种条件能实现 —— 重复型给不了这个。
+ *
+ * 跳过规则（按顺序）：
+ *   · 时间串不合法 → 跳过（见 RM_RE 那段）
+ *   · 这一时刻已经过去 → 跳过（原生也不接受过去的时刻，会静默丢弃）
+ *   · 频率单位是「天」且那天**已经打过卡** → 跳过。
+ *     只对天口径做这件事：周/月口径的「达标」是按整期算的，
+ *     这周打过两次不代表今天这一次不用做，替用户跳过反而是错的。
+ *
+ * @param days 往前看几天（默认 7）。只排 7 天是因为再远没有意义 ——
+ *   原生那边有数量上限，而这个应用本来就每天都会打开。
+ * @param nowMs 现在（毫秒）。显式传进来是为了冻结时钟能测。
+ * @returns [{ id, key, at(毫秒), date, time, title }]，按时间升序。
+ */
+export function remindPlan(days, nowMs) {
+  const n = Number(days) > 0 ? Math.floor(Number(days)) : 7
+  const now = Number(nowMs) || Date.now()
+  const out = []
+  /* 一趟把「哪天要提醒」收齐，不要去循环里调 habitById（那是按签名 O(n) 的） */
+  for (const d of db.DOMAINS) {
+    for (const h of (d.habits || [])) {
+      const t = remindTimeOf(h)
+      if (!t) continue
+      /* 天口径的习惯：那天打过卡就不排。用 habitDoneOn（O(1) 查索引），
+         不是每行扫一遍 HABIT_LOGS。 */
+      const daily = habitUnit(h.m) === 'day'
+      for (let i = 0; i < n; i++) {
+        const date = shiftDays(TODAY, i)
+        const at = atOf(date, t)
+        if (!(at > now)) continue
+        if (daily && habitDoneOn(h.id, date)) continue
+        out.push({ id: 0, key: h.id, at: at, date: date, time: t, title: labelOf(h) })
+      }
+    }
+  }
+  out.sort(function (a, b) { return a.at - b.at })
+  /* 通知 id 必须是 32 位正整数且**稳定**：同一颗通知每次重排要落在同一个 id 上，
+     否则旧的取消不掉、到点会响两遍。
+     用「日期 + 时间 + 习惯 id 的哈希」拼成一个正整数，同一天同一习惯永远同一个 id。 */
+  const used = {}
+  for (const o of out) {
+    let id = notifyIdOf(o.date, o.time, o.key)
+    while (used[id]) id = id === 2147483647 ? 1 : id + 1   /* 撞了就顺延，避开 0 */
+    used[id] = true
+    o.id = id
+  }
+  return out
+}
+
+/* 'YYYY-MM-DD' + 'HH:MM' → 毫秒。**按本机时区**算（new Date(y, m, d, hh, mm)），
+   不用 Date.parse('T…Z') —— 那样得到的是 UTC，会差出一个时区。 */
+function atOf(date, hhmm) {
+  const y = Number(date.slice(0, 4)), mo = Number(date.slice(5, 7)), da = Number(date.slice(8, 10))
+  const hh = Number(hhmm.slice(0, 2)), mi = Number(hhmm.slice(3, 5))
+  return new Date(y, mo - 1, da, hh, mi, 0, 0).getTime()
+}
+export function remindAtOf(date, hhmm) { return atOf(date, hhmm) }
+
+/* 通知 id：把三个串揉成一个 31 位正整数。要求只有两个 ——
+   · 同样的输入永远得到同样的 id（重排要能盖掉上一次那颗）
+   · 不同的输入**基本**不撞（撞了由 remindPlan 里的顺延兜住）
+   所以用一个简单的 31 位 FNV 变体就够了，不需要密码学强度。 */
+function notifyIdOf(date, time, key) {
+  const s = date + 'T' + time + '#' + key
+  let h = 2166136261
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i)
+    h = (h * 16777619) >>> 0
+  }
+  return (h % 2147483646) + 1
+}
+export function remindIdOf(date, time, key) { return notifyIdOf(date, time, key) }
+
+/* 设不设提醒、以及有哪些习惯设了（设置页和今日页要看这个数）。 */
+export function remindStats() {
+  let on = 0
+  for (const d of db.DOMAINS) for (const h of (d.habits || [])) if (remindTimeOf(h)) on++
+  return { on: on }
+}
+
 /* ---------------- 钱 ---------------- */
 export function money(n) {
   const v = Math.round(Number(n) * 100) / 100
@@ -1243,6 +1379,49 @@ export function parseDatePhrase(t) {
 export function ruleName(r) {
   if (!r) return '未命名规则'
   return r.t || r.kw || r.re || '未命名规则'
+}
+
+/* 常用短语：速记框里给你填的一排快捷胶囊。
+ *
+ * 来源 = 你**记过**的东西：待办标题、随心记正文、收件箱、以及 text 型的记录项
+ * （数字型的「热量 1800」没有可复用的措辞，不收）。只收「一句话」级别的短句：
+ * 随心记那种两行的感慨太长，点进去不是省事是添乱。
+ *
+ * 排序 = 最近（新记的靠前）× 高频（出现次数多的靠前），再加一层**前缀匹配**：
+ * 你打了「喝」，就把「喝水 500ml」这些带「喝」的顶到最前；没输入时给最近最常记的。
+ * 这是纯前端从已有数据里算的，不额外存任何东西 —— 越用越贴合你的措辞。 */
+export function recentPhrases(query, limit) {
+  const q = String(query || '').trim()
+  const cap = limit || 6
+  const freq = {}
+  const bump = function (s) {
+    const t = String(s || '').trim()
+    if (!t || t.length > 40) return           /* 太长的（比如整段随心记）不收 */
+    if (t.length < 2) return                  /* 单字没意义 */
+    freq[t] = (freq[t] || 0) + 1
+  }
+  for (const it of (db.ITEMS || [])) bump(it.title)
+  for (const n of (db.NOTES || [])) bump(n.text)
+  for (const x of (db.INBOX || [])) bump(x.text)
+  for (const rt of (db.RECORD_TYPES || [])) {
+    if (rt.mode !== 'text') continue
+    for (const l of (rt.logs || [])) bump(l.v)
+  }
+  /* 最近在前：数据天然是按「后记的靠后」追加的，倒序走一遍，给先遇到的（= 较新的）
+     一个更大的序号加成，同频时更新者胜。 */
+  const rank = {}
+  let seq = 0
+  const all = Object.keys(freq)
+  /* 出现一次的低频词也收，但排在多次的后面：单次可能是偶发的、也更有用，
+     因为「你昨天刚记过一句新话，今天还想再说」。 */
+  const scored = all.map(function (t) {
+    let score = freq[t] * 1000
+    if (q && t.indexOf(q) >= 0) score += 100000          /* 前缀匹配：大幅加权 */
+    return { t: t, score: score }
+  })
+  scored.sort(function (a, b) { return b.score - a.score })
+  const out = scored.slice(0, cap).map(function (x) { return x.t })
+  return out
 }
 
 /* 一条规则是否命中这句话。 */
@@ -2012,6 +2191,17 @@ export function setQuadColor(k, hex) {
   const v = hexOf(hex, '')
   if (!v) return { error: '颜色要写成 #RRGGBB' }
   db.QUAD_COLORS[k] = v
+  return { ok: true, hex: v }
+}
+
+/* ---------------- 打卡完成色（设置页选，打卡按钮的完成态用） ----------------
+ * 默认空 = 用内置的绿。用户给的是「深色主色」—— 完成态是实心圆 + 白勾，
+ * 进度环、描边、环心数字都用同一个色，不需要再派生浅底。
+ * 清数据（clearAllData）不清它：清的是记录，不该连外观偏好一起抹掉。 */
+export function setTickDone(color) {
+  const v = hexOf(color, '')
+  if (!v) { db.TICK_DONE = ''; return { ok: true, hex: '' } }
+  db.TICK_DONE = v
   return { ok: true, hex: v }
 }
 
@@ -2819,7 +3009,12 @@ export function editFields() {
       { k: 't', label: '习惯（必填）', type: 'text' },
       /* 频率用滚轮选不用手填：它只有「单位 × 次数」两种组合，
          手填会填出「一周四次」「周4」「每周4次」三种写法，复盘里没法归到一起。 */
-      { k: 'm', label: '频率', type: 'freq' }
+      { k: 'm', label: '频率', type: 'freq' },
+      /* 提醒时间。**想不想被提醒**是习惯自己的属性，所以放在这个弹窗里，
+         和「每天几次」并排；**能不能响**是设备的事，总开关在设置页。
+         空 = 不提醒（默认），一颗习惯一颗习惯地开 —— 不做一个「全部习惯都提醒」的批处理，
+         那会把一个安静的工具变成一个催命的东西。 */
+      { k: 'rm', label: '提醒我', type: 'time' }
     ]
   }
   if (ED.kind === 'money') {
@@ -2881,7 +3076,7 @@ export function openEdit(spec) {
       status: hit.node.status || 'todo', quad: quadOf(hit.node),
       repeat: hit.node.repeat || ''
     }
-    : { t: labelOf(hit.node), m: hit.node.m || '' }
+    : { t: labelOf(hit.node), m: hit.node.m || '', rm: remindTimeOf(hit.node) }
   ED.title = hit.kind === 'habit' ? '修改习惯' : '修改待办'
   ED.where = hit.kind === 'item' ? domainName(hit.node) : (d ? d.name : '')
   ED.on = true
@@ -2998,7 +3193,24 @@ export function commitEdit() {
     if (!t2) return { error: ED.kind === 'habit' ? '习惯不能空' : '内容不能空' }
     if (nd.t !== t2) ch.push('内容「' + nd.t + '」→「' + t2 + '」')
     if ((nd.m || '') !== (dr.m || '')) ch.push((ED.kind === 'habit' ? '频率「' : '说明「') + (nd.m || '（空）') + '」→「' + (dr.m || '（空）') + '」')
-    if (ch.length) { nd.t = t2; nd.m = dr.m }
+    /* 提醒时间只对习惯有。比对用 remindTimeOf 而不是读 nd.rm ——
+       nd.rm 可能是历史遗留的非法值（手改过档案），拿它比会在「本来就是空」
+       的情况下多报一次改动，而写下去的是空。比的是**生效值**。 */
+    if (ED.kind === 'habit') {
+      const rm0 = remindTimeOf(nd), rm1 = String(dr.rm || '')
+      if (rm0 !== rm1) ch.push('提醒 ' + (rm0 || '不提醒') + ' → ' + (rm1 || '不提醒'))
+    }
+    if (ch.length) {
+      nd.t = t2; nd.m = dr.m
+      /* 空串就把字段摘掉（和 bumpHabitLog 把 n 减回 1 时摘 n 同一个规矩：
+         条目回到老档案的样子，导出去一个字节都不多）。
+         dr.rm 在这里是**原样写**，不做正则过滤 —— 过滤是界面的事（picker 只能给
+         合法值），数据层接受调用方显式给的时间串，好让对拍能拿任意串试。 */
+      if (ED.kind === 'habit') {
+        if (rm1) nd.rm = rm1
+        else delete nd.rm
+      }
+    }
     target = t2
   }
   if (!ch.length) { closeEdit(); return { unchanged: true } }

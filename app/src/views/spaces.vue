@@ -255,12 +255,67 @@
       </view>
       <view class="srow"><text class="srow-k">账号、登录、多端同步</text><text class="srow-v">第 5 步</text></view>
       <view class="srow"><text class="srow-k">AI 语义识别</text><text class="srow-v">现在用规则表</text></view>
-      <view class="srow"><text class="srow-k">手机推送提醒</text><text class="srow-v">不做</text></view>
+      <view class="srow"><text class="srow-k">桌面小组件 / 语音</text><text class="srow-v">等壳稳定</text></view>
+    </view>
+
+    <!-- ============ 习惯提醒 ============
+         放在「外观」上面、离「数据」远一点：它和外观一样是「怎么用这个应用」，
+         不是数据本身。 -->
+    <view class="block">
+      <view class="block-h">
+        <text class="tag">习惯提醒</text>
+        <text class="block-note">{{ rmOn ? '开' : '关' }}</text>
+      </view>
+
+      <!-- 没有原生壳（浏览器里、或者壳里没装通知插件）：整个块只说一句实话，
+           不给一颗点了没反应的开关。 -->
+      <view v-if="!rm.supported" class="note">
+        <text class="note-t">提醒只在装到手机上的 App 里生效。这一份是网页版，先记着，装上 App 就能开。</text>
+      </view>
+
+      <template v-else>
+        <view class="srow">
+          <text class="srow-k">到点提醒我打卡</text>
+          <view class="sw" :class="{ 'is-on': rmOn }" @click="flipNotify">
+            <view class="sw-dot"></view>
+          </view>
+        </view>
+        <view class="srow">
+          <text class="srow-k">系统通知权限</text>
+          <text class="srow-v" :class="{ 'is-warn': rm.perm === 'denied' }">{{ permLabel(rm.perm) }}</text>
+        </view>
+        <!-- 权限被拒时只能说清去哪儿开：Android 上应用自己再也弹不出那个框了，
+             再点一次开关也还是 rejected。 -->
+        <view v-if="rm.perm === 'denied'" class="note">
+          <text class="note-t">手机把通知权限拒了，应用自己再也弹不出申请框。要去「设置 → 应用 → 书脊 → 通知」里手动打开，回来再点一次上面那颗开关。</text>
+        </view>
+        <view class="note">
+          <text class="note-t">哪些习惯要提醒、几点提醒，在每条习惯里单独设（点开习惯，「提醒我」那一行）。现在有 {{ rm.count }} 个习惯设了提醒。</text>
+          <text class="note-t">提醒会提前排好未来 7 天，每次打开应用会重排一次 —— 所以「今天已经打过卡的习惯不会再吵你」。</text>
+          <text class="note-t">打卡改成每天多次的习惯，只在第一次没打卡时提醒。</text>
+        </view>
+      </template>
     </view>
 
     <view class="block">
       <view class="block-h"><text class="tag">外观</text><text class="block-note">先做浅色，够用</text></view>
       <view class="srow"><text class="srow-k">主题</text><text class="srow-v">浅色</text></view>
+      <!-- 打卡按钮完成态的颜色。预设色板而不是自由取色：
+           uni-app 没有跨端都可靠的颜色选择器，而且八个精选的比一整个调色盘好挑。
+           存在 db.TICK_DONE（UI_KEYS，跟设备走），导入档案不改它 —— 外观偏好跟着设备。 -->
+      <view class="srow srow-tick">
+        <text class="srow-k">打卡完成色</text>
+        <view class="tickswatches">
+          <view
+            v-for="c in TICK_COLORS"
+            :key="c.v || 'default'"
+            class="ticksw"
+            :class="{ 'is-on': curTick === c.v }"
+            :style="{ background: c.hex }"
+            @click="pickTick(c.v)"
+          ></view>
+        </view>
+      </view>
     </view>
 
     <!-- 清空数据放在设置的最底下，和上面的导出/导入隔了三块 ——
@@ -287,6 +342,7 @@
 
 <script setup>
 import { computed, ref } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
 import {
   db, go, money, TODAY, pad2, summaryOf, recordTypesOf, togglePin, newDomain,
   monthMoney,
@@ -295,9 +351,11 @@ import {
   backupList, restoreBackup,
   ruleName, ruleTargetLabel, ruleMatchLabel, ruleStats, ruleMatches, whyNot,
   toggleRule, moveRule, saveRule, armConfirm, delArmed, disarmDelete,
-  quadColorOf, setQuadColor, QUAD_COLOR_DEFAULT,
+  quadColorOf, setQuadColor, setTickDone, QUAD_COLOR_DEFAULT,
+  remindStats,
   resolveCapture, describeCapture
 } from '../stores/db'
+import { notifyState, enableReminders, disableReminders, permLabel } from '../lib/notify'
 import PageHead from '../components/PageHead.vue'
 import PlusIcon from '../components/PlusIcon.vue'
 import RuleForm from '../components/RuleForm.vue'
@@ -375,6 +433,59 @@ function resetQuad() {
   saveState(true)
   toast('已恢复默认配色')
 }
+
+/* ---------------- 打卡完成色 ----------------
+ * 八个预设（默认绿 + 七个深色），照四象限配色那套色板的样子做。
+ * 存 db.TICK_DONE（UI_KEYS，跟设备走、清数据不清），打卡按钮的完成态读它。 */
+const TICK_COLORS = [
+  { v: '', hex: '#0F7A5A' },
+  { v: '#2F6FEB', hex: '#2F6FEB' },
+  { v: '#7C5CC4', hex: '#7C5CC4' },
+  { v: '#D85A30', hex: '#D85A30' },
+  { v: '#C0392B', hex: '#C0392B' },
+  { v: '#2F9E8F', hex: '#2F9E8F' },
+  { v: '#A85B00', hex: '#A85B00' },
+  { v: '#5A6272', hex: '#5A6272' }
+]
+const curTick = computed(function () { return db.TICK_DONE || '' })
+function pickTick(v) {
+  setTickDone(v)
+  saveState(true)
+  toast(v ? '打卡完成色已换' : '已恢复默认绿')
+}
+
+/* ---------------- 习惯提醒 ----------------
+ * 总开关默认**关**（见 db.NOTIFY_ON 的说明）。开的时候先要系统权限，
+ * 拿到了才把开关落下去 —— 顺序反过来的话会出现「屏幕上说开着、系统里一颗没排」
+ * 那种最难查的失败。权限和开关的状态都从 lib/notify.js 问，这里不自己判断环境。
+ *
+ * 这一块的状态是**异步**来的（要问原生），所以用一个 ref 兜着；
+ * 页面每次显示时刷一遍 —— 人可能刚从手机的设置里改完权限回来。 */
+const rm = ref({ supported: false, on: false, perm: 'unsupported', count: remindStats().on })
+const rmOn = computed(function () { return !!(rm.value.supported && rm.value.on) })
+
+function refreshNotify() {
+  return notifyState().then(function (s) { rm.value = s })
+}
+
+function flipNotify() {
+  if (!rm.value.supported) return
+  if (rm.value.on) {
+    disableReminders().then(function () { return refreshNotify() })
+      .then(function () { toast('已关掉提醒，系统里排的那些也清掉了') })
+    return
+  }
+  enableReminders().then(function (r) {
+    return refreshNotify().then(function () {
+      if (r.error) { toast(r.error); return }
+      toast('提醒已开')
+    })
+  })
+}
+
+/* 回到这一页就刷一次权限：人有可能切出去在系统设置里改过，
+   不刷的话屏幕上显示的还是进来那一刻的状态。 */
+onShow(function () { refreshNotify() })
 
 /* ---------------- 清空数据 ----------------
  * 两段确认，和别处的删除走**同一个**闸门（db.armConfirm / delArmed）：
@@ -740,6 +851,7 @@ const test = computed(function () {
 }
 .srow-k { font-size: 14px; color: var(--text); }
 .srow-v { font-size: 12px; color: var(--muted); }
+.srow-v.is-warn { color: var(--warn); }
 
 .sw {
   position: relative;
@@ -782,6 +894,21 @@ const test = computed(function () {
   border: 1px solid rgba(31, 36, 48, .12);
 }
 .qcsw.is-on { border: 2px solid var(--text); }
+
+/* 打卡完成色的色板：和四象限那套（qcswatches / qcsw）同款形状。
+   单独一份类而不是共用 —— 两处的语义不同（那边是象限标记色，这边是打卡完成色），
+   以后要调哪一个都不至于牵动另一个。 */
+.tickswatches { display: flex; flex-direction: row; flex-wrap: wrap; margin-top: 8px; }
+.ticksw {
+  width: 26px;
+  height: 26px;
+  margin: 0 7px 7px 0;
+  border-radius: 50%;
+  border: 1px solid rgba(31, 36, 48, .12);
+}
+.ticksw.is-on { border: 2px solid var(--text); }
+/* 色板和标签并排放不下时换行 —— 八个色块比一般 srow 的右侧值宽 */
+.srow-tick { flex-wrap: wrap; }
 
 /* 清空数据那块：整块描红边，不是只有那颗钮是红的。
    离得远 + 整块变红，两种信号一起说「这一块和上面那些不一样」。 */
