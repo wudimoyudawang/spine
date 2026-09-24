@@ -610,13 +610,19 @@ function habitIndex() {
 }
 function datesOf(id) { const e = habitIndex()[id]; return e ? e.dates : EMPTY_DATES }
 
-/* 返回的是副本：调用方一直可以随便改（原来也是每次现建一个数组） */
-export function habitDoneOn(id, date) {
+/* 返回的是副本：调用方一直可以随便改（原来也是每次现建一个数组）。
+   date 省略 = **今天** —— 理由见下面 habitCountOn 那段。 */
+export function habitDoneOn(id, date = TODAY) {
   const e = habitIndex()[id]
   return !!(e && e.set.has(date))
 }
-/* 某一天打了几次。0 = 这天没打过。老档案没有 n 字段，一条就是 1 次。 */
-export function habitCountOn(id, date) {
+/* 某一天打了几次。0 = 这天没打过。老档案没有 n 字段，一条就是 1 次。
+   **date 省略 = 今天**，不是「随便哪天」。这个默认值是必须的：
+   少了它就是 `count[undefined]` → 0，而 0 在调用方读起来是「今天还没打卡」——
+   一个不报错的错答案。TreeList 的长按撤销正是这么栽的（见那边 hold() 的注释）：
+   漏传日期 → 永远走「今天还没有打卡记录」分支，撤销一次都没生效过，
+   而对拍抓不到它，因为错的是调用方、不是数据层。 */
+export function habitCountOn(id, date = TODAY) {
   const e = habitIndex()[id]
   return (e && e.count[date]) || 0
 }

@@ -267,8 +267,13 @@ async function main() {
     check('再点一下 = 2/3', await tickLabel(), '2/3')
 
     /* 长按：走 uni-h5 自己的 longpress 模拟链路 —— 它监听的是 window 的
-       touchstart（350ms 定时器后向触摸目标派发 longpress）。构造带 touches 的
-       TouchEvent 派发，等过阈值再 touchend；随后派发的 click 应被时间戳拦住。 */
+       touchstart（350ms 定时器后派发 longpress）。
+       **但 touchstart 必须派发在元素上，不能派发在 window 上**：uni-h5 合成
+       longpress 用的是 `evt.target.dispatchEvent(customEvent)`（见
+       uni-h5.es.js 的 initLongPress），派发在 window 上 target 就是 window，
+       longpress 也发在 window 上，绑在 .tickc 的监听器永远收不到。
+       这条用例长期红着、被当成「无头浏览器合成手势不稳定」——
+       其实它每次都不生效，真正的原因就在这里。 */
     tk = await tickAt()
     await cdp.eval(`(async () => {
       const r = Array.from(document.querySelectorAll('.trow')).find(x => x.innerText.indexOf('端到端测试习惯') >= 0);
@@ -276,9 +281,9 @@ async function main() {
       if (!t) return false;
       const b = t.getBoundingClientRect();
       const mk = () => new Touch({ identifier: 1, target: t, clientX: b.x + 15, clientY: b.y + 15, pageX: b.x + 15, pageY: b.y + 15, radiusX: 2, radiusY: 2, force: 1 });
-      window.dispatchEvent(new TouchEvent('touchstart', { bubbles: true, cancelable: true, touches: [mk()] }));
+      t.dispatchEvent(new TouchEvent('touchstart', { bubbles: true, cancelable: true, touches: [mk()] }));
       await new Promise(r2 => setTimeout(r2, 450));
-      window.dispatchEvent(new TouchEvent('touchend', { bubbles: true, cancelable: true, touches: [], changedTouches: [mk()] }));
+      t.dispatchEvent(new TouchEvent('touchend', { bubbles: true, cancelable: true, touches: [], changedTouches: [mk()] }));
       return true;
     })()`)
     await cdp.wait(300)

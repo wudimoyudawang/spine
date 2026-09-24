@@ -361,9 +361,12 @@
    纯操作行（比如「归类」）改不了，弹窗只给「移除这一行」。
    **记账页的「最近流水」同样能点一行改、能删**（两段确认），
    两个入口（速记面板和记账输入框）现在都会往流水里留痕。
-7. **回归网：仓库内还没有等价物。** 现在有七份 harness（六份 node 探针 + 一份截图），
-   但都在仓库外的 `C:\workbuddy\spine-analysis\`（见本节末的表）——
-   别人 clone 下来是跑不到这些的。要不要搬进 `app/tests/`，是个还没定的决定。
+7. ~~回归网：仓库内还没有等价物~~ —— **已了结（2026-09-24，按「分家」处理）**：
+   这一条问的是 `prototype/index.html` 那七份 harness 要不要搬进仓库。
+   结论是**不搬**，理由是原型已定稿不再改（见第 6 节末）——
+   它们的用处是「哪天动原型就全跑一遍」，留一份换机重建说明就够。
+   而 `app/` **自己那套回归网早就在仓库里**（`app/test/`：行为等价性对拍 +
+   两个组件交互测试 + 端到端），跟原型那套是两回事、各管各的。
 8. **正则只做了「拒存」，没做「跑不死的超时」。** `riskyRegex()` 把嵌套量词和超长挡在门外，
    但 HANDOFF 第 3 节那条「真实实现必须把正则放进 Web Worker 设超时」还没做 ——
    那是**上线前必做，不是优化项**（导进来的规则、以及挡不住的写法，都会把页面钉死）。
@@ -564,6 +567,38 @@
 - 验证工具（`app-shot.cjs` / `crop.cjs` / 六个 `app-*-probe.cjs`）都在仓库外的
   `C:\workbuddy\spine-analysis\`，见第 6 节末。
 
+**本机出 APK（`node shell/make-apk.cjs` 那四步）—— 三个沙箱坑（2026-09-24）**
+
+- **`cap sync android` 在沙箱里会静默卡死**：位置在 `update` 阶段 ——
+  打完「Found N Capacitor plugins」之后就再没声了，CPU 用完 0.9 秒后一直干等，
+  连 java 进程都没起来。同一条命令**放到沙箱外只要 7 秒**，所以是沙箱拦的，
+  不是 Capacitor 的问题。**只改 Web 资源时 `cap copy android` 就够了**
+  （copy 在沙箱里正常，10 秒）；`sync = copy + update`，只有**动了原生侧**
+  （加 / 升级 Capacitor 插件）才非它不可，那种时候把整条出包链放到沙箱外跑。
+- **沙箱的 `safe-delete` 守卫会拦掉 H5 构建**：vite 要清 `app/dist/build/h5/assets`
+  （1191 个文件，超过阈值 50），于是报
+  `[safe-delete][SAFE_DELETE_BULK_CONFIRM_REQUIRED] {"count":1191,...}` →
+  `Build failed with errors`。同样是**放到沙箱外跑**就好，别去改 vite 配置。
+- **`cap sync` 死在半路会把 `android/capacitor-cordova-android-plugins/` 清空**，
+  而它是**生成物、不入库**。于是 Gradle 报
+  `Could not read script '.../cordova.variables.gradle' as it does not exist`。
+  补回来只需要跑一次能跑完的 `cap sync android`（沙箱外）。
+  **看到这条 Gradle 报错，先想「是不是上次 sync 死在半路」，别去翻 gradle 配置。**
+- **后台跑长命令不要接 `| tail`**：`tail` 得等管道 EOF 才吐字，整个构建过程
+  一个字都看不到，看着就像卡死。让它自己写日志文件、随时读，或者干脆不接管道。
+
+**数据层查询函数：可选参数省掉不报错，会给一个「看着对」的错答案（2026-09-24）**
+
+- `habitCountOn(id, date)` / `habitDoneOn(id, date)` 的 `date` 是必须的，
+  现在都写了默认值 `= TODAY`。**必须有** —— 省掉它的后果是
+  `count[undefined] → undefined → || 0`：不抛错、返回 0，而 0 在调用方读起来
+  正是「今天还没打卡」。**一个静默的错答案比一个报错难查得多。**
+- 踩到的具体地方：`TreeList.vue` 的 `hold()`（长按撤销）漏传了 `date` ——
+  于是**长按撤销从 `b153b0c` 引入那天起一次都没生效过**，永远提示「今天还没有打卡记录」。
+  对拍抓不到（错的是调用方，不是数据层）；是组件测试
+  `app/test/component-tree.cjs` 把它挖出来的。
+  **教训：省参数的默认值要显式给，别让 `undefined` 悄悄退化成一个「合理」的值。**
+
 ### 6. 本机的验证方式（原型没有测试框架）
 
 - **两层，都要跑**：**jsdom** 加载真实页面 + 派发真实事件做断言（验 DOM / 事件委托 /
@@ -611,11 +646,30 @@
     `--virtual-time-budget=3000` **必须加**（页面靠 JS 渲染，不加截到空壳）。
   - **本机 bash 不可靠**：`head` / `tail` / `wc` / `ls` 之类经常找不到，别在管道里用；
     删文件用 Node 的 `fs.unlinkSync`。
-- **jsdom 里有两类坑**：
+- **jsdom / 组件测试里的几类坑**：
   - `new W(dom).Event(...)` 会被解析成 `(new W(dom)).Event(...)`，报错位置落在点号上。
     先取到 `win` 再 `new win.Event(...)`。
   - **只读 `textarea` 的内容在 `.value` 里，`textContent` 永远是空的。** 读 textContent 会
     得到 `''`，断言写 `indexOf(...) >= 0` 就会莫名其妙地失败。
+  - **Vue 3.4 起事件登记表的键是 `Symbol("_vei")`，不是字符串 `_vei`。**
+    查 Vue 3.4.21 的 `runtime-dom`：`const veiKey = Symbol("_vei")`。
+    所以 `el._vei` 恒为 `undefined` —— 拿它诊断「事件有没有绑上」会得出**反**的结论
+    （看着像没绑，其实绑了）。要走符号：`Object.getOwnPropertySymbols(el)
+    .filter(s => String(s).indexOf('vei') >= 0)`。
+  - **冻结时钟和「时间窗守卫」天生打架。** `lib/frozen-clock.cjs` 让 `Date.now()` 恒定，
+    于是 `tap()` 里那句「距上次长按 <700ms 就跳过」永远成立 —— 长按过一行之后
+    同一行再也点不动。组件测试里给它一块**可推进的表盘**（基准值不变，
+    需要时往前拨），别去改产品代码迁就测试。
+- **`e2e.cjs` 跑的是构建产物，不是源码。** 这是最容易白绕一圈的地方：
+  `src/` 改对了、`dist/` 还是几小时前那份 → 表现成「改对了端到端照样红」。
+  **改完源码一定要重跑 `npm run build:h5` 再跑 e2e。**（2026-09-24 在这上面误判过一次。）
+- **uni-h5 的 `longpress` 有个反直觉处**：`initLongPress()` 监听的是 **window** 的
+  `touchstart`（350ms 定时器），但合成事件时用的是
+  **`evt.target.dispatchEvent(new CustomEvent('longpress'))`**。
+  所以在测试里合成手势时，`touchstart` **必须派发在元素上**（带 `bubbles: true`
+  自然冒泡到 window 的监听器）；派发在 `window` 上 → `evt.target` 就是 window，
+  longpress 也发在 window 上，绑在按钮上的处理器永远收不到。
+  这条长期被误记成「无头浏览器合成触摸不稳定」——**其实它是确定性的收不到**。
 - **用脚本生成测试代码时，`String.replace` 的替换串里 `$$` 会被吃掉一个 `$`。**
   拼进去的 `$$(dom, …)` 会静默变成 `$(dom, …)`，报错却是「find is not a function」，
   离现场很远。替换串里有 `$` 就用函数形式：`s.replace(m, () => xxx)`。

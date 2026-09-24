@@ -10,10 +10,11 @@
     "build:app": "uni build -p app",
     "dev:mp-weixin": "uni -p mp-weixin",
     "build:mp-weixin": "uni build -p mp-weixin",
-    "test": "node test/equiv.cjs && node test/component.cjs",
+    "test": "node test/equiv.cjs && node test/component.cjs && node test/component-tree.cjs",
     "test:equiv": "node test/equiv.cjs",
     "test:equiv:update": "node test/equiv.cjs --update",
     "test:component": "node test/component.cjs",
+    "test:tree": "node test/component-tree.cjs",
     "test:e2e": "node test/e2e.cjs"
   },
   "dependencies": {

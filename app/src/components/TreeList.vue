@@ -92,7 +92,7 @@
    行尾插槽可以不填：`tickable` 为真时默认给打卡按钮（习惯行）。
    计划行要进度条就自己填 tail。 */
 import { ref } from 'vue'
-import { db, toggleFold, addSub, labelOf, saveState, delArmed, bumpHabitLog, habitCountOn } from '../stores/db'
+import { db, TODAY, toggleFold, addSub, labelOf, saveState, delArmed, bumpHabitLog, habitCountOn } from '../stores/db'
 import { confirmDelete, toast } from '../lib/ui'
 import { syncReminders } from '../lib/notify'
 import TreeRow from './TreeRow.vue'
@@ -147,8 +147,13 @@ function commitSub(spec, text) {
    定时器」，手指抬起那一刻 click 照发 —— 不拦的话「长按撤销」会变成
    先 −1 再 +1，等于白按。记下长按的时刻，click 里发现刚长按过就跳过。
    用时间戳不用布尔标志：长按后手指滑出按钮再抬起时 click 不会来，
-   布尔会残留到下一次点击把它误吞；时间戳自己过期，没有这个坑。 */
-let lastLongAt = 0
+   布尔会残留到下一次点击把它误吞；时间戳自己过期，没有这个坑。
+   **还必须记住是哪一行**：早先只存一个全局时间戳，等于「任何一行长按之后
+   700ms 内，别的行的点击也一起被吞」。真机上窗口只有 700ms、很难撞到，
+   但组件测试里时钟是冻的（Date.now() 不前进），于是长按过一行之后
+   所有行的点击全部失效 —— 这条是组件测试当场抓出来的。
+   要拦的就是「同一颗按钮紧跟的那一次 click」，按行判才对。 */
+let lastLong = { id: '', at: 0 }
 
 /* 完成色：设置页选的（db.TICK_DONE），没选就是内置绿。 */
 const doneColor = () => db.TICK_DONE || '#0F7A5A'
@@ -177,7 +182,7 @@ function tickStyle(r) {
   return { borderColor: c, color: c }
 }
 function tap(r) {
-  if (Date.now() - lastLongAt < 700) return
+  if (lastLong.id === r.node.id && Date.now() - lastLong.at < 700) return
   bumpHabitLog(r.node.id, 1)
   saveState()
   /* 打卡之后重排提醒：这个习惯如果设了提醒、今天这一颗已经不该再响，
@@ -191,10 +196,14 @@ function tap(r) {
     : '已打卡 · 长按撤销')
 }
 function hold(r) {
-  lastLongAt = Date.now()
+  lastLong = { id: r.node.id, at: Date.now() }
   /* 有没有打过卡要问**数据层**（habitCountOn 实时查），不能用行上的 todayCount ——
-     那是快照：连续撤销时行对象还没重算，快照说 0 就会跳过一次真实的撤销。 */
-  if (!habitCountOn(r.node.id)) { toast('今天还没有打卡记录'); return }
+     那是快照：连续撤销时行对象还没重算，快照说 0 就会跳过一次真实的撤销。
+     **今天这个日期必须显式传**：habitCountOn 的第二参省掉会退化成 count[undefined]，
+     拿回来恒为 0，于是这里永远提示「今天还没有打卡记录」、一次都撤销不掉。
+     （2026-09-24 修的：这个漏参从 b153b0c 引入长按撤销那天就在了，
+       端到端里一直表现为「长按合成不稳定」，其实它一次都没成功过。） */
+  if (!habitCountOn(r.node.id, TODAY)) { toast('今天还没有打卡记录'); return }
   bumpHabitLog(r.node.id, -1)
   saveState()
   syncReminders()

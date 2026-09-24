@@ -13145,6 +13145,8 @@
   "countAfterUndo": 3,
   "countAfterZero": 1,
   "countBefore": 1,
+  "countNoDate": 4,
+  "doneNoDate": true,
   "doneOnAfterZero": true,
   "entriesAfter1": 1,
   "entriesAfterZero": 1,

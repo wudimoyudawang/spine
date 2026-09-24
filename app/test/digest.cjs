@@ -523,6 +523,11 @@ async function collect(M) {
     bumpHabitLog(id, 1)
     bumpHabitLog(id, 1)
     r.countAfter3 = habitCountOn(id, TODAY)
+    /* 省略日期 = 今天。**这一对是给「漏参」钉的钉子**：漏了参数就会退化成
+       count[undefined] → 0，而不是抛错，所以只能靠「不传 == 传 TODAY」这条断言抓。
+       TreeList 的长按撤销就漏过一次（永远提示「今天还没有打卡记录」）。 */
+    r.countNoDate = habitCountOn(id)
+    r.doneNoDate = habitDoneOn(id)
     r.entryAfter3 = { ...todayEntries()[0] }          /* {key,date,n:3} —— 同一天还是一条 */
     r.rowExtra = habitRowExtra(node, TODAY)           /* todayCount / periodCount / target / unit */
     r.undo1 = bumpHabitLog(id, -1)

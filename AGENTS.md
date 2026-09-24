@@ -44,7 +44,7 @@ AGENTS.md（本文件）→ PROMPT.md（现状与待办）→ HANDOFF.md（产�
 
 ```bash
 cd app
-npm test          # 对拍 + 组件交互，几秒
+npm test          # 对拍 + 两个组件交互测试，几秒
 ```
 
 **改之前跑一遍**。如果改之前就是红的，那是既有问题（先报告，别顺手修）；
@@ -259,18 +259,23 @@ views/  components/        ← 只读 db 的状态、只调 db 的函数
 | 套件 | 命令 | 守的线 | 需要浏览器 |
 |---|---|---|---|
 | **行为等价性对拍** | `npm run test:equiv` | 重构不许改行为 | 否，毫秒级 |
-| **组件交互测试** | `npm run test:component` | 编译产物对了 ≠ 运行期对 | 否（jsdom） |
-| **端到端 + 截图** | `npm run test:e2e` | 界面上真的能用 | 是（先 build） |
+| **组件交互测试** | `npm run test:component` | 编译产物对了 ≠ 运行期对（FreqField） | 否（jsdom） |
+| **打卡按钮交互测试** | `npm run test:tree` | 「事件 → 数据层」这条链（TreeList 点击 / 长按撤销） | 否（jsdom） |
+| **端到端 + 截图** | `npm run test:e2e` | 界面上真的能用 | 是（**先 build**） |
 
-`npm test` = 对拍 + 组件。**端到端不在里面**，因为它需要先构建、起浏览器、慢得多 ——
-**动了视图 / 组件 / 样式就必须单独补跑**。
+`npm test` = 对拍 + 两个组件测试（不需要浏览器，几秒）。**端到端不在里面**，
+因为它需要先构建、起浏览器、慢得多 —— **动了视图 / 组件 / 样式就必须单独补跑**。
+
+> ⚠️ **`test:e2e` 跑的是 `dist/` 里的构建产物，不是源码。** 改完 `src/` 忘了
+> `npm run build:h5`，它测的还是上一版包 —— 表现是「源码改对了，端到端照样红」。
+> 2026-09-24 在这上面误判过一次（把构建产物过期当成产品 bug 没修好）。
 
 ### 5.2 改什么 → 跑什么
 
 | 你改了什么 | 最少要跑 |
 |---|---|
 | `stores/db.js`（逻辑） | `npm test` +（动了取数结构还要）`test:e2e` |
-| 组件（`.vue` 的 script） | `npm test` + `test:component` |
+| 组件（`.vue` 的 script） | `npm test` +（改了模板/结构还要 `build:h5` + `test:e2e`） |
 | 视图模板 / 插槽 / 组件结构 | `npm run build:h5` + `test:e2e` |
 | **纯样式** | `build:h5` + **改动前后各截一套图逐像素比**（见 5.4） |
 | `shell/` | `node shell/build.cjs`（它自带自检） |

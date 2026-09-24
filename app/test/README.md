@@ -4,10 +4,11 @@
 不是重复劳动：**数据层改完靠对拍、组件改完靠交互测试、界面改完靠端到端 + 截图**。
 
 ```bash
-npm test                 # 对拍 + 组件交互（不需要浏览器，几秒）
+npm test                 # 对拍 + 两个组件交互测试（不需要浏览器，几秒）
 npm run test:equiv       # 只跑行为等价性对拍
-npm run test:component   # 只跑组件交互测试
-npm run test:e2e         # 端到端（要先 npm run build:h5，会起浏览器）
+npm run test:component   # 只跑 FreqField 的交互测试
+npm run test:tree        # 只跑 TreeList 打卡按钮的交互测试（点击 / 长按撤销）
+npm run test:e2e         # 端到端（**必须先 npm run build:h5**，会起浏览器）
 ```
 
 ---
@@ -65,7 +66,29 @@ npm i -D jsdom
 
 找不到 jsdom 会打印 `SKIP` 并以 0 退出，不阻塞 `npm test`。
 
-## 3. `e2e.cjs` —— 端到端（真实浏览器 + CDP）
+## 3. `component-tree.cjs` —— TreeList 打卡按钮的交互测试
+
+**它守的线**：打卡 / 长按撤销这条「事件 → 数据层」的链。
+
+把 `TreeList.vue`（连同它用到的 `TreeRow.vue` / `PlusIcon.vue`）真挂到 jsdom 里，
+造两个习惯行（一个多次型、一个单次型），真派发 `click` / `longpress`，断言：
+多次型点一下 +1、长按 −1、连按两次减到 0 会删条目、**长按后紧跟的 click 被吞**、
+单次型打卡 = 已完成态、长按撤销 = 记录删除。
+
+为什么单独一个文件：长按撤销这条链在端到端里要靠合成触摸才能触发（要过 350ms 阈值、
+还依赖坐标），而组件层直接派发事件、直达监听器。**它抓到过一个真 bug**，见下面「两个坑」。
+
+**两个坑（都踩实了，改这个文件前先看）**：
+
+- **Vue 3.4 起事件登记表的键是 `Symbol("_vei")`，不是字符串 `_vei`**。
+  早先这里诊断「事件有没有绑上」用的是 `el._vei`，恒为 `undefined` —— 看着像「没绑上」，
+  其实是读错了地方。要走符号：
+  `Object.getOwnPropertySymbols(el).filter(s => String(s).indexOf('vei') >= 0)`。
+- **冻住的时钟（`Date.now()` 恒定）会让「长按后 700ms 内吞掉 click」这个守卫永不失效** ——
+  同一行长按之后就再也点不动了。所以这个文件里有一块**可推进的表盘**：
+  基准时刻仍是冻结值（`TODAY`、自动 id 都不变），只在需要「假装过了 700ms」时 `advance(ms)`。
+
+## 4. `e2e.cjs` —— 端到端（真实浏览器 + CDP）
 
 **它守的线**：界面上真的能用。
 
@@ -108,6 +131,9 @@ node test/e2e.cjs --shots after/
 
 ## 已知限制
 
+- **`e2e.cjs` 跑的是构建产物，不是源码。** 改完 `src/` 不重新 `npm run build:h5`，
+  它测的还是上一版包 —— 表现是「源码明明改对了，端到端还是红」。
+  （2026-09-24 在这上面绕了很久：`@longpress` 的修复在源码里，而 `dist/` 还是几小时前那份。）
 - `sandbox.cjs` 把依赖**拍平**到同一个目录 —— 目前 store 只有 `db.js` + `seed.js`（同目录），
   够用。以后出现跨目录的相对依赖要改成保留目录结构。
 - `e2e.cjs` 需要 Edge/Chrome；找不到会打印提示并以 0 退出。
