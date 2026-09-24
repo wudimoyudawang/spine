@@ -26,7 +26,22 @@
       </view>
 
       <view class="delbtn" :class="{ 'is-armed': armed }" @click.stop="$emit('del')">
-        <text class="delbtn-t" :class="{ 'is-armed': armed }">{{ armed ? '确认删' : '×' }}</text>
+        <!-- × 用 SVG 不用字符：和旁边的 + 是同一份规格（线宽 2、圆头、currentColor）——
+             字符「×」的字形和粗细跟着字体走，各机型不一样，也永远和 + 对不齐。
+             武装态显示文字「确认删」，那两个字还是要的。 -->
+        <text v-if="armed" class="delbtn-t is-armed">确认删</text>
+        <svg
+          v-else
+          class="dx"
+          style="width: 14px; height: 14px"
+          viewBox="0 0 16 16"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+        >
+          <path d="M4 4l8 8M12 4l-8 8" />
+        </svg>
       </view>
     </view>
 
@@ -168,6 +183,9 @@ function loseFocus() {
   color: var(--sub);
 }
 .nodebtn:active { background: var(--bg); }
+/* 删除那颗的 × 是 SVG（见模板），颜色从这儿给 —— 和 .delbtn-t 原来的 muted 一致 */
+.delbtn { color: var(--muted); }
+.dx { display: block; flex: none; }
 /* 第一下只武装，第二下才真删 */
 .delbtn.is-armed { background: var(--danger-bg); }
 

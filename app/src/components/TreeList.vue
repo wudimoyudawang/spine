@@ -26,14 +26,14 @@
       <!-- 行尾：默认给习惯行的打卡按钮；计划行要用进度条就自己填这个插槽 -->
       <template #tail>
         <slot name="tail" :row="r">
-          <view v-if="tickable" class="tickbox">
-            <view class="tick" :class="{ 'is-on': isOn(r) }" @click.stop="tap(r)" @longpress.stop="hold(r)">
-              <text class="tick-t">{{ tickLabel(r) }}</text>
-            </view>
-            <!-- 长按没有任何视觉提示，多次型的按钮下面常驻这行小字
-                 （和宇定的方案：要「一直看得见」，不是「弹一次就不见了」）。
-                 单次型不显示 —— 它的撤销就是再点一下，本来就知道。 -->
-            <text v-if="multi(r)" class="tick-hint">长按撤销</text>
+          <view
+            v-if="tickable"
+            class="tick"
+            :class="{ 'is-on': isOn(r) }"
+            @click.stop="tap(r)"
+            @longpress.stop="hold(r)"
+          >
+            <text class="tick-t">{{ tickLabel(r) }}</text>
           </view>
         </slot>
       </template>
@@ -119,9 +119,11 @@ function tap(r) {
   if (Date.now() - lastLongAt < 700) return
   bumpHabitLog(r.node.id, 1)
   saveState()
+  /* 撤销的手势只在 toast 里说 —— 按钮下常驻小字试过一版，宇觉得丑；
+     每次打卡都带一句，看过两次自然就知道了。 */
   toast(multi(r)
-    ? '记 1 次 · 本期 ' + (r.periodCount + 1) + '/' + r.target
-    : '已打卡')
+    ? '记 1 次 · 本期 ' + (r.periodCount + 1) + '/' + r.target + ' · 长按撤销'
+    : '已打卡 · 长按撤销')
 }
 function hold(r) {
   lastLongAt = Date.now()
@@ -144,18 +146,13 @@ function del(r) {
 
 /* 打卡按钮的样式跟着按钮一起搬进来（scoped 样式不会跨组件生效）。
    今日页和领域页原先各有一份逐字相同的 .tick / .tick-t。 */
-.tickbox {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  margin-left: 8px;
-}
 .tick {
   display: flex;
   align-items: center;
   justify-content: center;
   min-height: 32px;
   padding: 6px 14px;
+  margin-left: 8px;
   border: 1px solid var(--line2);
   border-radius: 8px;
   background: var(--card);
@@ -164,7 +161,4 @@ function del(r) {
 .tick.is-on { background: var(--ok-bg); border-color: var(--ok); }
 .tick.is-on .tick-t { color: var(--ok); }
 .tick:active { background: var(--bg); }
-/* 长按说明。比页面上任何正文都小一号 —— 它不是说给每一次看的，
-   是让人第一次就知道有这个手势。 */
-.tick-hint { margin-top: 2px; font-size: 9px; color: var(--muted); }
 </style>
