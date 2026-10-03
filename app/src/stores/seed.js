@@ -10,6 +10,12 @@ export const TODAY='2026-09-18';
 
 export const CATS=['餐饮','出行','数码','生活','娱乐','医疗','服饰'];
 
+/* 收入分类是**另一份清单**（2026-10-04 加）。和 CATS 各管各的 ——
+ * 「餐饮」出现在收入里没有意义，反过来也一样，共用一份只会让分类统计发浑。
+ * 它和 CATS 一样是用户能自己增删改的，所以跟着档案走（进 DATA_KEYS）。
+ * 默认这三项是照记账录入页收入那一档的样子配的。 */
+export const IN_CATS=['理财','副业','工资'];
+
 export const CAT_WORDS={
   '餐饮':['早餐','早饭','午餐','午饭','晚餐','晚饭','咖啡','奶茶','外卖','吃饭','聚餐','零食','夜宵','水果'],
   '出行':['地铁','公交','打车','出租','加油','高铁','机票','停车','单车','过路费'],
@@ -114,7 +120,14 @@ export const LOGS=[
   {id:'lg4',kind:'money',date:'2026-09-16',category:'数码',value:899},
   {id:'lg5',kind:'money',date:'2026-09-15',category:'餐饮',value:26},
   {id:'lg6',kind:'money',date:'2026-09-14',category:'生活',value:460},
-  {id:'lg7',kind:'money',date:'2026-09-12',category:'娱乐',value:210}
+  {id:'lg7',kind:'money',date:'2026-09-12',category:'娱乐',value:210},
+  /* 收入两笔（2026-10-04 加）。为什么种子里非有不可：收入在界面上占一整个 tab，
+     种子里一笔都没有的话，新装上的人切过去只看得到空网格，验证截图也拍不到它。
+     为什么**只有收入的记录带 dir**：支出不写 dir 是刻意的 ——「缺失 = 支出」是契约，
+     写满了这一条就永远走不到，「老档案缺 dir」那条兼容断言也就等于没验。
+     （两笔金额都刻意留了小数 / 整数各一，`money()` 两种格式都得走到。） */
+  {id:'lg8',kind:'money',dir:'in',date:'2026-09-15',category:'工资',value:12000},
+  {id:'lg9',kind:'money',dir:'in',date:'2026-09-17',category:'理财',value:186.5}
 ];
 
 export const DOMAINS=[
@@ -218,6 +231,6 @@ export const CLOSED_NODES={};
    SEED_UI   = 界面状态（哪些条目被折叠了），只活在这个会话里，不导出去。 */
 export const SEED_DATA = {
   ITEMS, HABIT_LOGS, INBOX, NOTES, NOTE_PROMPTS, LOGS, DOMAINS,
-  RECORD_TYPES, CAPTURE_MODES, AUTO_RULES, TODAY_LOGS, CAT_WORDS, CATS
+  RECORD_TYPES, CAPTURE_MODES, AUTO_RULES, TODAY_LOGS, CAT_WORDS, CATS, IN_CATS
 }
 export const SEED_UI = { CLOSED_NODES }

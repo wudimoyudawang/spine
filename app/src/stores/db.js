@@ -92,11 +92,31 @@ export const QUAD_COLOR_DEFAULT = { q1: '#D64545', q2: '#E08E2B', q3: '#3B7DD8',
 export const QUAD_KEYS = ['q1', 'q2', 'q3', 'q4']
 export const DEFAULT_REV_TRENDS = [{ k: 'money' }, { k: 'rt', id: 'rt_weight' }, { k: 'rt', id: 'rt_kcal_in' }]
 
+/* 收入分类的**出厂默认**（2026-10-04 加）。
+ *
+ * 为什么它是个常量、而不是只在种子数据里写一份：
+ * 「档案里没有 IN_CATS」有三种来路，三种都得落到同一个答案上 ——
+ *   ① 老档案导入（`replaceAll` 按 DATA_KEYS 逐项换，缺项即清空）
+ *   ② 老 localStorage（`restore` 是「缺就保留本机现值」）
+ *   ③ 用户点了「清空数据」
+ * 这三条路各自有落点：①③ 走 `EMPTY_VALUE_OF`，② 靠 `db` 这个 reactive 的初值
+ * ——两处都指向这里。**不要**在 `ensureIds` 里按「空不空」判：用户把收入分类
+ * 真的删光了得到的也是 `[]`，补回去等于跟他的选择对抗。
+ * （`undefined ≠ []` 这个区分靠 `replaceAll` 的 `hasOwnProperty` 做，那里才是
+ * 唯一分得清「那时候还没有这一项」和「用户清空了」的地方。） */
+export const DEFAULT_IN_CATS = ['理财', '副业', '工资']
+
 /* ---------------- 状态 ---------------- */
 export const db = reactive({
   ITEMS: [], HABIT_LOGS: [], INBOX: [], NOTES: [], NOTE_PROMPTS: [],
   LOGS: [], DOMAINS: [], RECORD_TYPES: [], CAPTURE_MODES: [],
   AUTO_RULES: [], TODAY_LOGS: [], CAT_WORDS: {}, CATS: [],
+  /* 收入分类。**和 CATS 各管各的** —— 两份清单，两个 tab 各配一套图标，
+     共用一份会让「餐饮」出现在收入里，分类统计也跟着发浑。
+     它和 CATS 一样是用户能自己增删改的，所以进 DATA_KEYS。
+     初值给的是**出厂默认**而不是空数组：这个 reactive 的初值同时兜住
+     「老 localStorage 里没有这一项」那条路，理由见 DEFAULT_IN_CATS。 */
+  IN_CATS: DEFAULT_IN_CATS.slice(),
   /* 界面状态 */
   CURRENT: 'today',
   DOMAIN_ID: '',
@@ -119,12 +139,21 @@ export const db = reactive({
        默认关的理由：这个应用的气质是「安静地记」，通知是唯一会主动打扰人的东西，
        必须由人自己打开（装完就弹权限申请也是同一件事的反面）。 */
     NOTIFY_ON: false,
-  /* 面板开着没有、现在是哪个模式。
+  /* 面板开着没有。
      瞬时状态，**不进 UI_KEYS** —— 重开 App 时不该一进来就弹着个面板。
      放在 db 里而不是组件内部，是因为底栏和面板是两个组件，
      挂在任意一边另一边都得转发事件。 */
   CAP_OPEN: false,
-  CAPTURE_KIND: 'quick',
+  /* 记账录入页（整页那个）开着没有、现在记哪个方向（2026-10-04 加）。
+     和 CAP_OPEN 一样是瞬时状态，**不进 UI_KEYS**。
+
+     ⚠️ 原来的 `CAPTURE_KIND` 在这里被**删掉**了：面板里那个「记账」模式不再是
+     「同一个面板的另一种输入」，而是跳到这一页 —— 它只剩「记一笔」一个取值，
+     留着一个永远不变的字段，只会让下一个人以为面板还有两种模式。
+     （`db.js` 的导出只增不减是针对**函数**的；这是一个界面状态字段，
+     归档时少写一个键，老档案读回来也不会出错。） */
+  PAY_OPEN: false,
+  PAY_DIR: 'out',
   /* 「记一笔」那排胶囊：哪些进这一排、按什么顺序。
      存成一张**独立的偏好表**，不去动 CAPTURE_MODES / RECORD_TYPES 本身 ——
      那两个是「有什么可记」（数据），这张是「你想怎么摆」（偏好）。
@@ -149,12 +178,15 @@ export const db = reactive({
   REV_TRENDS: deepCopy(DEFAULT_REV_TRENDS)
 })
 
-/* 进快照、进导出文件的就是这 15 项。前 13 项和原型的 DATA_VARS 一字不差，
-   末尾两项是 uni-app 版新增的界面偏好（原型把这类配置放在设置页里改，没进快照）：
-   挑哪几颗胶囊、盯哪几项趋势，都是人一条条调出来的，换设备时不该重来一遍。 */
+/* 进快照、进导出文件的就是这 17 项。前 13 项和原型的 DATA_VARS 一字不差，
+   末尾几项是 uni-app 版新增的：4 项界面偏好（原型把这类配置放在设置页里改，没进快照）——
+   挑哪几颗胶囊、盯哪几项趋势、四象限什么颜色、收入有哪些类，都是人一条条调出来的，
+   换设备时不该重来一遍。
+   ⚠️ **IN_CATS 是末尾新加的**（原来在末尾的是 QUAD_COLORS）——
+   新增一律追加，不动前面各项的位置。 */
 export const DATA_KEYS = ['ITEMS', 'HABIT_LOGS', 'INBOX', 'NOTES', 'NOTE_PROMPTS', 'LOGS',
   'DOMAINS', 'RECORD_TYPES', 'CAPTURE_MODES', 'AUTO_RULES', 'TODAY_LOGS', 'CAT_WORDS', 'CATS',
-  'CAP_CFG', 'REV_TRENDS', 'QUAD_COLORS']
+  'CAP_CFG', 'REV_TRENDS', 'QUAD_COLORS', 'IN_CATS']
 
 /* 界面状态：跟着设备走。
  *
@@ -291,7 +323,7 @@ export function restore(raw) {
  * 「缺了就保留本机」会让一份残缺档案看起来导入成功了、实际留下两边的混合数据 ——
  * 那是更坏的一种失败，因为人不会发现。**档案的完整性由用户自己负责。**
  *
- * 「整体」的范围 = DATA_KEYS 全部 16 项，与 snapshot() / exportText() 的范围严格一致
+ * 「整体」的范围 = DATA_KEYS 全部 17 项，与 snapshot() / exportText() 的范围严格一致
  * （不一致的话，导入一份自己刚导出的文件都会丢东西）。
  * **不碰 UI_KEYS**：那是「我在哪一页」，跟着设备走 —— 导入的是数据，不该顺手把人踢走
  * （importSnapshot 另外还把 CURRENT 显式还原了一次，见那里的说明）。
@@ -301,7 +333,7 @@ export function restore(raw) {
  * 但两者共用 DATA_KEYS 这一份清单，范围不会分叉。 */
 export function replaceAll(archive) {
   const v = (archive && archive.v) || {}
-  /* 先把 16 项的新值全算出来，再一次性赋值：算的过程中抛错也不会留下
+  /* 先把 17 项的新值全算出来，再一次性赋值：算的过程中抛错也不会留下
      「换了一半」的中间状态（屏幕上看着新、存储里是旧的那种最坏失败）。 */
   const next = {}
   for (const k of DATA_KEYS) {
@@ -360,7 +392,15 @@ const EMPTY_VALUE_OF = {
   CAT_WORDS: function () { return {} },
   CAP_CFG: function () { return { order: [], common: {} } },
   REV_TRENDS: function () { return [] },
-  QUAD_COLORS: function () { return {} }
+  QUAD_COLORS: function () { return {} },
+  /* 收入分类的「空」是**出厂默认**，不是 `[]`。它和上面那几项不一样：
+     REV_TRENDS / QUAD_COLORS 是用户配出来的，空了就该是空（读取层各自有兜底色 / 空清单）；
+     而 IN_CATS 里的三项是**出厂就有的**，不是用户数据 ——
+     老档案（那时候还没有收入分类）导进来、或者用户清空数据之后，
+     收入那一边不该一个分类都选不到。
+     用户真要清空收入分类，得到的是 `IN_CATS: []`，那一个是**显式写在档案里**的，
+     走的是 replaceAll 的另一条分支（hasOwnProperty 为真），不会被这里覆盖。 */
+  IN_CATS: function () { return DEFAULT_IN_CATS.slice() }
 }
 export function clearAllData() {
   for (const k of DATA_KEYS) {
@@ -385,6 +425,10 @@ function ensureIds() {
   for (const it of db.ITEMS || []) { if (!it.id) it.id = newId('it') }
   for (const n of db.NOTES || []) { if (!n.id) n.id = newId('nt') }
   for (const n of db.INBOX || []) { if (!n.id) n.id = newId('in') }
+  /* IN_CATS 是后加的一项。**不在这里修** —— 它有别的落点：
+     「档案/存储里根本没有这一项」由 `db` 的初值和 `EMPTY_VALUE_OF` 兜住；
+     而「用户把收入分类全删了」得到的是 `[]`，那是他的选择，补回去等于跟他对抗。
+     在这里按「空不空」判断会把这两件事混成一件（见 DEFAULT_IN_CATS 那段）。 */
 }
 
 /* 流水行的 id 是后加的（「移除这一行」要用它，数组下标不行）。
@@ -937,27 +981,59 @@ export function sumByCategory(list) {
   return out
 }
 
-/* ---------------- 记账品类 ---------------- */
+/* ---------------- 收支方向 ----------------
+ * `dir` 是**后加的可选字段**，只有收入写 `'in'`，支出**不写**（缺失即支出）。
+ * 为什么不给支出也补一个 `'out'`：那样「缺失 = 支出」这条契约就永远走不到，
+ * 「老档案缺 dir」的兼容路径也就没有任何一条测试在验它了。
+ *
+ * 判断只允许走下面两个函数。散着写 `l.dir === 'in'` 的话，
+ * 将来要加第三种方向（转账）就得满仓去找 —— 而漏一处是静默算错钱。 */
+export function dirOf(l) { return (l && l.dir === 'in') ? 'in' : 'out' }
+export function isIncome(l) { return dirOf(l) === 'in' }
+/* 方向的中文说法。界面上要说「支出 / 收入」的地方都从这儿取，不许各写各的。 */
+export function dirName(dir) { return dir === 'in' ? '收入' : '支出' }
+
+/* ---------------- 记账品类 ----------------
+ * 支出和收入**各一份清单**（`db.CATS` / `db.IN_CATS`），所以下面每个函数都带一个
+ * 尾部的 `dir` 参数，**缺省 = 支出**。加参数而不是另写一套 `inCatList()` /
+ * `addInCat()`：两套的话「改名要连带已记的」这种规则就得维护两份，
+ * 迟早只改一处（见 AGENTS.md 4.3「近似的规则不要硬合并」的反面：
+ * 这里不是近似，是逐条相同，那就该是一份代码）。
+ * 现有调用方一个都不用改 —— 它们不传 dir，拿到的还是原来那份支出清单。 */
+function catArr(dir) { return dir === 'in' ? db.IN_CATS : db.CATS }
+
 /* 清单 + 历史里出现过、但已经不在清单里的（追加在最后）。
    编辑弹窗用它，这样删过类之后仍然能把老记录改回原来的类。 */
-export function catList() {
-  const out = db.CATS.slice(), seen = {}
+export function catList(dir) {
+  const d = dir === 'in' ? 'in' : 'out'
+  const arr = catArr(d)
+  const out = (Array.isArray(arr) ? arr : []).slice(), seen = {}
   out.forEach(c => { seen[c] = 1 })
+  /* 只认**同方向**的历史：拿支出清单去补收入那一栏，会让「餐饮」出现在收入的候选里 */
   for (const l of db.LOGS) {
+    if (l.kind !== 'money' || dirOf(l) !== d) continue
     const c = l.category
     if (c && !seen[c]) { seen[c] = 1; out.push(c) }
   }
   return out
 }
 /* 分类候选。'未分类' 永远给选 —— 存的时候它是空串，
-   但打开老记录时显示的就是它，选不到等于改不动。 */
-function catOpts() {
-  const list = catList().filter(function (c) { return c !== '未分类' })
+   但打开老记录时显示的就是它，选不到等于改不动。
+   `keep` 是「这条记录现在用的那个分类」：改方向之后它多半不在新方向的清单里，
+   缀在末尾让它仍然是个能看见、能选中的项 —— 不缀的话 chip 一排全不高亮，
+   看着像这个分类丢了，而它其实还在草稿里、也还会存下去。 */
+function catOpts(dir, keep) {
+  const list = catList(dir).filter(function (c) { return c !== '未分类' })
   const out = list.map(function (c) { return [c, c] })
+  if (keep && keep !== '未分类' && list.indexOf(keep) < 0) out.push([keep, keep])
   out.push(['未分类', '未分类'])
   return out
 }
 
+/* 「自动猜」只服务支出，而且是**单向**的：
+ * 一句话里有个数字，猜它花在哪一类。收入没有对应的关键词表 ——
+ * 收入分类就那几个（工资 / 理财 / 副业），手点一下比猜更准，
+ * 猜错了还得回头改，反而多一步。所以 `IN_CATS` 没有配套的 `IN_CAT_WORDS`。 */
 export function guessCategory(text) {
   const t = String(text == null ? '' : text)
   for (const k in db.CAT_WORDS) {
@@ -971,39 +1047,49 @@ export function guessCategory(text) {
 
 /* 某个品类被记过多少笔。删之前要看得见下面挂着几条 ——
    「删掉不影响已记的」不是空话，得有个地方能核对。 */
-export function catUsed(name) {
+export function catUsed(name, dir) {
+  const d = dir === 'in' ? 'in' : 'out'
   let n = 0
-  for (const l of db.LOGS) { if (l.category === name) n++ }
+  for (const l of db.LOGS) { if (l.category === name && dirOf(l) === d) n++ }
   return n
 }
 
-function catClash(name, except) {
-  return db.CATS.indexOf(name) >= 0 && name !== except
+function catClash(name, except, dir) {
+  return catList(dir).indexOf(name) >= 0 && name !== except
 }
 
-export function addCat(name) {
+export function addCat(name, dir) {
+  const d = dir === 'in' ? 'in' : 'out'
   const v = String(name || '').trim()
   if (!v) return { error: '先写个名字' }
-  if (catClash(v)) return { error: '已经有「' + v + '」了' }
-  db.CATS.push(v)
+  /* 查重查的是**清单本身**，不是 catList() —— 后者会把历史里补进来的名字也算上，
+     拿它去拦会拦出一个用户看不见的「已经有这个了」（那名字并不在清单里）。 */
+  if (catArr(d).indexOf(v) >= 0) return { error: '已经有「' + v + '」了' }
+  catArr(d).push(v)
   return { name: v }
 }
 
-/* 改名要把已记的那几笔一起改过来，否则分类柱状图会裂成两根
+/* 改名要把**同方向**已记的那几笔一起改过来，否则分类柱状图会裂成两根
    （旧名一根、新名一根），看着像数据坏了。
    顺手把「自动猜」那张表也换名：不换的话旧名字再也不会出现在清单里，
-   猜出来的分类没人认得出。 */
-export function renameCat(from, name) {
+   猜出来的分类没人认得出。
+   ⚠️ 收入侧**不动 CAT_WORDS** —— 那张表是支出专用的关键词表，
+   拿收入分类名去写它，会让「工资」变成一个能猜到支出的词。 */
+export function renameCat(from, name, dir) {
+  const d = dir === 'in' ? 'in' : 'out'
   const v = String(name || '').trim()
-  const i = db.CATS.indexOf(from)
+  const arr = catArr(d)
+  const i = arr.indexOf(from)
   if (i < 0) return { error: '这个品类已经不在了' }
   if (!v) return { error: '先写个名字' }
-  if (catClash(v, from)) return { error: '已经有「' + v + '」了' }
+  if (catClash(v, from, d)) return { error: '已经有「' + v + '」了' }
   if (v === from) return { name: v, moved: 0 }
-  db.CATS[i] = v
+  arr[i] = v
   let moved = 0
-  for (const l of db.LOGS) { if (l.category === from) { l.category = v; moved++ } }
-  if (db.CAT_WORDS[from]) {
+  for (const l of db.LOGS) {
+    if (l.category === from && dirOf(l) === d) { l.category = v; moved++ }
+  }
+  if (d === 'out' && db.CAT_WORDS[from]) {
     db.CAT_WORDS[v] = db.CAT_WORDS[from]
     delete db.CAT_WORDS[from]
   }
@@ -1013,11 +1099,13 @@ export function renameCat(from, name) {
 /* 删一个品类只把它从清单里拿走。已记的那几笔一个字不改 ——
    它们还带着旧分类，所以 catList() 会把它补回候选末尾，
    老记录照样能改回这个类。（分类可以错，数据不该丢。） */
-export function delCat(name) {
-  const i = db.CATS.indexOf(name)
+export function delCat(name, dir) {
+  const d = dir === 'in' ? 'in' : 'out'
+  const arr = catArr(d)
+  const i = arr.indexOf(name)
   if (i < 0) return { error: '这个品类已经不在了' }
-  const used = catUsed(name)
-  db.CATS.splice(i, 1)
+  const used = catUsed(name, d)
+  arr.splice(i, 1)
   return { name: name, used: used }
 }
 
@@ -1042,30 +1130,49 @@ function newId(prefix) {
   return prefix + Date.now().toString(36) + '-' + SEQ
 }
 
-export function addMoney(value, text, category) {
+export function addMoney(value, text, category, dir, note) {
   const num = Number(value)
   if (!num || num <= 0) return null
+  const d = dir === 'in' ? 'in' : 'out'
   const rec = {
     id: newId('lg'), kind: 'money', date: TODAY,
-    category: category || guessCategory(text) || '', value: Math.round(num * 100) / 100
+    /* 收入才写 dir；支出不写（缺失即支出，见 dirOf 那段）。
+       分类**只对支出自动猜** —— 收入没有关键词表，拿支出的词表去猜收入
+       会把「打车」这种句子猜成收入分类。 */
+    category: category || (d === 'out' ? guessCategory(text) : '') || '',
+    value: Math.round(num * 100) / 100
   }
+  if (d === 'in') rec.dir = 'in'
+  /* 备注也不写空值 —— 空串和「没有这个字段」在显示层是一回事（都读成没有），
+     但存成空串会让导出的 JSON 多出一堆 `"note": ""`。 */
+  const nt = String(note == null ? '' : note).trim()
+  if (nt) rec.note = nt
   db.LOGS.unshift(rec)
   /* 「记下这笔」和「今天流水里有它」是同一个动作的两半，所以写在同一个入口里。
      记支出的有两个入口（速记面板、记账页那个框），散在两处写流水迟早漏一个。 */
-  pushTodayLog('', '', '', describeCapture({ kind: 'money', value: rec.value, category: rec.category }),
+  pushTodayLog('', '', '', describeCapture({ kind: 'money', dir: d, value: rec.value, category: rec.category, note: nt }),
     { k: 'money', id: rec.id })
   return rec
 }
 
 /* 记账那个「记下」框的提交，抽到数据层：记账页上有一个框、品类弹层里还有一个，
    两处各写一份的话，迟早有一天一句话在两处解成两个金额 ——
-   那是这台设备上最难查的一种错。返回 { rec } 或 { error }。 */
-export function commitMoneyText(t) {
+   那是这台设备上最难查的一种错。返回 { rec } 或 { error}。
+   `dir` 尾部可选，缺省 = 支出（老调用方一个字都不用改）。
+   注意这句话解析走的是**支出**规则（`resolveCapture`），所以收入那边
+   不走这条路 —— 收入要手选分类、手打金额，见记账录入页。
+
+   ⚠️ **目前没有视图调用它了**（2026-10-04）：品类弹层那个输入框随记账录入页
+   一起撤掉了，录入统一走 MoneyPage 的 `addMoney()`。
+   留着不删，是因为「一句话记一笔支出」这个能力本身是对的，
+   而且它对拍里有断言兜着；真要删，按 AGENTS.md 2.2 得先确认全仓无调用方**并经用户同意**。 */
+export function commitMoneyText(t, dir) {
+  const d = dir === 'in' ? 'in' : 'out'
   const text = String(t || '').trim()
   if (!text) return { error: '先写一句' }
   const r = resolveCapture(text, 'auto')
   if (r.kind !== 'money' || r.value === null) return { error: '这里只记支出，金额写在开头' }
-  const rec = addMoney(r.value, r.text, r.category)
+  const rec = addMoney(r.value, r.text, r.category, d)
   if (!rec) return { error: '金额不对' }
   return { rec: rec }
 }
@@ -1571,8 +1678,13 @@ export function describeCapture(r) {
     return rt.name + (r.text ? ' · ' + r.text : '')
   }
   /* 「没选分类」这件事只有一种说法：未分类。预览、流水、记账列表说的是同一个事实，
-     换个词（'分类待定'）就等于多出一处措辞，将来两处会各说一套。 */
-  if (r.kind === 'money') return '支出 ' + (r.value === null ? '' : '¥' + r.value) + ' · ' + (r.category || '未分类')
+     换个词（'分类待定'）就等于多出一处措辞，将来两处会各说一套。
+     方向（支出/收入）也在这里说 —— 流水行、预览、编辑弹窗读的是同一句。
+     备注缀在最后：它是这一笔的补充，不是分类的一部分（换了措辞也不该把它吃掉）。 */
+  if (r.kind === 'money') {
+    return dirName(r.dir) + ' ' + (r.value === null ? '' : '¥' + r.value) + ' · ' + (r.category || '未分类') +
+      (r.note ? ' · ' + r.note : '')
+  }
   if (r.kind === 'todo') {
     if (r.due) return '待办 · ' + (r.due === TODAY ? '今天到期' : fmtCN(r.due) + ' 到期')
     return '待办 · 进今天'
@@ -1795,39 +1907,75 @@ function delDomain(id) {
    硬塞进 DOMAINS 得处处判空。 */
 export const MONEY_SPACE = { id: 'money', name: '记账', fixed: true }
 
-/* 面板开合。
-   kind 是面板里的模式：'quick' = 记一笔（写什么都行，规则自己判），
-   'money' = 记账（先挑品类再填金额）。不传就保持当前那个。 */
+/* 面板开合。kind 现在只剩一个意思：传 'money' = **不打开面板，直接进记账录入页**
+   （面板底部那格「记账」走的就是这条路 —— 录入是一个整页，要键盘、要分类网格，
+   在面板里再实现一份就是两个入口做同一件事）。不传 = 打开「记一笔」面板。 */
 export function openCapture(kind) {
-  if (kind) db.CAPTURE_KIND = kind
+  if (kind === 'money') { openPay('out'); return }
   db.CAP_OPEN = true
 }
 export function closeCapture() {
   db.CAP_OPEN = false
 }
 
+/* 记账录入页的开合（2026-10-04 加）。
+ *
+ * 它和 CAPTURE_KIND 那个旧模式的区别：录入现在是一个**整页**（要自绘键盘、
+ * 要分类图标网格，面板那个矮盒子装不下），所以它自己一份状态。
+ * 但数据仍然是同一个来源 —— 写入口只有 `addMoney()` 一处。
+ *
+ * `dir` 只在这一页被**打开**时决定，不是每次渲染都读：打开之后页内自己切 tab，
+ * 切完不该被外面那个调用方按回去。 */
+export function openPay(dir) {
+  if (dir) db.PAY_DIR = dir === 'in' ? 'in' : 'out'
+  db.PAY_OPEN = true
+}
+export function closePay() {
+  db.PAY_OPEN = false
+}
+
 /* ---------------- 今日页要用的几项 ---------------- */
 
-/* 某个月的支出：明细 + 合计 + 笔数。传 '2026-09' 这样的前缀
+/* 某个月的**一个方向**的账：明细 + 合计 + 笔数。传 '2026-09' 这样的前缀
    （原型的 sumByCategory 就是这个用法）。
  *
- * 三个地方都在要这同一个数：今日页的「本月」（只要合计）、记账页的柱状图与合计
+ * 三个地方都在要这同一个数：今日页的「本月」（只要支出合计）、记账页的柱状图与合计
  * （还要明细）、空间页记账卡的摘要。原先各自 filter + reduce 扫一遍，
  * 改口径（比如某类算不算）就得改三处，漏一处两个页面就对不上 ——
  * 而这两个数并排显示在同一屏上，对不上会很难看。
  *
- * 记账页要明细画柱状图，所以 list 一并给出去，免得它为了明细再扫一遍。 */
-export function monthMoney(prefix) {
+ * 记账页要明细画柱状图，所以 list 一并给出去，免得它为了明细再扫一遍。
+ *
+ * `dir` 尾部可选，**缺省 = 支出**：今日页那行、空间页那张卡读的都是它，
+ * 传不传都是老口径（「今天花了多少」不该被一笔工资抹平，那是两个问题）。
+ * 要看收支两边的走 monthSummary。 */
+export function monthMoney(prefix, dir) {
   const p = String(prefix || '')
+  const want = dir === 'in' ? 'in' : 'out'
   const list = []
   let sum = 0
   for (const l of db.LOGS) {
     if (l.kind !== 'money') continue
+    if (dirOf(l) !== want) continue
     if (String(l.date).slice(0, 7) !== p) continue
     list.push(l)
     sum += Number(l.value || 0)
   }
   return { list: list, sum: Math.round(sum * 100) / 100, count: list.length }
+}
+
+/* 某个月的收支两边 + 结余。记账页要的就是这个数 ——
+ * 它是**唯一**一处把「收入」和「支出」并排算出来的地方，
+ * 免得记账页自己 reduce 一遍（那样收入的口径会和 monthMoney 漂开）。 */
+export function monthSummary(prefix) {
+  const out = monthMoney(prefix, 'out')
+  const income = monthMoney(prefix, 'in')
+  return {
+    out: out, in: income,
+    /* 结余 = 收入 − 支出。可以为负，**不做 0 截断** ——
+       这个月花超了就是要看见它是负的。 */
+    net: Math.round((income.sum - out.sum) * 100) / 100
+  }
 }
 
 /* 只要合计的走这里。moneyTotalOf 这个名字保留 —— 它对外的语义没变。 */
@@ -2267,7 +2415,7 @@ export function monthView(anchorIso) {
   /* 周一起头。网格第一格是「含 1 号的那一周的周一」，可能落在上个月。 */
   const lead = startOfWeek(first)
 
-  const open = {}, done = {}, habit = {}, money = {}, rt = {}
+  const open = {}, done = {}, habit = {}, money = {}, income = {}, rt = {}
   for (const it of (db.ITEMS || [])) {
     if (!it.due) continue
     if (it.status === 'done') done[it.due] = (done[it.due] || 0) + 1
@@ -2277,9 +2425,14 @@ export function monthView(anchorIso) {
   for (const l of (db.LOGS || [])) {
     if (!l.date) continue
     /* money 在这里存的是**当天的支出合计**，不是笔数 ——
-       格子里要显示的是「那天花了多少」。笔数另外由 dayMarks 给。 */
-    if (l.kind === 'money') money[l.date] = (money[l.date] || 0) + Number(l.value || 0)
-    else rt[l.date] = (rt[l.date] || 0) + 1
+       格子里要显示的是「那天花了多少」。笔数另外由 dayMarks 给。
+       收入单记一本 `income`（2026-10-04 加）：格子那一行放不下两个数，
+       「那天花了多少」才是日历要回答的问题，所以格子照旧只显示支出；
+       收入单独给出来，让「点开这一天」那一块能分收支两行列。 */
+    if (l.kind === 'money') {
+      if (dirOf(l) === 'in') income[l.date] = (income[l.date] || 0) + Number(l.value || 0)
+      else money[l.date] = (money[l.date] || 0) + Number(l.value || 0)
+    } else rt[l.date] = (rt[l.date] || 0) + 1
   }
   for (const t of (db.RECORD_TYPES || [])) {
     if (t.retired) continue
@@ -2307,9 +2460,10 @@ export function monthView(anchorIso) {
       done: done[iso] || 0,
       habit: habit[iso] || 0,
       money: Math.round((money[iso] || 0) * 100) / 100,
+      income: Math.round((income[iso] || 0) * 100) / 100,
       rt: rt[iso] || 0
     }
-    c.any = !!(c.habit || c.money || c.rt)
+    c.any = !!(c.habit || c.money || c.income || c.rt)
     if (inMonth) { mOpen += c.open; mDone += c.done }
     cells.push(c)
   }
@@ -2357,12 +2511,15 @@ export function dayMarks(iso) {
   }
   const moneyList = []
   let moneyCount = 0, moneySum = 0
+  let inCount = 0, inSum = 0
   for (const l of (db.LOGS || [])) {
     if (l.date !== iso || l.kind !== 'money') continue
-    moneyCount++
-    moneySum += Number(l.value || 0)
-    /* 日历那天那一栏要把每一笔列出来（分类 + 金额），不是只给个合计 */
-    moneyList.push({ category: l.category || '未分类', value: Math.round(Number(l.value || 0) * 100) / 100 })
+    const v = Math.round(Number(l.value || 0) * 100) / 100
+    /* 日历那天那一栏要把每一笔列出来（分类 + 金额），不是只给个合计。
+       `dir` 跟着这一笔走 —— 显示层要靠它决定 ± 号和颜色，不在这里定死。 */
+    const row = { category: l.category || '未分类', value: v, dir: dirOf(l) }
+    moneyList.push(row)
+    if (row.dir === 'in') { inCount++; inSum += v } else { moneyCount++; moneySum += v }
   }
   for (const t of (db.RECORD_TYPES || [])) {
     if (t.retired) continue
@@ -2372,7 +2529,10 @@ export function dayMarks(iso) {
       }
     }
   }
-  return { habits, moneyList, moneyCount, moneySum: Math.round(moneySum * 100) / 100, rts }
+  return {
+    habits, moneyList, moneyCount, moneySum: Math.round(moneySum * 100) / 100,
+    inCount, inSum: Math.round(inSum * 100) / 100, rts
+  }
 }
 
 export function shiftWeeks(iso, n) { return shiftDays(iso, n * 7) }
@@ -2417,10 +2577,13 @@ export function weekView(anchorIso) {
     if (arr.indexOf(n) < 0) arr.push(n)
   }
 
-  const moneyByDay = {}
+  /* 支出和收入分开两本（和 monthView 同一个口径）——
+     周视图每天那行写的也是「那天花了多少」，收入另给一个数。 */
+  const moneyByDay = {}, incomeByDay = {}
   for (const l of (db.LOGS || [])) {
     if (!l.date || l.kind !== 'money') continue
-    moneyByDay[l.date] = (moneyByDay[l.date] || 0) + Number(l.value || 0)
+    if (dirOf(l) === 'in') incomeByDay[l.date] = (incomeByDay[l.date] || 0) + Number(l.value || 0)
+    else moneyByDay[l.date] = (moneyByDay[l.date] || 0) + Number(l.value || 0)
   }
 
   const rtByDay = {}
@@ -2452,6 +2615,7 @@ export function weekView(anchorIso) {
       done: b ? b.done : 0,
       habit: (habitNamesByDay[iso] || []).length,
       moneySum: Math.round((moneyByDay[iso] || 0) * 100) / 100,
+      incomeSum: Math.round((incomeByDay[iso] || 0) * 100) / 100,
       rt: rtByDay[iso] || 0
     })
   }
@@ -2463,24 +2627,39 @@ export function weekView(anchorIso) {
  *
  * 「对比上期」是这里最容易做错的一处：上一期一笔都没记的时候，
  * 不能拿 0 当分母算出「多了 100%」—— 那种数会让人以为账坏了。
- * 所以 prev / prevCount 原样给出去，措辞由显示层决定（见 calendar.vue）。 */
+ * 所以 prev / prevCount 原样给出去，措辞由显示层决定（见 calendar.vue）。
+ *
+ * 收入（2026-10-04 加）：`sum / count / cats / prev` 仍然是**支出**那一路，
+ * 一个字没动（BillBar 那句「本期支出」读的就是它）。收入另给一组 `in*`。
+ * 为什么不合成一个「净额」：这个条要回答的是「这一期花了多少」，
+ * 净额会被一笔工资抹平 —— 两个问题，两个数。
+ * 收入**不给分类明细**：收入类就那几个，前三类排出来没有信息量，
+ * 明细在「点开某一天」那一块里（见 dayMarks）。 */
 export function moneyBrief(from, to, pf, pt) {
   const cats = {}
   let sum = 0, count = 0
   let prev = 0, prevCount = 0
+  let inSum = 0, inCount = 0, inPrev = 0, inPrevCount = 0
   /* 本期和上期在**同一次遍历**里分别累（原来是扫两遍）。
      两个 if 是独立的、不是 else if：区间是可以重叠的（自定义区间可能压到上一期上），
      而这两个数是分开的两个指标，重叠的那几笔本来就该各算一次。 */
   for (const l of (db.LOGS || [])) {
     if (l.kind !== 'money') continue
     const v = Number(l.value || 0)
-    if (inRange(l.date, from, to)) {
+    const cur = inRange(l.date, from, to)
+    const last = !!(pf && pt && inRange(l.date, pf, pt))
+    if (dirOf(l) === 'in') {
+      if (cur) { inSum += v; inCount++ }
+      if (last) { inPrev += v; inPrevCount++ }
+      continue
+    }
+    if (cur) {
       sum += v
       count++
       const k = l.category || '未分类'
       cats[k] = (cats[k] || 0) + v
     }
-    if (pf && pt && inRange(l.date, pf, pt)) {
+    if (last) {
       prev += v
       prevCount++
     }
@@ -2494,7 +2673,13 @@ export function moneyBrief(from, to, pf, pt) {
     count,
     cats: list,
     prev: Math.round(prev * 100) / 100,
-    prevCount
+    prevCount,
+    /* 收入那一路。`inSum===0 && inCount===0` = 这一期没有收入，
+       BillBar 据此整行不铺（不显示一个「收入 ¥0」，那不是信息）。 */
+    inSum: Math.round(inSum * 100) / 100,
+    inCount,
+    inPrev: Math.round(inPrev * 100) / 100,
+    inPrevCount
   }
 }
 
@@ -2528,7 +2713,15 @@ export function searchAll(q) {
   for (const l of (db.LOGS || [])) {
     if (l.kind !== 'money') continue
     if (!hit(l.category) && !hit(l.text) && !hit(String(l.value))) continue
-    moneyRows.push({ id: l.id, title: (l.category || '未分类') + ' ' + money(l.value), sub: fmtCN(l.date), spec: 'money:' + l.id })
+    /* 前面那个 ± 号不是装饰：搜出来一串结果里，收入那几笔不带符号就和支出长得一样，
+       而「这笔是进还是出」正是看结果时第一个要回答的问题。 */
+    moneyRows.push({
+      id: l.id,
+      title: dirOf(l) === 'in' ? ('+' + money(l.value) + ' ' + (l.category || '未分类'))
+        : ('−' + money(l.value) + ' ' + (l.category || '未分类')),
+      sub: dirName(dirOf(l)) + ' · ' + fmtCN(l.date),
+      spec: 'money:' + l.id
+    })
   }
   for (const n of (db.NOTES || [])) {
     if (hit(n.text)) notes.push({ id: n.id, title: n.text, sub: '随心记 · ' + fmtCN(n.d) })
@@ -2690,10 +2883,12 @@ export function habitDaysIn(from, to) {
   }
   return Object.keys(seen).length
 }
-export function moneyIn(from, to) {
+/* 一段时间里**一个方向**的账合计。`dir` 缺省 = 支出（老调用方语义不变）。 */
+export function moneyIn(from, to, dir) {
+  const want = dir === 'in' ? 'in' : 'out'
   let t = 0
   for (const l of db.LOGS) {
-    if (l.kind === 'money' && inRange(l.date, from, to)) t += Number(l.value || 0)
+    if (l.kind === 'money' && dirOf(l) === want && inRange(l.date, from, to)) t += Number(l.value || 0)
   }
   return Math.round(t * 100) / 100
 }
@@ -2736,10 +2931,14 @@ export function avgOfRt(id, from, to) {
 }
 
 /* ---- 趋势清单：只存「我选了哪几项」，怎么算由 metricDefs 定义 ----
-   所以加一项趋势不用动渲染代码，新建一个数值记录项它自己就出现在候选里。 */
+   所以加一项趋势不用动渲染代码，新建一个数值记录项它自己就出现在候选里。
+   收入（2026-10-04 加）和支出**并列两项**，不合并成「净额」——
+   复盘的用法是「这一期比上一期」，把两个方向揉成一个数，
+   两个问题（花多了？赚少了？）就都看不出来了。 */
 export function metricDefs() {
   const out = [
     { k: 'money', name: '支出', unit: '¥' },
+    { k: 'income', name: '收入', unit: '¥' },
     { k: 'habit', name: '打卡天数', unit: '天' },
     { k: 'todo', name: '待办完成', unit: '' }
   ]
@@ -2815,6 +3014,7 @@ function rtIntegerOnly(id) {
    横向比必须比同一件事，不能这周看均值、上周看最新值。 */
 export function metricLine(def, d) {
   if (def.k === 'money') return money(d.money) + ' · 上一期 ' + money(d.moneyPrev)
+  if (def.k === 'income') return money(d.income) + ' · 上一期 ' + money(d.incomePrev)
   if (def.k === 'habit') return d.habit + ' / ' + d.days + ' 天'
   if (def.k === 'todo') return d.todos.total ? (d.todos.done + ' / ' + d.todos.total) : '— 这一期没有到期的待办'
   const now = avgOfRt(def.id, d.range.from, d.range.to)
@@ -2837,12 +3037,19 @@ export function reviewData() {
      口径要和被替掉的那几个函数一字不差：captureCount 数的是**全部** LOGS 条数，
      而 money 只认 kind==='money'。 */
   let moneyNow = 0, moneyPrev = 0, captures = 0
+  let incomeNow = 0, incomePrev = 0
   for (const l of db.LOGS) {
     if (inRange(l.date, r.from, r.to)) {
       captures++
-      if (l.kind === 'money') moneyNow += Number(l.value || 0)
+      if (l.kind === 'money') {
+        if (dirOf(l) === 'in') incomeNow += Number(l.value || 0)
+        else moneyNow += Number(l.value || 0)
+      }
     }
-    if (l.kind === 'money' && inRange(l.date, p.from, p.to)) moneyPrev += Number(l.value || 0)
+    if (l.kind === 'money' && inRange(l.date, p.from, p.to)) {
+      if (dirOf(l) === 'in') incomePrev += Number(l.value || 0)
+      else moneyPrev += Number(l.value || 0)
+    }
   }
   for (const t of db.RECORD_TYPES) {
     if (t.retired) continue
@@ -2854,6 +3061,8 @@ export function reviewData() {
     habit: habitDaysIn(r.from, r.to),
     money: Math.round(moneyNow * 100) / 100,
     moneyPrev: Math.round(moneyPrev * 100) / 100,
+    income: Math.round(incomeNow * 100) / 100,
+    incomePrev: Math.round(incomePrev * 100) / 100,
     captures: captures,
     texts: textLogsIn(r.from, r.to)
   }
@@ -3024,9 +3233,20 @@ export function editFields() {
     ]
   }
   if (ED.kind === 'money') {
+    const d = ED.draft.dir === 'in' ? 'in' : 'out'
     return [
+      /* 方向要给出来：录入页上点错了「收入 / 支出」，在这里能改回来，
+         不必删了重记（删掉就丢了一笔真实发生过的账）。
+         分类候选跟着方向走 —— 支出那份清单里没有「工资」，
+         收入那份里也没有「餐饮」，两份清单各管各的。 */
+      { k: 'dir', label: '方向', type: 'chips', opts: [['out', '支出'], ['in', '收入']] },
       { k: 'value', label: '金额（必填）', type: 'num' },
-      { k: 'category', label: '分类', type: 'chips', opts: catOpts() },
+      { k: 'category', label: '分类', type: 'chips', opts: catOpts(d, ED.draft.category) },
+      /* 备注（2026-10-04 加，跟着记账录入页一起来）。可选，空串**不落库** ——
+         显示层把「没有它」和「它是空串」读成同一件事，存空串只是让导出的 JSON 变胖。
+         这条以前写的是「数据里没有备注这个字段，弹窗里凭空多一个框就是骗人」——
+         那时候是实话，现在字段真的有了，所以这一段也得跟着改。 */
+      { k: 'note', label: '备注', type: 'text' },
       { k: 'date', label: '日期', type: 'date', clearable: false }
     ]
   }
@@ -3089,16 +3309,22 @@ export function openEdit(spec) {
   return { ok: true }
 }
 
-/* 一笔支出能改的就三样：多少钱、算哪类、哪一天。
-   没有「备注」—— 记的时候那句原话（'32 午餐'）存进的是分类判断，
-   数据里没有备注这个字段，弹窗里凭空多一个框就是骗人。 */
+/* 一笔账能改的就五样：多少钱、算哪类、哪一天、哪个方向、备注。
+   ⚠️ 这里以前写着「没有『备注』——数据里没有这个字段，弹窗里凭空多一个框就是骗人」。
+   2026-10-04 记账录入页把它加成了**可选字段**（`note`，缺失 = 没写），
+   所以那句话不再成立，改注释而不是留着不一致（AGENTS.md 4.4）。 */
 function openMoneyEdit(id) {
   const lg = logById(id)
   if (!lg) return { error: '这笔已经不在了' }
+  const d = dirOf(lg)
   ED.spec = 'money:' + lg.id
   ED.kind = 'money'
-  ED.draft = { value: String(lg.value), category: lg.category || '未分类', date: lg.date }
-  ED.title = '修改这笔支出'
+  ED.meta = { dir: d }
+  ED.draft = {
+    dir: d, value: String(lg.value), category: lg.category || '未分类',
+    note: lg.note || '', date: lg.date
+  }
+  ED.title = '修改这笔' + dirName(d)
   ED.where = fmtCN(lg.date)
   ED.on = true
   return { ok: true }
@@ -3238,17 +3464,30 @@ function commitMoneyEdit() {
   if (!(val > 0)) return { error: '金额要大于 0' }
   const nextCat = String(dr.category || '').trim() || '未分类'
   const date = dr.date || lg.date
+  const wasDir = dirOf(lg)
+  const nextDir = dr.dir === 'in' ? 'in' : 'out'
+  const nextNote = String(dr.note || '').trim()
   const ch = []
   if (Number(lg.value) !== Math.round(val * 100) / 100) ch.push('金额 ' + money(lg.value) + ' → ' + money(val))
   if ((lg.category || '未分类') !== nextCat) ch.push('分类「' + (lg.category || '未分类') + '」→「' + nextCat + '」')
   if (lg.date !== date) ch.push('日期 ' + fmtCN(lg.date) + ' → ' + fmtCN(date))
+  if (wasDir !== nextDir) ch.push('方向 ' + dirName(wasDir) + ' → ' + dirName(nextDir))
+  if ((lg.note || '') !== nextNote) ch.push('备注「' + (lg.note || '没有') + '」→「' + (nextNote || '没有') + '」')
   if (!ch.length) { closeEdit(); return { unchanged: true } }
   lg.value = Math.round(val * 100) / 100
   /* '未分类' 不落库，落的是空串：显示层本来就把空读成它，存两个字反而多一种表示 */
   lg.category = nextCat === '未分类' ? '' : nextCat
   lg.date = date
-  pushTodayLog('修改', '支出 ' + money(lg.value) + ' · ' + (lg.category || '未分类'), ch.join('；'),
-    '修改一笔支出')
+  /* 备注同理：空串不落库，删掉这个键 */
+  if (nextNote) lg.note = nextNote
+  else delete lg.note
+  /* 「缺失 = 支出」是契约（见 dirOf 那段）。改回支出时要**把字段真的删掉** ——
+     留一个 `dir:'out'` 等于给同一件事造出第二种表示，哪天有人写
+     `if (l.dir) 当收入` 就会把支出读成收入。 */
+  if (nextDir === 'in') lg.dir = 'in'
+  else delete lg.dir
+  pushTodayLog('修改', dirName(nextDir) + ' ' + money(lg.value) + ' · ' + (lg.category || '未分类'), ch.join('；'),
+    '修改一笔' + dirName(nextDir))
   closeEdit()
   return { changed: ch }
 }
@@ -3355,7 +3594,7 @@ export function deleteNode(spec) {
   if (kind === 'money') {
     const l = db.LOGS.filter(x => x.id === key)[0]
     if (l) {
-      done = { what: '一笔支出', label: (l.category || '未分类') + ' ' + money(l.value) }
+      done = { what: '一笔' + dirName(dirOf(l)), label: (l.category || '未分类') + ' ' + money(l.value) }
       db.LOGS.splice(db.LOGS.indexOf(l), 1)
     }
   } else if (kind === 'note') {
@@ -3396,6 +3635,13 @@ export function deleteNode(spec) {
     const r = delCat(key)
     if (r.error) return r
     done = { what: '品类', label: r.name, detail: '已记的 ' + r.used + ' 笔不改' }
+  } else if (kind === 'incat') {
+    /* 收入品类。和 `cat:` 分开一个前缀（而不是共用 `cat:` 加个后缀）——
+       品类名里可以有冒号，拼在 key 上的话切不开；
+       也正因为分开了，`delArmed` 那个全局唯一闸门不会把两边混成一件事。 */
+    const r = delCat(key, 'in')
+    if (r.error) return r
+    done = { what: '收入品类', label: r.name, detail: '已记的 ' + r.used + ' 笔不改' }
   } else if (kind === 'trend') {
     /* 按 metric key 删，不按下标 —— 删掉中间一项之后下标整体错位，
        那是「确认删」武装着的那一项已经不是刚才点的那一项了 */

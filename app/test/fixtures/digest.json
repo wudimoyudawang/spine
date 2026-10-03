@@ -6982,10 +6982,13 @@
  ],
  "dayMarks:2026-09-13": {
   "habits": [],
+  "inCount": 0,
+  "inSum": 0,
   "moneyCount": 1,
   "moneyList": [
    {
     "category": "未分类",
+    "dir": "out",
     "value": 29.97
    }
   ],
@@ -7098,10 +7101,13 @@
  ],
  "dayMarks:2026-09-14": {
   "habits": [],
+  "inCount": 0,
+  "inSum": 0,
   "moneyCount": 1,
   "moneyList": [
    {
     "category": "娱乐",
+    "dir": "out",
     "value": 33.3
    }
   ],
@@ -7231,10 +7237,13 @@
  ],
  "dayMarks:2026-09-18": {
   "habits": [],
+  "inCount": 0,
+  "inSum": 0,
   "moneyCount": 1,
   "moneyList": [
    {
     "category": "未分类",
+    "dir": "out",
     "value": 46.62
    }
   ],
@@ -7347,10 +7356,13 @@
  ],
  "dayMarks:2026-09-20": {
   "habits": [],
+  "inCount": 0,
+  "inSum": 0,
   "moneyCount": 1,
   "moneyList": [
    {
     "category": "餐饮",
+    "dir": "out",
     "value": 53.28
    }
   ],
@@ -7463,10 +7475,13 @@
  ],
  "dayMarks:2026-09-21": {
   "habits": [],
+  "inCount": 0,
+  "inSum": 0,
   "moneyCount": 1,
   "moneyList": [
    {
     "category": "出行",
+    "dir": "out",
     "value": 0
    }
   ],
@@ -7579,6 +7594,8 @@
  ],
  "dayMarks:2026-10-01": {
   "habits": [],
+  "inCount": 0,
+  "inSum": 0,
   "moneyCount": 0,
   "moneyList": [],
   "moneySum": 0,
@@ -7587,14 +7604,18 @@
  "dayRows:2026-09-10": [],
  "dayMarks:2026-09-10": {
   "habits": [],
+  "inCount": 0,
+  "inSum": 0,
   "moneyCount": 2,
   "moneyList": [
    {
     "category": "餐饮",
+    "dir": "out",
     "value": 19.98
    },
    {
     "category": "餐饮",
+    "dir": "out",
     "value": 0
    }
   ],
@@ -7707,10 +7728,13 @@
  ],
  "dayMarks:2026-08-31": {
   "habits": [],
+  "inCount": 0,
+  "inSum": 0,
   "moneyCount": 1,
   "moneyList": [
    {
     "category": "餐饮",
+    "dir": "out",
     "value": 43.29
    }
   ],
@@ -7723,6 +7747,7 @@
     "d": 14,
     "done": 2,
     "habit": 0,
+    "incomeSum": 0,
     "iso": "2026-09-14",
     "moneySum": 33.3,
     "rows": [
@@ -7803,6 +7828,7 @@
     "d": 15,
     "done": 2,
     "habit": 0,
+    "incomeSum": 0,
     "iso": "2026-09-15",
     "moneySum": 36.63,
     "rows": [
@@ -7883,6 +7909,7 @@
     "d": 16,
     "done": 0,
     "habit": 0,
+    "incomeSum": 0,
     "iso": "2026-09-16",
     "moneySum": 39.96,
     "rows": [],
@@ -7894,6 +7921,7 @@
     "d": 17,
     "done": 0,
     "habit": 0,
+    "incomeSum": 0,
     "iso": "2026-09-17",
     "moneySum": 43.29,
     "rows": [],
@@ -7905,6 +7933,7 @@
     "d": 18,
     "done": 2,
     "habit": 0,
+    "incomeSum": 0,
     "iso": "2026-09-18",
     "moneySum": 46.62,
     "rows": [
@@ -8002,6 +8031,7 @@
     "d": 19,
     "done": 0,
     "habit": 0,
+    "incomeSum": 0,
     "iso": "2026-09-19",
     "moneySum": 49.95,
     "rows": [],
@@ -8013,6 +8043,7 @@
     "d": 20,
     "done": 2,
     "habit": 0,
+    "incomeSum": 0,
     "iso": "2026-09-20",
     "moneySum": 53.28,
     "rows": [
@@ -8099,6 +8130,7 @@
     "d": 14,
     "done": 2,
     "habit": 0,
+    "incomeSum": 0,
     "iso": "2026-09-14",
     "moneySum": 33.3,
     "rows": [
@@ -8179,6 +8211,7 @@
     "d": 15,
     "done": 2,
     "habit": 0,
+    "incomeSum": 0,
     "iso": "2026-09-15",
     "moneySum": 36.63,
     "rows": [
@@ -8259,6 +8292,7 @@
     "d": 16,
     "done": 0,
     "habit": 0,
+    "incomeSum": 0,
     "iso": "2026-09-16",
     "moneySum": 39.96,
     "rows": [],
@@ -8270,6 +8304,7 @@
     "d": 17,
     "done": 0,
     "habit": 0,
+    "incomeSum": 0,
     "iso": "2026-09-17",
     "moneySum": 43.29,
     "rows": [],
@@ -8281,6 +8316,7 @@
     "d": 18,
     "done": 2,
     "habit": 0,
+    "incomeSum": 0,
     "iso": "2026-09-18",
     "moneySum": 46.62,
     "rows": [
@@ -8378,6 +8414,7 @@
     "d": 19,
     "done": 0,
     "habit": 0,
+    "incomeSum": 0,
     "iso": "2026-09-19",
     "moneySum": 49.95,
     "rows": [],
@@ -8389,6 +8426,7 @@
     "d": 20,
     "done": 2,
     "habit": 0,
+    "incomeSum": 0,
     "iso": "2026-09-20",
     "moneySum": 53.28,
     "rows": [
@@ -8475,6 +8513,7 @@
     "d": 21,
     "done": 2,
     "habit": 0,
+    "incomeSum": 0,
     "iso": "2026-09-21",
     "moneySum": 0,
     "rows": [
@@ -8555,6 +8594,7 @@
     "d": 22,
     "done": 0,
     "habit": 0,
+    "incomeSum": 0,
     "iso": "2026-09-22",
     "moneySum": 3.33,
     "rows": [],
@@ -8566,6 +8606,7 @@
     "d": 23,
     "done": 0,
     "habit": 0,
+    "incomeSum": 0,
     "iso": "2026-09-23",
     "moneySum": 6.66,
     "rows": [],
@@ -8577,6 +8618,7 @@
     "d": 24,
     "done": 0,
     "habit": 0,
+    "incomeSum": 0,
     "iso": "2026-09-24",
     "moneySum": 9.99,
     "rows": [],
@@ -8588,6 +8630,7 @@
     "d": 25,
     "done": 0,
     "habit": 0,
+    "incomeSum": 0,
     "iso": "2026-09-25",
     "moneySum": 13.32,
     "rows": [],
@@ -8599,6 +8642,7 @@
     "d": 26,
     "done": 0,
     "habit": 0,
+    "incomeSum": 0,
     "iso": "2026-09-26",
     "moneySum": 16.65,
     "rows": [],
@@ -8610,6 +8654,7 @@
     "d": 27,
     "done": 0,
     "habit": 0,
+    "incomeSum": 0,
     "iso": "2026-09-27",
     "moneySum": 19.98,
     "rows": [],
@@ -8627,6 +8672,7 @@
     "d": 31,
     "done": 2,
     "habit": 0,
+    "incomeSum": 0,
     "iso": "2026-08-31",
     "moneySum": 43.29,
     "rows": [
@@ -8707,6 +8753,7 @@
     "d": 1,
     "done": 0,
     "habit": 0,
+    "incomeSum": 0,
     "iso": "2026-09-01",
     "moneySum": 46.62,
     "rows": [],
@@ -8718,6 +8765,7 @@
     "d": 2,
     "done": 0,
     "habit": 0,
+    "incomeSum": 0,
     "iso": "2026-09-02",
     "moneySum": 49.95,
     "rows": [],
@@ -8729,6 +8777,7 @@
     "d": 3,
     "done": 0,
     "habit": 0,
+    "incomeSum": 0,
     "iso": "2026-09-03",
     "moneySum": 53.28,
     "rows": [],
@@ -8740,6 +8789,7 @@
     "d": 4,
     "done": 0,
     "habit": 0,
+    "incomeSum": 0,
     "iso": "2026-09-04",
     "moneySum": 0,
     "rows": [],
@@ -8751,6 +8801,7 @@
     "d": 5,
     "done": 0,
     "habit": 0,
+    "incomeSum": 0,
     "iso": "2026-09-05",
     "moneySum": 3.33,
     "rows": [],
@@ -8762,6 +8813,7 @@
     "d": 6,
     "done": 0,
     "habit": 0,
+    "incomeSum": 0,
     "iso": "2026-09-06",
     "moneySum": 6.66,
     "rows": [],
@@ -8779,6 +8831,7 @@
     "d": 28,
     "done": 0,
     "habit": 0,
+    "incomeSum": 0,
     "iso": "2026-09-28",
     "moneySum": 23.31,
     "rows": [],
@@ -8790,6 +8843,7 @@
     "d": 29,
     "done": 0,
     "habit": 0,
+    "incomeSum": 0,
     "iso": "2026-09-29",
     "moneySum": 26.64,
     "rows": [],
@@ -8801,6 +8855,7 @@
     "d": 30,
     "done": 2,
     "habit": 0,
+    "incomeSum": 0,
     "iso": "2026-09-30",
     "moneySum": 29.97,
     "rows": [
@@ -8881,6 +8936,7 @@
     "d": 1,
     "done": 2,
     "habit": 0,
+    "incomeSum": 0,
     "iso": "2026-10-01",
     "moneySum": 0,
     "rows": [
@@ -8961,6 +9017,7 @@
     "d": 2,
     "done": 0,
     "habit": 0,
+    "incomeSum": 0,
     "iso": "2026-10-02",
     "moneySum": 0,
     "rows": [],
@@ -8972,6 +9029,7 @@
     "d": 3,
     "done": 0,
     "habit": 0,
+    "incomeSum": 0,
     "iso": "2026-10-03",
     "moneySum": 0,
     "rows": [],
@@ -8983,6 +9041,7 @@
     "d": 4,
     "done": 0,
     "habit": 0,
+    "incomeSum": 0,
     "iso": "2026-10-04",
     "moneySum": 0,
     "rows": [],
@@ -9002,6 +9061,7 @@
     "done": 2,
     "habit": 0,
     "inMonth": false,
+    "income": 0,
     "iso": "2026-08-31",
     "money": 43.29,
     "open": 4,
@@ -9014,6 +9074,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-09-01",
     "money": 46.62,
     "open": 0,
@@ -9026,6 +9087,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-09-02",
     "money": 49.95,
     "open": 0,
@@ -9038,6 +9100,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-09-03",
     "money": 53.28,
     "open": 0,
@@ -9050,6 +9113,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-09-04",
     "money": 0,
     "open": 0,
@@ -9062,6 +9126,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-09-05",
     "money": 3.33,
     "open": 0,
@@ -9074,6 +9139,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-09-06",
     "money": 6.66,
     "open": 0,
@@ -9086,6 +9152,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-09-07",
     "money": 9.99,
     "open": 0,
@@ -9098,6 +9165,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-09-08",
     "money": 13.32,
     "open": 0,
@@ -9110,6 +9178,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-09-09",
     "money": 16.65,
     "open": 0,
@@ -9122,6 +9191,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-09-10",
     "money": 19.98,
     "open": 0,
@@ -9134,6 +9204,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-09-11",
     "money": 23.31,
     "open": 0,
@@ -9146,6 +9217,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-09-12",
     "money": 26.64,
     "open": 0,
@@ -9158,6 +9230,7 @@
     "done": 2,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-09-13",
     "money": 29.97,
     "open": 4,
@@ -9170,6 +9243,7 @@
     "done": 2,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-09-14",
     "money": 33.3,
     "open": 4,
@@ -9182,6 +9256,7 @@
     "done": 2,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-09-15",
     "money": 36.63,
     "open": 4,
@@ -9194,6 +9269,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-09-16",
     "money": 39.96,
     "open": 0,
@@ -9206,6 +9282,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-09-17",
     "money": 43.29,
     "open": 0,
@@ -9218,6 +9295,7 @@
     "done": 2,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-09-18",
     "money": 46.62,
     "open": 5,
@@ -9230,6 +9308,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-09-19",
     "money": 49.95,
     "open": 0,
@@ -9242,6 +9321,7 @@
     "done": 2,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-09-20",
     "money": 53.28,
     "open": 4,
@@ -9254,6 +9334,7 @@
     "done": 2,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-09-21",
     "money": 0,
     "open": 4,
@@ -9266,6 +9347,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-09-22",
     "money": 3.33,
     "open": 0,
@@ -9278,6 +9360,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-09-23",
     "money": 6.66,
     "open": 0,
@@ -9290,6 +9373,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-09-24",
     "money": 9.99,
     "open": 0,
@@ -9302,6 +9386,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-09-25",
     "money": 13.32,
     "open": 0,
@@ -9314,6 +9399,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-09-26",
     "money": 16.65,
     "open": 0,
@@ -9326,6 +9412,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-09-27",
     "money": 19.98,
     "open": 0,
@@ -9338,6 +9425,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-09-28",
     "money": 23.31,
     "open": 0,
@@ -9350,6 +9438,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-09-29",
     "money": 26.64,
     "open": 0,
@@ -9362,6 +9451,7 @@
     "done": 2,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-09-30",
     "money": 29.97,
     "open": 4,
@@ -9374,6 +9464,7 @@
     "done": 2,
     "habit": 0,
     "inMonth": false,
+    "income": 0,
     "iso": "2026-10-01",
     "money": 0,
     "open": 4,
@@ -9386,6 +9477,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": false,
+    "income": 0,
     "iso": "2026-10-02",
     "money": 0,
     "open": 0,
@@ -9398,6 +9490,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": false,
+    "income": 0,
     "iso": "2026-10-03",
     "money": 0,
     "open": 0,
@@ -9410,6 +9503,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": false,
+    "income": 0,
     "iso": "2026-10-04",
     "money": 0,
     "open": 0,
@@ -9435,6 +9529,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": false,
+    "income": 0,
     "iso": "2026-07-27",
     "money": 0,
     "open": 0,
@@ -9447,6 +9542,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": false,
+    "income": 0,
     "iso": "2026-07-28",
     "money": 0,
     "open": 0,
@@ -9459,6 +9555,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": false,
+    "income": 0,
     "iso": "2026-07-29",
     "money": 0,
     "open": 0,
@@ -9471,6 +9568,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": false,
+    "income": 0,
     "iso": "2026-07-30",
     "money": 0,
     "open": 0,
@@ -9483,6 +9581,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": false,
+    "income": 0,
     "iso": "2026-07-31",
     "money": 0,
     "open": 0,
@@ -9495,6 +9594,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-08-01",
     "money": 33.3,
     "open": 0,
@@ -9507,6 +9607,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-08-02",
     "money": 39.96,
     "open": 0,
@@ -9519,6 +9620,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-08-03",
     "money": 46.62,
     "open": 0,
@@ -9531,6 +9633,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-08-04",
     "money": 53.28,
     "open": 0,
@@ -9543,6 +9646,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-08-05",
     "money": 59.94,
     "open": 0,
@@ -9555,6 +9659,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-08-06",
     "money": 66.6,
     "open": 0,
@@ -9567,6 +9672,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-08-07",
     "money": 73.26,
     "open": 0,
@@ -9579,6 +9685,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-08-08",
     "money": 23.31,
     "open": 0,
@@ -9591,6 +9698,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-08-09",
     "money": 29.97,
     "open": 0,
@@ -9603,6 +9711,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-08-10",
     "money": 36.63,
     "open": 0,
@@ -9615,6 +9724,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-08-11",
     "money": 43.29,
     "open": 0,
@@ -9627,6 +9737,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-08-12",
     "money": 49.95,
     "open": 0,
@@ -9639,6 +9750,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-08-13",
     "money": 56.61,
     "open": 0,
@@ -9651,6 +9763,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-08-14",
     "money": 63.27,
     "open": 0,
@@ -9663,6 +9776,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-08-15",
     "money": 69.93,
     "open": 0,
@@ -9675,6 +9789,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-08-16",
     "money": 76.59,
     "open": 0,
@@ -9687,6 +9802,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-08-17",
     "money": 83.25,
     "open": 0,
@@ -9699,6 +9815,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-08-18",
     "money": 33.3,
     "open": 0,
@@ -9711,6 +9828,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-08-19",
     "money": 39.96,
     "open": 0,
@@ -9723,6 +9841,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-08-20",
     "money": 46.62,
     "open": 0,
@@ -9735,6 +9854,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-08-21",
     "money": 53.28,
     "open": 0,
@@ -9747,6 +9867,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-08-22",
     "money": 59.94,
     "open": 0,
@@ -9759,6 +9880,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-08-23",
     "money": 66.6,
     "open": 0,
@@ -9771,6 +9893,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-08-24",
     "money": 73.26,
     "open": 0,
@@ -9783,6 +9906,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-08-25",
     "money": 23.31,
     "open": 0,
@@ -9795,6 +9919,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-08-26",
     "money": 29.97,
     "open": 0,
@@ -9807,6 +9932,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-08-27",
     "money": 36.63,
     "open": 0,
@@ -9819,6 +9945,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-08-28",
     "money": 43.29,
     "open": 0,
@@ -9831,6 +9958,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-08-29",
     "money": 49.95,
     "open": 0,
@@ -9843,6 +9971,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-08-30",
     "money": 39.96,
     "open": 0,
@@ -9855,6 +9984,7 @@
     "done": 2,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-08-31",
     "money": 43.29,
     "open": 4,
@@ -9867,6 +9997,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": false,
+    "income": 0,
     "iso": "2026-09-01",
     "money": 46.62,
     "open": 0,
@@ -9879,6 +10010,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": false,
+    "income": 0,
     "iso": "2026-09-02",
     "money": 49.95,
     "open": 0,
@@ -9891,6 +10023,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": false,
+    "income": 0,
     "iso": "2026-09-03",
     "money": 53.28,
     "open": 0,
@@ -9903,6 +10036,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": false,
+    "income": 0,
     "iso": "2026-09-04",
     "money": 0,
     "open": 0,
@@ -9915,6 +10049,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": false,
+    "income": 0,
     "iso": "2026-09-05",
     "money": 3.33,
     "open": 0,
@@ -9927,6 +10062,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": false,
+    "income": 0,
     "iso": "2026-09-06",
     "money": 6.66,
     "open": 0,
@@ -9952,6 +10088,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": false,
+    "income": 0,
     "iso": "2026-09-28",
     "money": 23.31,
     "open": 0,
@@ -9964,6 +10101,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": false,
+    "income": 0,
     "iso": "2026-09-29",
     "money": 26.64,
     "open": 0,
@@ -9976,6 +10114,7 @@
     "done": 2,
     "habit": 0,
     "inMonth": false,
+    "income": 0,
     "iso": "2026-09-30",
     "money": 29.97,
     "open": 4,
@@ -9988,6 +10127,7 @@
     "done": 2,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-10-01",
     "money": 0,
     "open": 4,
@@ -10000,6 +10140,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-10-02",
     "money": 0,
     "open": 0,
@@ -10012,6 +10153,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-10-03",
     "money": 0,
     "open": 0,
@@ -10024,6 +10166,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-10-04",
     "money": 0,
     "open": 0,
@@ -10036,6 +10179,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-10-05",
     "money": 0,
     "open": 0,
@@ -10048,6 +10192,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-10-06",
     "money": 0,
     "open": 0,
@@ -10060,6 +10205,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-10-07",
     "money": 0,
     "open": 0,
@@ -10072,6 +10218,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-10-08",
     "money": 0,
     "open": 0,
@@ -10084,6 +10231,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-10-09",
     "money": 0,
     "open": 0,
@@ -10096,6 +10244,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-10-10",
     "money": 0,
     "open": 0,
@@ -10108,6 +10257,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-10-11",
     "money": 0,
     "open": 0,
@@ -10120,6 +10270,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-10-12",
     "money": 0,
     "open": 0,
@@ -10132,6 +10283,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-10-13",
     "money": 0,
     "open": 0,
@@ -10144,6 +10296,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-10-14",
     "money": 0,
     "open": 0,
@@ -10156,6 +10309,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-10-15",
     "money": 0,
     "open": 0,
@@ -10168,6 +10322,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-10-16",
     "money": 0,
     "open": 0,
@@ -10180,6 +10335,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-10-17",
     "money": 0,
     "open": 0,
@@ -10192,6 +10348,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-10-18",
     "money": 0,
     "open": 0,
@@ -10204,6 +10361,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-10-19",
     "money": 0,
     "open": 0,
@@ -10216,6 +10374,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-10-20",
     "money": 0,
     "open": 0,
@@ -10228,6 +10387,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-10-21",
     "money": 0,
     "open": 0,
@@ -10240,6 +10400,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-10-22",
     "money": 0,
     "open": 0,
@@ -10252,6 +10413,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-10-23",
     "money": 0,
     "open": 0,
@@ -10264,6 +10426,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-10-24",
     "money": 0,
     "open": 0,
@@ -10276,6 +10439,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-10-25",
     "money": 0,
     "open": 0,
@@ -10288,6 +10452,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-10-26",
     "money": 0,
     "open": 0,
@@ -10300,6 +10465,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-10-27",
     "money": 0,
     "open": 0,
@@ -10312,6 +10478,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-10-28",
     "money": 0,
     "open": 0,
@@ -10324,6 +10491,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-10-29",
     "money": 0,
     "open": 0,
@@ -10336,6 +10504,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-10-30",
     "money": 0,
     "open": 0,
@@ -10348,6 +10517,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-10-31",
     "money": 0,
     "open": 0,
@@ -10360,6 +10530,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": false,
+    "income": 0,
     "iso": "2026-11-01",
     "money": 0,
     "open": 0,
@@ -10385,6 +10556,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": false,
+    "income": 0,
     "iso": "2026-01-26",
     "money": 0,
     "open": 0,
@@ -10397,6 +10569,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": false,
+    "income": 0,
     "iso": "2026-01-27",
     "money": 0,
     "open": 0,
@@ -10409,6 +10582,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": false,
+    "income": 0,
     "iso": "2026-01-28",
     "money": 0,
     "open": 0,
@@ -10421,6 +10595,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": false,
+    "income": 0,
     "iso": "2026-01-29",
     "money": 0,
     "open": 0,
@@ -10433,6 +10608,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": false,
+    "income": 0,
     "iso": "2026-01-30",
     "money": 0,
     "open": 0,
@@ -10445,6 +10621,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": false,
+    "income": 0,
     "iso": "2026-01-31",
     "money": 0,
     "open": 0,
@@ -10457,6 +10634,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-02-01",
     "money": 0,
     "open": 0,
@@ -10469,6 +10647,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-02-02",
     "money": 0,
     "open": 0,
@@ -10481,6 +10660,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-02-03",
     "money": 0,
     "open": 0,
@@ -10493,6 +10673,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-02-04",
     "money": 0,
     "open": 0,
@@ -10505,6 +10686,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-02-05",
     "money": 0,
     "open": 0,
@@ -10517,6 +10699,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-02-06",
     "money": 0,
     "open": 0,
@@ -10529,6 +10712,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-02-07",
     "money": 0,
     "open": 0,
@@ -10541,6 +10725,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-02-08",
     "money": 0,
     "open": 0,
@@ -10553,6 +10738,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-02-09",
     "money": 0,
     "open": 0,
@@ -10565,6 +10751,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-02-10",
     "money": 0,
     "open": 0,
@@ -10577,6 +10764,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-02-11",
     "money": 0,
     "open": 0,
@@ -10589,6 +10777,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-02-12",
     "money": 0,
     "open": 0,
@@ -10601,6 +10790,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-02-13",
     "money": 0,
     "open": 0,
@@ -10613,6 +10803,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-02-14",
     "money": 0,
     "open": 0,
@@ -10625,6 +10816,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-02-15",
     "money": 0,
     "open": 0,
@@ -10637,6 +10829,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-02-16",
     "money": 0,
     "open": 0,
@@ -10649,6 +10842,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-02-17",
     "money": 0,
     "open": 0,
@@ -10661,6 +10855,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-02-18",
     "money": 0,
     "open": 0,
@@ -10673,6 +10868,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-02-19",
     "money": 0,
     "open": 0,
@@ -10685,6 +10881,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-02-20",
     "money": 0,
     "open": 0,
@@ -10697,6 +10894,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-02-21",
     "money": 0,
     "open": 0,
@@ -10709,6 +10907,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-02-22",
     "money": 0,
     "open": 0,
@@ -10721,6 +10920,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-02-23",
     "money": 0,
     "open": 0,
@@ -10733,6 +10933,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-02-24",
     "money": 0,
     "open": 0,
@@ -10745,6 +10946,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-02-25",
     "money": 0,
     "open": 0,
@@ -10757,6 +10959,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-02-26",
     "money": 0,
     "open": 0,
@@ -10769,6 +10972,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-02-27",
     "money": 0,
     "open": 0,
@@ -10781,6 +10985,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": true,
+    "income": 0,
     "iso": "2026-02-28",
     "money": 0,
     "open": 0,
@@ -10793,6 +10998,7 @@
     "done": 0,
     "habit": 0,
     "inMonth": false,
+    "income": 0,
     "iso": "2026-03-01",
     "money": 0,
     "open": 0,
@@ -10830,6 +11036,10 @@
    }
   ],
   "count": 31,
+  "inCount": 0,
+  "inPrev": 0,
+  "inPrevCount": 0,
+  "inSum": 0,
   "prev": 1545.12,
   "prevCount": 60,
   "sum": 752.58
@@ -10854,6 +11064,10 @@
    }
   ],
   "count": 31,
+  "inCount": 0,
+  "inPrev": 0,
+  "inPrevCount": 0,
+  "inSum": 0,
   "prev": 419.58,
   "prevCount": 16,
   "sum": 752.58
@@ -10866,6 +11080,10 @@
    }
   ],
   "count": 2,
+  "inCount": 0,
+  "inPrev": 0,
+  "inPrevCount": 0,
+  "inSum": 0,
   "prev": 19.98,
   "prevCount": 2,
   "sum": 19.98
@@ -10890,6 +11108,10 @@
    }
   ],
   "count": 31,
+  "inCount": 0,
+  "inPrev": 0,
+  "inPrevCount": 0,
+  "inSum": 0,
   "prev": 0,
   "prevCount": 0,
   "sum": 752.58
@@ -10897,6 +11119,10 @@
  "moneyBrief.empty": {
   "cats": [],
   "count": 0,
+  "inCount": 0,
+  "inPrev": 0,
+  "inPrevCount": 0,
+  "inSum": 0,
   "prev": 0,
   "prevCount": 0,
   "sum": 0
@@ -10904,6 +11130,10 @@
  "moneyBrief.reversed": {
   "cats": [],
   "count": 0,
+  "inCount": 0,
+  "inPrev": 0,
+  "inPrevCount": 0,
+  "inSum": 0,
   "prev": 0,
   "prevCount": 0,
   "sum": 0
@@ -11142,6 +11372,8 @@
   "captures": 3,
   "days": 3,
   "habit": 0,
+  "income": 0,
+  "incomePrev": 0,
   "money": 9.99,
   "moneyPrev": 149.85,
   "prev": {
@@ -11162,6 +11394,8 @@
   "captures": 16,
   "days": 16,
   "habit": 0,
+  "income": 0,
+  "incomePrev": 0,
   "money": 419.58,
   "moneyPrev": 416.25,
   "prev": {
@@ -11792,6 +12026,11 @@
    "unit": "¥"
   },
   {
+   "k": "income",
+   "name": "收入",
+   "unit": "¥"
+  },
+  {
    "k": "habit",
    "name": "打卡天数",
    "unit": "天"
@@ -11827,6 +12066,7 @@
   }
  ],
  "metricLine.money": "¥9.99 · 上一期 ¥149.85",
+ "metricLine.income": "¥0 · 上一期 ¥0",
  "metricLine.todo": "2 / 6",
  "trendRows": [
   {
@@ -11848,6 +12088,11 @@
   }
  ],
  "trendCandidates": [
+  {
+   "k": "income",
+   "name": "收入",
+   "unit": "¥"
+  },
   {
    "k": "habit",
    "name": "打卡天数",
@@ -12252,6 +12497,525 @@
    0
   ]
  ],
+ "money.dirOf.probe": [
+  "out",
+  "in",
+  "out",
+  "out",
+  "out",
+  "out",
+  "out",
+  "out",
+  false,
+  true
+ ],
+ "money.dirName": [
+  "收入",
+  "支出",
+  "支出",
+  "支出"
+ ],
+ "money.DEFAULT_IN_CATS": [
+  "理财",
+  "副业",
+  "工资"
+ ],
+ "money.monthMoney.sides": [
+  {
+   "count": 31,
+   "list": [
+    {
+     "category": "出行",
+     "date": "2026-09-01",
+     "id": "lg31",
+     "kind": "money",
+     "value": 46.620000000000005
+    },
+    {
+     "category": "",
+     "date": "2026-09-02",
+     "id": "lg32",
+     "kind": "money",
+     "value": 49.95
+    },
+    {
+     "category": null,
+     "date": "2026-09-03",
+     "id": "lg33",
+     "kind": "money",
+     "value": 53.28
+    },
+    {
+     "category": "娱乐",
+     "date": "2026-09-04",
+     "id": "lg34",
+     "kind": "money",
+     "value": 0
+    },
+    {
+     "category": "餐饮",
+     "date": "2026-09-05",
+     "id": "lg35",
+     "kind": "money",
+     "value": 3.33
+    },
+    {
+     "category": "出行",
+     "date": "2026-09-06",
+     "id": "lg36",
+     "kind": "money",
+     "value": 6.66
+    },
+    {
+     "category": "",
+     "date": "2026-09-07",
+     "id": "lg37",
+     "kind": "money",
+     "value": 9.99
+    },
+    {
+     "category": null,
+     "date": "2026-09-08",
+     "id": "lg38",
+     "kind": "money",
+     "value": 13.32
+    },
+    {
+     "category": "娱乐",
+     "date": "2026-09-09",
+     "id": "lg39",
+     "kind": "money",
+     "value": 16.65
+    },
+    {
+     "category": "餐饮",
+     "date": "2026-09-10",
+     "id": "lg40",
+     "kind": "money",
+     "value": 19.98
+    },
+    {
+     "category": "出行",
+     "date": "2026-09-11",
+     "id": "lg41",
+     "kind": "money",
+     "value": 23.310000000000002
+    },
+    {
+     "category": "",
+     "date": "2026-09-12",
+     "id": "lg42",
+     "kind": "money",
+     "value": 26.64
+    },
+    {
+     "category": null,
+     "date": "2026-09-13",
+     "id": "lg43",
+     "kind": "money",
+     "value": 29.97
+    },
+    {
+     "category": "娱乐",
+     "date": "2026-09-14",
+     "id": "lg44",
+     "kind": "money",
+     "value": 33.3
+    },
+    {
+     "category": "餐饮",
+     "date": "2026-09-15",
+     "id": "lg45",
+     "kind": "money",
+     "value": 36.63
+    },
+    {
+     "category": "出行",
+     "date": "2026-09-16",
+     "id": "lg46",
+     "kind": "money",
+     "value": 39.96
+    },
+    {
+     "category": "",
+     "date": "2026-09-17",
+     "id": "lg47",
+     "kind": "money",
+     "value": 43.29
+    },
+    {
+     "category": null,
+     "date": "2026-09-18",
+     "id": "lg48",
+     "kind": "money",
+     "value": 46.620000000000005
+    },
+    {
+     "category": "娱乐",
+     "date": "2026-09-19",
+     "id": "lg49",
+     "kind": "money",
+     "value": 49.95
+    },
+    {
+     "category": "餐饮",
+     "date": "2026-09-20",
+     "id": "lg50",
+     "kind": "money",
+     "value": 53.28
+    },
+    {
+     "category": "出行",
+     "date": "2026-09-21",
+     "id": "lg51",
+     "kind": "money",
+     "value": 0
+    },
+    {
+     "category": "",
+     "date": "2026-09-22",
+     "id": "lg52",
+     "kind": "money",
+     "value": 3.33
+    },
+    {
+     "category": null,
+     "date": "2026-09-23",
+     "id": "lg53",
+     "kind": "money",
+     "value": 6.66
+    },
+    {
+     "category": "娱乐",
+     "date": "2026-09-24",
+     "id": "lg54",
+     "kind": "money",
+     "value": 9.99
+    },
+    {
+     "category": "餐饮",
+     "date": "2026-09-25",
+     "id": "lg55",
+     "kind": "money",
+     "value": 13.32
+    },
+    {
+     "category": "出行",
+     "date": "2026-09-26",
+     "id": "lg56",
+     "kind": "money",
+     "value": 16.65
+    },
+    {
+     "category": "",
+     "date": "2026-09-27",
+     "id": "lg57",
+     "kind": "money",
+     "value": 19.98
+    },
+    {
+     "category": null,
+     "date": "2026-09-28",
+     "id": "lg58",
+     "kind": "money",
+     "value": 23.310000000000002
+    },
+    {
+     "category": "娱乐",
+     "date": "2026-09-29",
+     "id": "lg59",
+     "kind": "money",
+     "value": 26.64
+    },
+    {
+     "category": "餐饮",
+     "date": "2026-09-30",
+     "id": "lg60",
+     "kind": "money",
+     "value": 29.97
+    },
+    {
+     "category": "餐饮",
+     "date": "2026-09-10",
+     "id": "lgNaN",
+     "kind": "money"
+    }
+   ],
+   "sum": 752.58
+  },
+  752.58,
+  {
+   "count": 0,
+   "list": [],
+   "sum": 0
+  },
+  752.58,
+  {
+   "in": {
+    "count": 0,
+    "list": [],
+    "sum": 0
+   },
+   "net": -752.58,
+   "out": {
+    "count": 31,
+    "list": [
+     {
+      "category": "出行",
+      "date": "2026-09-01",
+      "id": "lg31",
+      "kind": "money",
+      "value": 46.620000000000005
+     },
+     {
+      "category": "",
+      "date": "2026-09-02",
+      "id": "lg32",
+      "kind": "money",
+      "value": 49.95
+     },
+     {
+      "category": null,
+      "date": "2026-09-03",
+      "id": "lg33",
+      "kind": "money",
+      "value": 53.28
+     },
+     {
+      "category": "娱乐",
+      "date": "2026-09-04",
+      "id": "lg34",
+      "kind": "money",
+      "value": 0
+     },
+     {
+      "category": "餐饮",
+      "date": "2026-09-05",
+      "id": "lg35",
+      "kind": "money",
+      "value": 3.33
+     },
+     {
+      "category": "出行",
+      "date": "2026-09-06",
+      "id": "lg36",
+      "kind": "money",
+      "value": 6.66
+     },
+     {
+      "category": "",
+      "date": "2026-09-07",
+      "id": "lg37",
+      "kind": "money",
+      "value": 9.99
+     },
+     {
+      "category": null,
+      "date": "2026-09-08",
+      "id": "lg38",
+      "kind": "money",
+      "value": 13.32
+     },
+     {
+      "category": "娱乐",
+      "date": "2026-09-09",
+      "id": "lg39",
+      "kind": "money",
+      "value": 16.65
+     },
+     {
+      "category": "餐饮",
+      "date": "2026-09-10",
+      "id": "lg40",
+      "kind": "money",
+      "value": 19.98
+     },
+     {
+      "category": "出行",
+      "date": "2026-09-11",
+      "id": "lg41",
+      "kind": "money",
+      "value": 23.310000000000002
+     },
+     {
+      "category": "",
+      "date": "2026-09-12",
+      "id": "lg42",
+      "kind": "money",
+      "value": 26.64
+     },
+     {
+      "category": null,
+      "date": "2026-09-13",
+      "id": "lg43",
+      "kind": "money",
+      "value": 29.97
+     },
+     {
+      "category": "娱乐",
+      "date": "2026-09-14",
+      "id": "lg44",
+      "kind": "money",
+      "value": 33.3
+     },
+     {
+      "category": "餐饮",
+      "date": "2026-09-15",
+      "id": "lg45",
+      "kind": "money",
+      "value": 36.63
+     },
+     {
+      "category": "出行",
+      "date": "2026-09-16",
+      "id": "lg46",
+      "kind": "money",
+      "value": 39.96
+     },
+     {
+      "category": "",
+      "date": "2026-09-17",
+      "id": "lg47",
+      "kind": "money",
+      "value": 43.29
+     },
+     {
+      "category": null,
+      "date": "2026-09-18",
+      "id": "lg48",
+      "kind": "money",
+      "value": 46.620000000000005
+     },
+     {
+      "category": "娱乐",
+      "date": "2026-09-19",
+      "id": "lg49",
+      "kind": "money",
+      "value": 49.95
+     },
+     {
+      "category": "餐饮",
+      "date": "2026-09-20",
+      "id": "lg50",
+      "kind": "money",
+      "value": 53.28
+     },
+     {
+      "category": "出行",
+      "date": "2026-09-21",
+      "id": "lg51",
+      "kind": "money",
+      "value": 0
+     },
+     {
+      "category": "",
+      "date": "2026-09-22",
+      "id": "lg52",
+      "kind": "money",
+      "value": 3.33
+     },
+     {
+      "category": null,
+      "date": "2026-09-23",
+      "id": "lg53",
+      "kind": "money",
+      "value": 6.66
+     },
+     {
+      "category": "娱乐",
+      "date": "2026-09-24",
+      "id": "lg54",
+      "kind": "money",
+      "value": 9.99
+     },
+     {
+      "category": "餐饮",
+      "date": "2026-09-25",
+      "id": "lg55",
+      "kind": "money",
+      "value": 13.32
+     },
+     {
+      "category": "出行",
+      "date": "2026-09-26",
+      "id": "lg56",
+      "kind": "money",
+      "value": 16.65
+     },
+     {
+      "category": "",
+      "date": "2026-09-27",
+      "id": "lg57",
+      "kind": "money",
+      "value": 19.98
+     },
+     {
+      "category": null,
+      "date": "2026-09-28",
+      "id": "lg58",
+      "kind": "money",
+      "value": 23.310000000000002
+     },
+     {
+      "category": "娱乐",
+      "date": "2026-09-29",
+      "id": "lg59",
+      "kind": "money",
+      "value": 26.64
+     },
+     {
+      "category": "餐饮",
+      "date": "2026-09-30",
+      "id": "lg60",
+      "kind": "money",
+      "value": 29.97
+     },
+     {
+      "category": "餐饮",
+      "date": "2026-09-10",
+      "id": "lgNaN",
+      "kind": "money"
+     }
+    ],
+    "sum": 752.58
+   }
+  }
+ ],
+ "money.moneyIn.sides": [
+  752.58,
+  752.58,
+  0
+ ],
+ "catList.dir": [
+  [
+   "餐饮",
+   "出行",
+   "数码",
+   "生活",
+   "娱乐",
+   "医疗",
+   "服饰"
+  ],
+  [
+   "餐饮",
+   "出行",
+   "数码",
+   "生活",
+   "娱乐",
+   "医疗",
+   "服饰"
+  ],
+  [
+   "理财",
+   "副业",
+   "工资"
+  ]
+ ],
+ "typeof.catArrIn": [
+  "object",
+  true,
+  3
+ ],
  "summaryOf": [
   "13 项待办 · 5 个习惯 · 4 个目标 · 5 个记录项",
   "13 项待办 · 2 个习惯 · 3 个目标 · 2 个记录项",
@@ -12420,8 +13184,10 @@
    "ok": true
   },
   [
+   "dir",
    "value",
    "category",
+   "note",
    "date"
   ]
  ],
@@ -12759,7 +13525,7 @@
   "notes": 3,
   "records": 96
  },
- "snapshot.readonly": "{\"v\":{\"ITEMS\":[{\"id\":\"it0\",\"title\":\"待办 0\",\"dom\":null,\"due\":\"2026-09-13\",\"status\":\"done\",\"parent\":null,\"imp\":true,\"urg\":true},{\"id\":\"it1\",\"title\":\"待办 1\",\"dom\":\"study\",\"due\":\"2026-09-14\",\"status\":\"todo\",\"parent\":null,\"imp\":false,\"urg\":false},{\"id\":\"it2\",\"title\":\"待办 2\",\"dom\":\"work\",\"due\":\"2026-09-15\",\"status\":\"todo\",\"parent\":null,\"imp\":true,\"urg\":false},{\"id\":\"it3\",\"title\":\"待办 3\",\"dom\":\"life\",\"due\":\"2026-09-18\",\"status\":\"done\",\"parent\":null,\"imp\":false,\"urg\":true},{\"id\":\"it4\",\"title\":\"待办 4\",\"dom\":\"fitness\",\"due\":\"2026-09-20\",\"status\":\"todo\",\"parent\":null,\"imp\":true,\"urg\":false},{\"id\":\"it5\",\"title\":\"待办 5\",\"dom\":\"study\",\"due\":\"2026-09-21\",\"status\":\"todo\",\"parent\":\"it4\",\"imp\":false,\"urg\":false},{\"id\":\"it6\",\"title\":\"待办 6\",\"dom\":\"work\",\"due\":\"2026-08-31\",\"status\":\"done\",\"parent\":null,\"imp\":true,\"urg\":true},{\"id\":\"it7\",\"title\":\"待办 7\",\"dom\":\"life\",\"due\":\"2026-09-30\",\"status\":\"todo\",\"parent\":null,\"imp\":false,\"urg\":false},{\"id\":\"it8\",\"title\":\"待办 8\",\"dom\":\"fitness\",\"due\":\"2026-10-01\",\"status\":\"todo\",\"parent\":null,\"imp\":true,\"urg\":false},{\"id\":\"it9\",\"title\":\"待办 9\",\"dom\":null,\"due\":null,\"status\":\"done\",\"parent\":null,\"imp\":false,\"urg\":true},{\"id\":\"it10\",\"title\":\"待办 10\",\"dom\":\"work\",\"due\":\"2026-09-13\",\"status\":\"todo\",\"parent\":\"it9\",\"imp\":true,\"urg\":false},{\"id\":\"it11\",\"title\":\"待办 11\",\"dom\":\"life\",\"due\":\"2026-09-14\",\"status\":\"todo\",\"parent\":null,\"imp\":false,\"urg\":false},{\"id\":\"it12\",\"title\":\"待办 12\",\"dom\":\"fitness\",\"due\":\"2026-09-15\",\"status\":\"done\",\"parent\":null,\"imp\":true,\"urg\":true},{\"id\":\"it13\",\"title\":\"待办 13\",\"dom\":\"study\",\"due\":\"2026-09-18\",\"status\":\"todo\",\"parent\":null,\"imp\":false,\"urg\":false},{\"id\":\"it14\",\"title\":\"待办 14\",\"dom\":\"work\",\"due\":\"2026-09-20\",\"status\":\"todo\",\"parent\":null,\"imp\":true,\"urg\":false},{\"id\":\"it15\",\"title\":\"待办 15\",\"dom\":\"life\",\"due\":\"2026-09-21\",\"status\":\"done\",\"parent\":\"it14\",\"imp\":false,\"urg\":true},{\"id\":\"it16\",\"title\":\"待办 16\",\"dom\":\"fitness\",\"due\":\"2026-08-31\",\"status\":\"todo\",\"parent\":null,\"imp\":true,\"urg\":false},{\"id\":\"it17\",\"title\":\"待办 17\",\"dom\":\"study\",\"due\":\"2026-09-30\",\"status\":\"todo\",\"parent\":null,\"imp\":false,\"urg\":false},{\"id\":\"it18\",\"title\":\"待办 18\",\"dom\":null,\"due\":\"2026-10-01\",\"status\":\"done\",\"parent\":null,\"imp\":true,\"urg\":true},{\"id\":\"it19\",\"title\":\"待办 19\",\"dom\":\"life\",\"due\":null,\"status\":\"todo\",\"parent\":null,\"imp\":false,\"urg\":false},{\"id\":\"it20\",\"title\":\"待办 20\",\"dom\":\"fitness\",\"due\":\"2026-09-13\",\"status\":\"todo\",\"parent\":\"it19\",\"imp\":true,\"urg\":false},{\"id\":\"it21\",\"title\":\"待办 21\",\"dom\":\"study\",\"due\":\"2026-09-14\",\"status\":\"done\",\"parent\":null,\"imp\":false,\"urg\":true},{\"id\":\"it22\",\"title\":\"待办 22\",\"dom\":\"work\",\"due\":\"2026-09-15\",\"status\":\"todo\",\"parent\":null,\"imp\":true,\"urg\":false},{\"id\":\"it23\",\"title\":\"待办 23\",\"dom\":\"life\",\"due\":\"2026-09-18\",\"status\":\"todo\",\"parent\":null,\"imp\":false,\"urg\":false},{\"id\":\"it24\",\"title\":\"待办 24\",\"dom\":\"fitness\",\"due\":\"2026-09-20\",\"status\":\"done\",\"parent\":null,\"imp\":true,\"urg\":true},{\"id\":\"it25\",\"title\":\"待办 25\",\"dom\":\"study\",\"due\":\"2026-09-21\",\"status\":\"todo\",\"parent\":\"it24\",\"imp\":false,\"urg\":false},{\"id\":\"it26\",\"title\":\"待办 26\",\"dom\":\"work\",\"due\":\"2026-08-31\",\"status\":\"todo\",\"parent\":null,\"imp\":true,\"urg\":false},{\"id\":\"it27\",\"title\":\"待办 27\",\"dom\":null,\"due\":\"2026-09-30\",\"status\":\"done\",\"parent\":null,\"imp\":false,\"urg\":true},{\"id\":\"it28\",\"title\":\"待办 28\",\"dom\":\"fitness\",\"due\":\"2026-10-01\",\"status\":\"todo\",\"parent\":null,\"imp\":true,\"urg\":false},{\"id\":\"it29\",\"title\":\"待办 29\",\"dom\":\"study\",\"due\":null,\"status\":\"todo\",\"parent\":null,\"imp\":false,\"urg\":false},{\"id\":\"it30\",\"title\":\"待办 30\",\"dom\":\"work\",\"due\":\"2026-09-13\",\"status\":\"done\",\"parent\":\"it29\",\"imp\":true,\"urg\":true},{\"id\":\"it31\",\"title\":\"待办 31\",\"dom\":\"life\",\"due\":\"2026-09-14\",\"status\":\"todo\",\"parent\":null,\"imp\":false,\"urg\":false},{\"id\":\"it32\",\"title\":\"待办 32\",\"dom\":\"fitness\",\"due\":\"2026-09-15\",\"status\":\"todo\",\"parent\":null,\"imp\":true,\"urg\":false},{\"id\":\"it33\",\"title\":\"待办 33\",\"dom\":\"study\",\"due\":\"2026-09-18\",\"status\":\"done\",\"parent\":null,\"imp\":false,\"urg\":true},{\"id\":\"it34\",\"title\":\"待办 34\",\"dom\":\"work\",\"due\":\"2026-09-20\",\"status\":\"todo\",\"parent\":null,\"imp\":true,\"urg\":false},{\"id\":\"it35\",\"title\":\"待办 35\",\"dom\":\"life\",\"due\":\"2026-09-21\",\"status\":\"todo\",\"parent\":\"it34\",\"imp\":false,\"urg\":false},{\"id\":\"it36\",\"title\":\"待办 36\",\"dom\":null,\"due\":\"2026-08-31\",\"status\":\"done\",\"parent\":null,\"imp\":true,\"urg\":true},{\"id\":\"it37\",\"title\":\"待办 37\",\"dom\":\"study\",\"due\":\"2026-09-30\",\"status\":\"todo\",\"parent\":null,\"imp\":false,\"urg\":false},{\"id\":\"it38\",\"title\":\"待办 38\",\"dom\":\"work\",\"due\":\"2026-10-01\",\"status\":\"todo\",\"parent\":null,\"imp\":true,\"urg\":false},{\"id\":\"it39\",\"title\":\"待办 39\",\"dom\":\"life\",\"due\":null,\"status\":\"done\",\"parent\":null,\"imp\":false,\"urg\":true},{\"id\":\"it40\",\"title\":\"待办 40\",\"dom\":\"fitness\",\"due\":\"2026-09-13\",\"status\":\"todo\",\"parent\":\"it39\",\"imp\":true,\"urg\":false},{\"id\":\"it41\",\"title\":\"待办 41\",\"dom\":\"study\",\"due\":\"2026-09-14\",\"status\":\"todo\",\"parent\":null,\"imp\":false,\"urg\":false},{\"id\":\"it42\",\"title\":\"待办 42\",\"dom\":\"work\",\"due\":\"2026-09-15\",\"status\":\"done\",\"parent\":null,\"imp\":true,\"urg\":true},{\"id\":\"it43\",\"title\":\"待办 43\",\"dom\":\"life\",\"due\":\"2026-09-18\",\"status\":\"todo\",\"parent\":null,\"imp\":false,\"urg\":false},{\"id\":\"it44\",\"title\":\"待办 44\",\"dom\":\"fitness\",\"due\":\"2026-09-20\",\"status\":\"todo\",\"parent\":null,\"imp\":true,\"urg\":false},{\"id\":\"it45\",\"title\":\"待办 45\",\"dom\":null,\"due\":\"2026-09-21\",\"status\":\"done\",\"parent\":\"it44\",\"imp\":false,\"urg\":true},{\"id\":\"it46\",\"title\":\"待办 46\",\"dom\":\"work\",\"due\":\"2026-08-31\",\"status\":\"todo\",\"parent\":null,\"imp\":true,\"urg\":false},{\"id\":\"it47\",\"title\":\"待办 47\",\"dom\":\"life\",\"due\":\"2026-09-30\",\"status\":\"todo\",\"parent\":null,\"imp\":false,\"urg\":false},{\"id\":\"it48\",\"title\":\"待办 48\",\"dom\":\"fitness\",\"due\":\"2026-10-01\",\"status\":\"done\",\"parent\":null,\"imp\":true,\"urg\":true},{\"id\":\"it49\",\"title\":\"待办 49\",\"dom\":\"study\",\"due\":null,\"status\":\"todo\",\"parent\":null,\"imp\":false,\"urg\":false},{\"id\":\"it50\",\"title\":\"待办 50\",\"dom\":\"work\",\"due\":\"2026-09-13\",\"status\":\"todo\",\"parent\":\"it49\",\"imp\":true,\"urg\":false},{\"id\":\"it51\",\"title\":\"待办 51\",\"dom\":\"life\",\"due\":\"2026-09-14\",\"status\":\"done\",\"parent\":null,\"imp\":false,\"urg\":true},{\"id\":\"it52\",\"title\":\"待办 52\",\"dom\":\"fitness\",\"due\":\"2026-09-15\",\"status\":\"todo\",\"parent\":null,\"imp\":true,\"urg\":false},{\"id\":\"it53\",\"title\":\"待办 53\",\"dom\":\"study\",\"due\":\"2026-09-18\",\"status\":\"todo\",\"parent\":null,\"imp\":false,\"urg\":false},{\"id\":\"it54\",\"title\":\"待办 54\",\"dom\":null,\"due\":\"2026-09-20\",\"status\":\"done\",\"parent\":null,\"imp\":true,\"urg\":true},{\"id\":\"it55\",\"title\":\"待办 55\",\"dom\":\"life\",\"due\":\"2026-09-21\",\"status\":\"todo\",\"parent\":\"it54\",\"imp\":false,\"urg\":false},{\"id\":\"it56\",\"title\":\"待办 56\",\"dom\":\"fitness\",\"due\":\"2026-08-31\",\"status\":\"todo\",\"parent\":null,\"imp\":true,\"urg\":false},{\"id\":\"it57\",\"title\":\"待办 57\",\"dom\":\"study\",\"due\":\"2026-09-30\",\"status\":\"done\",\"parent\":null,\"imp\":false,\"urg\":true},{\"id\":\"it58\",\"title\":\"待办 58\",\"dom\":\"work\",\"due\":\"2026-10-01\",\"status\":\"todo\",\"parent\":null,\"imp\":true,\"urg\":false},{\"id\":\"it59\",\"title\":\"待办 59\",\"dom\":\"life\",\"due\":null,\"status\":\"todo\",\"parent\":null,\"imp\":false,\"urg\":false},{\"id\":\"itOrphan\",\"title\":\"孤儿\",\"dom\":null,\"due\":\"2026-09-18\",\"status\":\"todo\",\"parent\":\"itNope\",\"imp\":false,\"urg\":false}],\"HABIT_LOGS\":[{\"key\":\"h-fit-1\",\"date\":\"2026-06-01\"},{\"key\":\"h-fit-1\",\"date\":\"2026-06-02\"},{\"key\":\"h-fit-1\",\"date\":\"2026-06-03\"},{\"key\":\"h-fit-1\",\"date\":\"2026-06-04\"},{\"key\":\"h-fit-1\",\"date\":\"2026-06-05\"},{\"key\":\"h-fit-1\",\"date\":\"2026-06-06\"},{\"key\":\"h-fit-1\",\"date\":\"2026-06-08\"},{\"key\":\"h-fit-1\",\"date\":\"2026-06-09\"},{\"key\":\"h-fit-1\",\"date\":\"2026-06-10\"},{\"key\":\"h-fit-1\",\"date\":\"2026-06-11\"},{\"key\":\"h-fit-1\",\"date\":\"2026-06-12\"},{\"key\":\"h-fit-1\",\"date\":\"2026-06-13\"},{\"key\":\"h-fit-1\",\"date\":\"2026-06-15\"},{\"key\":\"h-fit-1\",\"date\":\"2026-06-16\"},{\"key\":\"h-fit-1\",\"date\":\"2026-06-17\"},{\"key\":\"h-fit-1\",\"date\":\"2026-06-18\"},{\"key\":\"h-fit-1\",\"date\":\"2026-06-19\"},{\"key\":\"h-fit-1\",\"date\":\"2026-06-20\"},{\"key\":\"h-fit-1\",\"date\":\"2026-06-22\"},{\"key\":\"h-fit-1\",\"date\":\"2026-06-23\"},{\"key\":\"h-fit-1\",\"date\":\"2026-06-24\"},{\"key\":\"h-fit-1\",\"date\":\"2026-06-25\"},{\"key\":\"h-fit-1\",\"date\":\"2026-06-26\"},{\"key\":\"h-fit-1\",\"date\":\"2026-06-27\"},{\"key\":\"h-fit-1\",\"date\":\"2026-06-29\"},{\"key\":\"h-fit-1\",\"date\":\"2026-06-30\"},{\"key\":\"h-fit-1\",\"date\":\"2026-07-01\"},{\"key\":\"h-fit-1\",\"date\":\"2026-07-02\"},{\"key\":\"h-fit-1\",\"date\":\"2026-07-03\"},{\"key\":\"h-fit-1\",\"date\":\"2026-07-04\"},{\"key\":\"h-fit-1\",\"date\":\"2026-07-06\"},{\"key\":\"h-fit-1\",\"date\":\"2026-07-07\"},{\"key\":\"h-fit-1\",\"date\":\"2026-07-08\"},{\"key\":\"h-fit-1\",\"date\":\"2026-07-09\"},{\"key\":\"h-fit-1\",\"date\":\"2026-07-10\"},{\"key\":\"hDup1\",\"date\":\"2026-06-01\"},{\"key\":\"hDup1\",\"date\":\"2026-06-02\"},{\"key\":\"hDup1\",\"date\":\"2026-06-03\"},{\"key\":\"hDup1\",\"date\":\"2026-06-04\"},{\"key\":\"hDup1\",\"date\":\"2026-06-05\"},{\"key\":\"hDup1\",\"date\":\"2026-06-07\"},{\"key\":\"hDup1\",\"date\":\"2026-06-08\"},{\"key\":\"hDup1\",\"date\":\"2026-06-09\"},{\"key\":\"hDup1\",\"date\":\"2026-06-10\"},{\"key\":\"hDup1\",\"date\":\"2026-06-11\"},{\"key\":\"hDup1\",\"date\":\"2026-06-12\"},{\"key\":\"hDup1\",\"date\":\"2026-06-14\"},{\"key\":\"hDup1\",\"date\":\"2026-06-15\"},{\"key\":\"hDup1\",\"date\":\"2026-06-16\"},{\"key\":\"hDup1\",\"date\":\"2026-06-17\"},{\"key\":\"hDup1\",\"date\":\"2026-06-18\"},{\"key\":\"hDup1\",\"date\":\"2026-06-19\"},{\"key\":\"hDup1\",\"date\":\"2026-06-21\"},{\"key\":\"hDup1\",\"date\":\"2026-06-22\"},{\"key\":\"hDup1\",\"date\":\"2026-06-23\"},{\"key\":\"hDup1\",\"date\":\"2026-06-24\"},{\"key\":\"hDup1\",\"date\":\"2026-06-25\"},{\"key\":\"hDup1\",\"date\":\"2026-06-26\"},{\"key\":\"hDup1\",\"date\":\"2026-06-28\"},{\"key\":\"hDup1\",\"date\":\"2026-06-29\"},{\"key\":\"hDup1\",\"date\":\"2026-06-30\"},{\"key\":\"hDup1\",\"date\":\"2026-07-01\"},{\"key\":\"hDup1\",\"date\":\"2026-07-02\"},{\"key\":\"hDup1\",\"date\":\"2026-07-03\"},{\"key\":\"hDup1\",\"date\":\"2026-07-05\"},{\"key\":\"hDup1\",\"date\":\"2026-07-06\"},{\"key\":\"hDup1\",\"date\":\"2026-07-07\"},{\"key\":\"hDup1\",\"date\":\"2026-07-08\"},{\"key\":\"hDup1\",\"date\":\"2026-07-09\"},{\"key\":\"hDup1\",\"date\":\"2026-07-10\"},{\"key\":\"hDeep2\",\"date\":\"2026-06-01\"},{\"key\":\"hDeep2\",\"date\":\"2026-06-02\"},{\"key\":\"hDeep2\",\"date\":\"2026-06-03\"},{\"key\":\"hDeep2\",\"date\":\"2026-06-05\"},{\"key\":\"hDeep2\",\"date\":\"2026-06-06\"},{\"key\":\"hDeep2\",\"date\":\"2026-06-07\"},{\"key\":\"hDeep2\",\"date\":\"2026-06-08\"},{\"key\":\"hDeep2\",\"date\":\"2026-06-09\"},{\"key\":\"hDeep2\",\"date\":\"2026-06-10\"},{\"key\":\"hDeep2\",\"date\":\"2026-06-12\"},{\"key\":\"hDeep2\",\"date\":\"2026-06-13\"},{\"key\":\"hDeep2\",\"date\":\"2026-06-14\"},{\"key\":\"hDeep2\",\"date\":\"2026-06-15\"},{\"key\":\"hDeep2\",\"date\":\"2026-06-16\"},{\"key\":\"hDeep2\",\"date\":\"2026-06-17\"},{\"key\":\"hDeep2\",\"date\":\"2026-06-19\"},{\"key\":\"hDeep2\",\"date\":\"2026-06-20\"},{\"key\":\"hDeep2\",\"date\":\"2026-06-21\"},{\"key\":\"hDeep2\",\"date\":\"2026-06-22\"},{\"key\":\"hDeep2\",\"date\":\"2026-06-23\"},{\"key\":\"hDeep2\",\"date\":\"2026-06-24\"},{\"key\":\"hDeep2\",\"date\":\"2026-06-26\"},{\"key\":\"hDeep2\",\"date\":\"2026-06-27\"},{\"key\":\"hDeep2\",\"date\":\"2026-06-28\"},{\"key\":\"hDeep2\",\"date\":\"2026-06-29\"},{\"key\":\"hDeep2\",\"date\":\"2026-06-30\"},{\"key\":\"hDeep2\",\"date\":\"2026-07-01\"},{\"key\":\"hDeep2\",\"date\":\"2026-07-03\"},{\"key\":\"hDeep2\",\"date\":\"2026-07-04\"},{\"key\":\"hDeep2\",\"date\":\"2026-07-05\"},{\"key\":\"hDeep2\",\"date\":\"2026-07-06\"},{\"key\":\"hDeep2\",\"date\":\"2026-07-07\"},{\"key\":\"hDeep2\",\"date\":\"2026-07-08\"},{\"key\":\"hDeep2\",\"date\":\"2026-07-10\"},{\"key\":\"hDeep3\",\"date\":\"2026-06-01\"},{\"key\":\"hDeep3\",\"date\":\"2026-06-02\"},{\"key\":\"hDeep3\",\"date\":\"2026-06-04\"},{\"key\":\"hDeep3\",\"date\":\"2026-06-05\"},{\"key\":\"hDeep3\",\"date\":\"2026-06-06\"},{\"key\":\"hDeep3\",\"date\":\"2026-06-07\"},{\"key\":\"hDeep3\",\"date\":\"2026-06-08\"},{\"key\":\"hDeep3\",\"date\":\"2026-06-09\"},{\"key\":\"hDeep3\",\"date\":\"2026-06-11\"},{\"key\":\"hDeep3\",\"date\":\"2026-06-12\"},{\"key\":\"hDeep3\",\"date\":\"2026-06-13\"},{\"key\":\"hDeep3\",\"date\":\"2026-06-14\"},{\"key\":\"hDeep3\",\"date\":\"2026-06-15\"},{\"key\":\"hDeep3\",\"date\":\"2026-06-16\"},{\"key\":\"hDeep3\",\"date\":\"2026-06-18\"},{\"key\":\"hDeep3\",\"date\":\"2026-06-19\"},{\"key\":\"hDeep3\",\"date\":\"2026-06-20\"},{\"key\":\"hDeep3\",\"date\":\"2026-06-21\"},{\"key\":\"hDeep3\",\"date\":\"2026-06-22\"},{\"key\":\"hDeep3\",\"date\":\"2026-06-23\"},{\"key\":\"hDeep3\",\"date\":\"2026-06-25\"},{\"key\":\"hDeep3\",\"date\":\"2026-06-26\"},{\"key\":\"hDeep3\",\"date\":\"2026-06-27\"},{\"key\":\"hDeep3\",\"date\":\"2026-06-28\"},{\"key\":\"hDeep3\",\"date\":\"2026-06-29\"},{\"key\":\"hDeep3\",\"date\":\"2026-06-30\"},{\"key\":\"hDeep3\",\"date\":\"2026-07-02\"},{\"key\":\"hDeep3\",\"date\":\"2026-07-03\"},{\"key\":\"hDeep3\",\"date\":\"2026-07-04\"},{\"key\":\"hDeep3\",\"date\":\"2026-07-05\"},{\"key\":\"hDeep3\",\"date\":\"2026-07-06\"},{\"key\":\"hDeep3\",\"date\":\"2026-07-07\"},{\"key\":\"hDeep3\",\"date\":\"2026-07-09\"},{\"key\":\"hDeep3\",\"date\":\"2026-07-10\"},{\"key\":\"hDup2\",\"date\":\"2026-06-02\"},{\"key\":\"hDup2\",\"date\":\"2026-06-03\"},{\"key\":\"hDup2\",\"date\":\"2026-06-04\"},{\"key\":\"hDup2\",\"date\":\"2026-06-05\"},{\"key\":\"hDup2\",\"date\":\"2026-06-06\"},{\"key\":\"hDup2\",\"date\":\"2026-06-07\"},{\"key\":\"hDup2\",\"date\":\"2026-06-09\"},{\"key\":\"hDup2\",\"date\":\"2026-06-10\"},{\"key\":\"hDup2\",\"date\":\"2026-06-11\"},{\"key\":\"hDup2\",\"date\":\"2026-06-12\"},{\"key\":\"hDup2\",\"date\":\"2026-06-13\"},{\"key\":\"hDup2\",\"date\":\"2026-06-14\"},{\"key\":\"hDup2\",\"date\":\"2026-06-16\"},{\"key\":\"hDup2\",\"date\":\"2026-06-17\"},{\"key\":\"hDup2\",\"date\":\"2026-06-18\"},{\"key\":\"hDup2\",\"date\":\"2026-06-19\"},{\"key\":\"hDup2\",\"date\":\"2026-06-20\"},{\"key\":\"hDup2\",\"date\":\"2026-06-21\"},{\"key\":\"hDup2\",\"date\":\"2026-06-23\"},{\"key\":\"hDup2\",\"date\":\"2026-06-24\"},{\"key\":\"hDup2\",\"date\":\"2026-06-25\"},{\"key\":\"hDup2\",\"date\":\"2026-06-26\"},{\"key\":\"hDup2\",\"date\":\"2026-06-27\"},{\"key\":\"hDup2\",\"date\":\"2026-06-28\"},{\"key\":\"hDup2\",\"date\":\"2026-06-30\"},{\"key\":\"hDup2\",\"date\":\"2026-07-01\"},{\"key\":\"hDup2\",\"date\":\"2026-07-02\"},{\"key\":\"hDup2\",\"date\":\"2026-07-03\"},{\"key\":\"hDup2\",\"date\":\"2026-07-04\"},{\"key\":\"hDup2\",\"date\":\"2026-07-05\"},{\"key\":\"hDup2\",\"date\":\"2026-07-07\"},{\"key\":\"hDup2\",\"date\":\"2026-07-08\"},{\"key\":\"hDup2\",\"date\":\"2026-07-09\"},{\"key\":\"hDup2\",\"date\":\"2026-07-10\"},{\"key\":\"h-work-1\",\"date\":\"2026-06-01\"},{\"key\":\"h-work-1\",\"date\":\"2026-06-02\"},{\"key\":\"h-work-1\",\"date\":\"2026-06-03\"},{\"key\":\"h-work-1\",\"date\":\"2026-06-04\"},{\"key\":\"h-work-1\",\"date\":\"2026-06-05\"},{\"key\":\"h-work-1\",\"date\":\"2026-06-06\"},{\"key\":\"h-work-1\",\"date\":\"2026-06-08\"},{\"key\":\"h-work-1\",\"date\":\"2026-06-09\"},{\"key\":\"h-work-1\",\"date\":\"2026-06-10\"},{\"key\":\"h-work-1\",\"date\":\"2026-06-11\"},{\"key\":\"h-work-1\",\"date\":\"2026-06-12\"},{\"key\":\"h-work-1\",\"date\":\"2026-06-13\"},{\"key\":\"h-work-1\",\"date\":\"2026-06-15\"},{\"key\":\"h-work-1\",\"date\":\"2026-06-16\"},{\"key\":\"h-work-1\",\"date\":\"2026-06-17\"},{\"key\":\"h-work-1\",\"date\":\"2026-06-18\"},{\"key\":\"h-work-1\",\"date\":\"2026-06-19\"},{\"key\":\"h-work-1\",\"date\":\"2026-06-20\"},{\"key\":\"h-work-1\",\"date\":\"2026-06-22\"},{\"key\":\"h-work-1\",\"date\":\"2026-06-23\"},{\"key\":\"h-work-1\",\"date\":\"2026-06-24\"},{\"key\":\"h-work-1\",\"date\":\"2026-06-25\"},{\"key\":\"h-work-1\",\"date\":\"2026-06-26\"},{\"key\":\"h-work-1\",\"date\":\"2026-06-27\"},{\"key\":\"h-work-1\",\"date\":\"2026-06-29\"},{\"key\":\"h-work-1\",\"date\":\"2026-06-30\"},{\"key\":\"h-work-1\",\"date\":\"2026-07-01\"},{\"key\":\"h-work-1\",\"date\":\"2026-07-02\"},{\"key\":\"h-work-1\",\"date\":\"2026-07-03\"},{\"key\":\"h-work-1\",\"date\":\"2026-07-04\"},{\"key\":\"h-work-1\",\"date\":\"2026-07-06\"},{\"key\":\"h-work-1\",\"date\":\"2026-07-07\"},{\"key\":\"h-work-1\",\"date\":\"2026-07-08\"},{\"key\":\"h-work-1\",\"date\":\"2026-07-09\"},{\"key\":\"h-work-1\",\"date\":\"2026-07-10\"},{\"key\":\"h-life-2\",\"date\":\"2026-06-01\"},{\"key\":\"h-life-2\",\"date\":\"2026-06-02\"},{\"key\":\"h-life-2\",\"date\":\"2026-06-03\"},{\"key\":\"h-life-2\",\"date\":\"2026-06-04\"},{\"key\":\"h-life-2\",\"date\":\"2026-06-06\"},{\"key\":\"h-life-2\",\"date\":\"2026-06-07\"},{\"key\":\"h-life-2\",\"date\":\"2026-06-08\"},{\"key\":\"h-life-2\",\"date\":\"2026-06-09\"},{\"key\":\"h-life-2\",\"date\":\"2026-06-10\"},{\"key\":\"h-life-2\",\"date\":\"2026-06-11\"},{\"key\":\"h-life-2\",\"date\":\"2026-06-13\"},{\"key\":\"h-life-2\",\"date\":\"2026-06-14\"},{\"key\":\"h-life-2\",\"date\":\"2026-06-15\"},{\"key\":\"h-life-2\",\"date\":\"2026-06-16\"},{\"key\":\"h-life-2\",\"date\":\"2026-06-17\"},{\"key\":\"h-life-2\",\"date\":\"2026-06-18\"},{\"key\":\"h-life-2\",\"date\":\"2026-06-20\"},{\"key\":\"h-life-2\",\"date\":\"2026-06-21\"},{\"key\":\"h-life-2\",\"date\":\"2026-06-22\"},{\"key\":\"h-life-2\",\"date\":\"2026-06-23\"},{\"key\":\"h-life-2\",\"date\":\"2026-06-24\"},{\"key\":\"h-life-2\",\"date\":\"2026-06-25\"},{\"key\":\"h-life-2\",\"date\":\"2026-06-27\"},{\"key\":\"h-life-2\",\"date\":\"2026-06-28\"},{\"key\":\"h-life-2\",\"date\":\"2026-06-29\"},{\"key\":\"h-life-2\",\"date\":\"2026-06-30\"},{\"key\":\"h-life-2\",\"date\":\"2026-07-01\"},{\"key\":\"h-life-2\",\"date\":\"2026-07-02\"},{\"key\":\"h-life-2\",\"date\":\"2026-07-04\"},{\"key\":\"h-life-2\",\"date\":\"2026-07-05\"},{\"key\":\"h-life-2\",\"date\":\"2026-07-06\"},{\"key\":\"h-life-2\",\"date\":\"2026-07-07\"},{\"key\":\"h-life-2\",\"date\":\"2026-07-08\"},{\"key\":\"h-life-2\",\"date\":\"2026-07-09\"},{\"key\":\"h-life-3\",\"date\":\"2026-06-01\"},{\"key\":\"h-life-3\",\"date\":\"2026-06-02\"},{\"key\":\"h-life-3\",\"date\":\"2026-06-03\"},{\"key\":\"h-life-3\",\"date\":\"2026-06-05\"},{\"key\":\"h-life-3\",\"date\":\"2026-06-06\"},{\"key\":\"h-life-3\",\"date\":\"2026-06-07\"},{\"key\":\"h-life-3\",\"date\":\"2026-06-08\"},{\"key\":\"h-life-3\",\"date\":\"2026-06-09\"},{\"key\":\"h-life-3\",\"date\":\"2026-06-10\"},{\"key\":\"h-life-3\",\"date\":\"2026-06-12\"},{\"key\":\"h-life-3\",\"date\":\"2026-06-13\"},{\"key\":\"h-life-3\",\"date\":\"2026-06-14\"},{\"key\":\"h-life-3\",\"date\":\"2026-06-15\"},{\"key\":\"h-life-3\",\"date\":\"2026-06-16\"},{\"key\":\"h-life-3\",\"date\":\"2026-06-17\"},{\"key\":\"h-life-3\",\"date\":\"2026-06-19\"},{\"key\":\"h-life-3\",\"date\":\"2026-06-20\"},{\"key\":\"h-life-3\",\"date\":\"2026-06-21\"},{\"key\":\"h-life-3\",\"date\":\"2026-06-22\"},{\"key\":\"h-life-3\",\"date\":\"2026-06-23\"},{\"key\":\"h-life-3\",\"date\":\"2026-06-24\"},{\"key\":\"h-life-3\",\"date\":\"2026-06-26\"},{\"key\":\"h-life-3\",\"date\":\"2026-06-27\"},{\"key\":\"h-life-3\",\"date\":\"2026-06-28\"},{\"key\":\"h-life-3\",\"date\":\"2026-06-29\"},{\"key\":\"h-life-3\",\"date\":\"2026-06-30\"},{\"key\":\"h-life-3\",\"date\":\"2026-07-01\"},{\"key\":\"h-life-3\",\"date\":\"2026-07-03\"},{\"key\":\"h-life-3\",\"date\":\"2026-07-04\"},{\"key\":\"h-life-3\",\"date\":\"2026-07-05\"},{\"key\":\"h-life-3\",\"date\":\"2026-07-06\"},{\"key\":\"h-life-3\",\"date\":\"2026-07-07\"},{\"key\":\"h-life-3\",\"date\":\"2026-07-08\"},{\"key\":\"h-life-3\",\"date\":\"2026-07-10\"},{\"key\":\"hGhost\",\"date\":\"2026-06-15\"},{\"key\":\"h-fit-1\",\"date\":\"\"}],\"INBOX\":[{\"id\":\"in1\",\"text\":\"问问李工那个接口文档在哪\",\"at\":\"2026-09-22\"},{\"id\":\"in2\",\"text\":\"想学一下 GraphRAG\",\"at\":\"2026-09-22\"},{\"id\":\"in3\",\"text\":\"换一盒充电电池\",\"at\":\"2026-09-23\"}],\"NOTES\":[{\"id\":\"nt1\",\"d\":\"2026-09-22\",\"text\":\"今天试着把周报提前到周三写完，发现其实两个小时就够。之前一直拖到周五，大概是怕写完就要面对下一周。\"},{\"id\":\"nt2\",\"d\":\"2026-09-20\",\"text\":\"早睡这件事，卡住我的不是工作，是手机。\"},{\"id\":\"nt3\",\"d\":\"2026-09-17\",\"text\":\"体检报告出来了，其他都好，就是血脂偏高。要开始认真对待吃饭这件事了。\"}],\"NOTE_PROMPTS\":[\"最近哪件事让你反复想起？\",\"这周有件事想做没做成，卡在哪一步？\",\"这一周只能留一件事，你留哪件？\",\"有什么事你一直没说出口？\",\"最近一次觉得「这样挺好」是什么时候？\",\"今天哪个瞬间你想慢一点？\"],\"LOGS\":[{\"id\":\"lg0\",\"kind\":\"money\",\"date\":\"2026-08-01\",\"category\":\"餐饮\",\"value\":0},{\"id\":\"lg1\",\"kind\":\"money\",\"date\":\"2026-08-02\",\"category\":\"出行\",\"value\":3.33},{\"id\":\"lg2\",\"kind\":\"money\",\"date\":\"2026-08-03\",\"category\":\"\",\"value\":6.66},{\"id\":\"lg3\",\"kind\":\"money\",\"date\":\"2026-08-04\",\"category\":null,\"value\":9.99},{\"id\":\"lg4\",\"kind\":\"money\",\"date\":\"2026-08-05\",\"category\":\"娱乐\",\"value\":13.32},{\"id\":\"lg5\",\"kind\":\"money\",\"date\":\"2026-08-06\",\"category\":\"餐饮\",\"value\":16.65},{\"id\":\"lg6\",\"kind\":\"money\",\"date\":\"2026-08-07\",\"category\":\"出行\",\"value\":19.98},{\"id\":\"lg7\",\"kind\":\"money\",\"date\":\"2026-08-08\",\"category\":\"\",\"value\":23.310000000000002},{\"id\":\"lg8\",\"kind\":\"money\",\"date\":\"2026-08-09\",\"category\":null,\"value\":26.64},{\"id\":\"lg9\",\"kind\":\"money\",\"date\":\"2026-08-10\",\"category\":\"娱乐\",\"value\":29.97},{\"id\":\"lg10\",\"kind\":\"money\",\"date\":\"2026-08-11\",\"category\":\"餐饮\",\"value\":33.3},{\"id\":\"lg11\",\"kind\":\"money\",\"date\":\"2026-08-12\",\"category\":\"出行\",\"value\":36.63},{\"id\":\"lg12\",\"kind\":\"money\",\"date\":\"2026-08-13\",\"category\":\"\",\"value\":39.96},{\"id\":\"lg13\",\"kind\":\"money\",\"date\":\"2026-08-14\",\"category\":null,\"value\":43.29},{\"id\":\"lg14\",\"kind\":\"money\",\"date\":\"2026-08-15\",\"category\":\"娱乐\",\"value\":46.620000000000005},{\"id\":\"lg15\",\"kind\":\"money\",\"date\":\"2026-08-16\",\"category\":\"餐饮\",\"value\":49.95},{\"id\":\"lg16\",\"kind\":\"money\",\"date\":\"2026-08-17\",\"category\":\"出行\",\"value\":53.28},{\"id\":\"lg17\",\"kind\":\"money\",\"date\":\"2026-08-18\",\"category\":\"\",\"value\":0},{\"id\":\"lg18\",\"kind\":\"money\",\"date\":\"2026-08-19\",\"category\":null,\"value\":3.33},{\"id\":\"lg19\",\"kind\":\"money\",\"date\":\"2026-08-20\",\"category\":\"娱乐\",\"value\":6.66},{\"id\":\"lg20\",\"kind\":\"money\",\"date\":\"2026-08-21\",\"category\":\"餐饮\",\"value\":9.99},{\"id\":\"lg21\",\"kind\":\"money\",\"date\":\"2026-08-22\",\"category\":\"出行\",\"value\":13.32},{\"id\":\"lg22\",\"kind\":\"money\",\"date\":\"2026-08-23\",\"category\":\"\",\"value\":16.65},{\"id\":\"lg23\",\"kind\":\"money\",\"date\":\"2026-08-24\",\"category\":null,\"value\":19.98},{\"id\":\"lg24\",\"kind\":\"money\",\"date\":\"2026-08-25\",\"category\":\"娱乐\",\"value\":23.310000000000002},{\"id\":\"lg25\",\"kind\":\"money\",\"date\":\"2026-08-26\",\"category\":\"餐饮\",\"value\":26.64},{\"id\":\"lg26\",\"kind\":\"money\",\"date\":\"2026-08-27\",\"category\":\"出行\",\"value\":29.97},{\"id\":\"lg27\",\"kind\":\"money\",\"date\":\"2026-08-28\",\"category\":\"\",\"value\":33.3},{\"id\":\"lg28\",\"kind\":\"money\",\"date\":\"2026-08-29\",\"category\":null,\"value\":36.63},{\"id\":\"lg29\",\"kind\":\"money\",\"date\":\"2026-08-30\",\"category\":\"娱乐\",\"value\":39.96},{\"id\":\"lg30\",\"kind\":\"money\",\"date\":\"2026-08-31\",\"category\":\"餐饮\",\"value\":43.29},{\"id\":\"lg31\",\"kind\":\"money\",\"date\":\"2026-09-01\",\"category\":\"出行\",\"value\":46.620000000000005},{\"id\":\"lg32\",\"kind\":\"money\",\"date\":\"2026-09-02\",\"category\":\"\",\"value\":49.95},{\"id\":\"lg33\",\"kind\":\"money\",\"date\":\"2026-09-03\",\"category\":null,\"value\":53.28},{\"id\":\"lg34\",\"kind\":\"money\",\"date\":\"2026-09-04\",\"category\":\"娱乐\",\"value\":0},{\"id\":\"lg35\",\"kind\":\"money\",\"date\":\"2026-09-05\",\"category\":\"餐饮\",\"value\":3.33},{\"id\":\"lg36\",\"kind\":\"money\",\"date\":\"2026-09-06\",\"category\":\"出行\",\"value\":6.66},{\"id\":\"lg37\",\"kind\":\"money\",\"date\":\"2026-09-07\",\"category\":\"\",\"value\":9.99},{\"id\":\"lg38\",\"kind\":\"money\",\"date\":\"2026-09-08\",\"category\":null,\"value\":13.32},{\"id\":\"lg39\",\"kind\":\"money\",\"date\":\"2026-09-09\",\"category\":\"娱乐\",\"value\":16.65},{\"id\":\"lg40\",\"kind\":\"money\",\"date\":\"2026-09-10\",\"category\":\"餐饮\",\"value\":19.98},{\"id\":\"lg41\",\"kind\":\"money\",\"date\":\"2026-09-11\",\"category\":\"出行\",\"value\":23.310000000000002},{\"id\":\"lg42\",\"kind\":\"money\",\"date\":\"2026-09-12\",\"category\":\"\",\"value\":26.64},{\"id\":\"lg43\",\"kind\":\"money\",\"date\":\"2026-09-13\",\"category\":null,\"value\":29.97},{\"id\":\"lg44\",\"kind\":\"money\",\"date\":\"2026-09-14\",\"category\":\"娱乐\",\"value\":33.3},{\"id\":\"lg45\",\"kind\":\"money\",\"date\":\"2026-09-15\",\"category\":\"餐饮\",\"value\":36.63},{\"id\":\"lg46\",\"kind\":\"money\",\"date\":\"2026-09-16\",\"category\":\"出行\",\"value\":39.96},{\"id\":\"lg47\",\"kind\":\"money\",\"date\":\"2026-09-17\",\"category\":\"\",\"value\":43.29},{\"id\":\"lg48\",\"kind\":\"money\",\"date\":\"2026-09-18\",\"category\":null,\"value\":46.620000000000005},{\"id\":\"lg49\",\"kind\":\"money\",\"date\":\"2026-09-19\",\"category\":\"娱乐\",\"value\":49.95},{\"id\":\"lg50\",\"kind\":\"money\",\"date\":\"2026-09-20\",\"category\":\"餐饮\",\"value\":53.28},{\"id\":\"lg51\",\"kind\":\"money\",\"date\":\"2026-09-21\",\"category\":\"出行\",\"value\":0},{\"id\":\"lg52\",\"kind\":\"money\",\"date\":\"2026-09-22\",\"category\":\"\",\"value\":3.33},{\"id\":\"lg53\",\"kind\":\"money\",\"date\":\"2026-09-23\",\"category\":null,\"value\":6.66},{\"id\":\"lg54\",\"kind\":\"money\",\"date\":\"2026-09-24\",\"category\":\"娱乐\",\"value\":9.99},{\"id\":\"lg55\",\"kind\":\"money\",\"date\":\"2026-09-25\",\"category\":\"餐饮\",\"value\":13.32},{\"id\":\"lg56\",\"kind\":\"money\",\"date\":\"2026-09-26\",\"category\":\"出行\",\"value\":16.65},{\"id\":\"lg57\",\"kind\":\"money\",\"date\":\"2026-09-27\",\"category\":\"\",\"value\":19.98},{\"id\":\"lg58\",\"kind\":\"money\",\"date\":\"2026-09-28\",\"category\":null,\"value\":23.310000000000002},{\"id\":\"lg59\",\"kind\":\"money\",\"date\":\"2026-09-29\",\"category\":\"娱乐\",\"value\":26.64},{\"id\":\"lg60\",\"kind\":\"money\",\"date\":\"2026-09-30\",\"category\":\"餐饮\",\"value\":29.97},{\"id\":\"lg61\",\"kind\":\"money\",\"date\":\"2026-08-01\",\"category\":\"出行\",\"value\":33.3},{\"id\":\"lg62\",\"kind\":\"money\",\"date\":\"2026-08-02\",\"category\":\"\",\"value\":36.63},{\"id\":\"lg63\",\"kind\":\"money\",\"date\":\"2026-08-03\",\"category\":null,\"value\":39.96},{\"id\":\"lg64\",\"kind\":\"money\",\"date\":\"2026-08-04\",\"category\":\"娱乐\",\"value\":43.29},{\"id\":\"lg65\",\"kind\":\"money\",\"date\":\"2026-08-05\",\"category\":\"餐饮\",\"value\":46.620000000000005},{\"id\":\"lg66\",\"kind\":\"money\",\"date\":\"2026-08-06\",\"category\":\"出行\",\"value\":49.95},{\"id\":\"lg67\",\"kind\":\"money\",\"date\":\"2026-08-07\",\"category\":\"\",\"value\":53.28},{\"id\":\"lg68\",\"kind\":\"money\",\"date\":\"2026-08-08\",\"category\":null,\"value\":0},{\"id\":\"lg69\",\"kind\":\"money\",\"date\":\"2026-08-09\",\"category\":\"娱乐\",\"value\":3.33},{\"id\":\"lg70\",\"kind\":\"money\",\"date\":\"2026-08-10\",\"category\":\"餐饮\",\"value\":6.66},{\"id\":\"lg71\",\"kind\":\"money\",\"date\":\"2026-08-11\",\"category\":\"出行\",\"value\":9.99},{\"id\":\"lg72\",\"kind\":\"money\",\"date\":\"2026-08-12\",\"category\":\"\",\"value\":13.32},{\"id\":\"lg73\",\"kind\":\"money\",\"date\":\"2026-08-13\",\"category\":null,\"value\":16.65},{\"id\":\"lg74\",\"kind\":\"money\",\"date\":\"2026-08-14\",\"category\":\"娱乐\",\"value\":19.98},{\"id\":\"lg75\",\"kind\":\"money\",\"date\":\"2026-08-15\",\"category\":\"餐饮\",\"value\":23.310000000000002},{\"id\":\"lg76\",\"kind\":\"money\",\"date\":\"2026-08-16\",\"category\":\"出行\",\"value\":26.64},{\"id\":\"lg77\",\"kind\":\"money\",\"date\":\"2026-08-17\",\"category\":\"\",\"value\":29.97},{\"id\":\"lg78\",\"kind\":\"money\",\"date\":\"2026-08-18\",\"category\":null,\"value\":33.3},{\"id\":\"lg79\",\"kind\":\"money\",\"date\":\"2026-08-19\",\"category\":\"娱乐\",\"value\":36.63},{\"id\":\"lg80\",\"kind\":\"money\",\"date\":\"2026-08-20\",\"category\":\"餐饮\",\"value\":39.96},{\"id\":\"lg81\",\"kind\":\"money\",\"date\":\"2026-08-21\",\"category\":\"出行\",\"value\":43.29},{\"id\":\"lg82\",\"kind\":\"money\",\"date\":\"2026-08-22\",\"category\":\"\",\"value\":46.620000000000005},{\"id\":\"lg83\",\"kind\":\"money\",\"date\":\"2026-08-23\",\"category\":null,\"value\":49.95},{\"id\":\"lg84\",\"kind\":\"money\",\"date\":\"2026-08-24\",\"category\":\"娱乐\",\"value\":53.28},{\"id\":\"lg85\",\"kind\":\"money\",\"date\":\"2026-08-25\",\"category\":\"餐饮\",\"value\":0},{\"id\":\"lg86\",\"kind\":\"money\",\"date\":\"2026-08-26\",\"category\":\"出行\",\"value\":3.33},{\"id\":\"lg87\",\"kind\":\"money\",\"date\":\"2026-08-27\",\"category\":\"\",\"value\":6.66},{\"id\":\"lg88\",\"kind\":\"money\",\"date\":\"2026-08-28\",\"category\":null,\"value\":9.99},{\"id\":\"lg89\",\"kind\":\"money\",\"date\":\"2026-08-29\",\"category\":\"娱乐\",\"value\":13.32},{\"id\":\"lgBad\",\"kind\":\"money\",\"date\":\"\",\"category\":\"餐饮\",\"value\":\"oops\"},{\"id\":\"lgNaN\",\"kind\":\"money\",\"date\":\"2026-09-10\",\"category\":\"餐饮\"}],\"DOMAINS\":[{\"id\":\"fitness\",\"name\":\"健身\",\"pinned\":true,\"habits\":[{\"id\":\"h-fit-1\",\"t\":\"训练日打卡\",\"m\":\"每周 4 次\",\"parent\":null},{\"id\":\"hDup1\",\"t\":\"重名习惯\",\"m\":\"每周 3 次\",\"parent\":null},{\"id\":\"hDeep\",\"t\":\"深层父\",\"m\":\"每天\",\"parent\":null},{\"id\":\"hDeep2\",\"t\":\"中层\",\"m\":\"每天\",\"parent\":\"hDeep\"},{\"id\":\"hDeep3\",\"t\":\"最内层\",\"m\":\"每天\",\"parent\":\"hDeep2\"}],\"goals\":[{\"id\":\"g-fitness-1\",\"t\":\"硬拉 100kg\",\"m\":\"当前 80kg × 5 次\",\"p\":80,\"parent\":null},{\"id\":\"g-fitness-1a\",\"t\":\"周期一：85kg × 5\",\"m\":\"两周内\",\"p\":100,\"parent\":\"g-fitness-1\"},{\"id\":\"g-fitness-1b\",\"t\":\"周期二：95kg × 3\",\"m\":\"再两周\",\"p\":40,\"parent\":\"g-fitness-1\"},{\"id\":\"g-fitness-2\",\"t\":\"体脂降到 18%\",\"m\":\"当前约 21%\",\"p\":35,\"parent\":null}]},{\"id\":\"study\",\"name\":\"学习\",\"pinned\":false,\"habits\":[{\"id\":\"h-study-1\",\"t\":\"阅读 30 分钟\",\"m\":\"每天\",\"parent\":null},{\"id\":\"hDup2\",\"t\":\"重名习惯\",\"m\":\"每月 2 次\",\"parent\":null}],\"goals\":[{\"id\":\"g-study-1\",\"t\":\"读完《置身事内》\",\"m\":\"每周 30 页 · 已读 210/350 页\",\"p\":60,\"parent\":null},{\"id\":\"g-study-1a\",\"t\":\"第 1–5 章\",\"m\":\"讲财政\",\"p\":100,\"parent\":\"g-study-1\"},{\"id\":\"g-study-1b\",\"t\":\"第 6–10 章\",\"m\":\"当前在这\",\"p\":50,\"parent\":\"g-study-1\"}]},{\"id\":\"work\",\"name\":\"工作\",\"pinned\":false,\"habits\":[{\"id\":\"h-work-1\",\"t\":\"下班前清空收件箱\",\"m\":\"工作日\",\"parent\":null}],\"goals\":[{\"id\":\"g-work-1\",\"t\":\"知识库项目 v1 上线\",\"m\":\"方案已定 · 待开工\",\"p\":45,\"parent\":null}]},{\"id\":\"life\",\"name\":\"个人\",\"pinned\":false,\"habits\":[{\"id\":\"h-life-1\",\"t\":\"健康作息\",\"m\":\"一组习惯\",\"parent\":null},{\"id\":\"h-life-2\",\"t\":\"饮水 2L\",\"m\":\"每天\",\"parent\":\"h-life-1\"},{\"id\":\"h-life-3\",\"t\":\"23:30 前睡\",\"m\":\"工作日\",\"parent\":\"h-life-1\"}],\"goals\":[{\"id\":\"g-life-1\",\"t\":\"家庭年度旅行成行\",\"m\":\"还没定目的地\",\"p\":50,\"parent\":null},{\"id\":\"g-life-1a\",\"t\":\"定目的地和日期\",\"m\":\"这个月内\",\"p\":100,\"parent\":\"g-life-1\"},{\"id\":\"g-life-1b\",\"t\":\"办签证\",\"m\":\"看目的地\",\"p\":20,\"parent\":\"g-life-1\"}]}],\"RECORD_TYPES\":[{\"id\":\"rt_kcal_in\",\"domain\":\"fitness\",\"name\":\"热量摄入\",\"mode\":\"number\",\"unit\":\"kcal\",\"quick\":true,\"logs\":[{\"id\":\"k0_0\",\"d\":\"1月1日\",\"v\":70},{\"id\":\"k0_1\",\"d\":\"2月2日 周三\",\"v\":71},{\"id\":\"k0_2\",\"d\":\"3月3日\",\"v\":72},{\"id\":\"k0_3\",\"d\":\"4月4日 周三\",\"v\":73},{\"id\":\"k0_4\",\"d\":\"5月5日\",\"v\":74},{\"id\":\"k0_5\",\"d\":\"6月6日 周三\",\"v\":75},{\"id\":\"k0_6\",\"d\":\"7月7日\",\"v\":76},{\"id\":\"k0_7\",\"d\":\"8月8日 周三\",\"v\":70},{\"id\":\"k0_8\",\"d\":\"9月9日\",\"v\":71},{\"id\":\"k0_9\",\"d\":\"10月10日 周三\",\"v\":72},{\"id\":\"k0_10\",\"d\":\"11月11日\",\"v\":73},{\"id\":\"k0_11\",\"d\":\"12月12日 周三\",\"v\":74}],\"retired\":true},{\"id\":\"rt_kcal_out\",\"domain\":\"fitness\",\"name\":\"热量消耗\",\"mode\":\"number\",\"unit\":\"kcal\",\"quick\":true,\"logs\":[{\"id\":\"k1_0\",\"d\":\"1月1日\",\"v\":70},{\"id\":\"k1_1\",\"d\":\"2月2日 周三\",\"v\":71},{\"id\":\"k1_2\",\"d\":\"3月3日\",\"v\":72},{\"id\":\"k1_3\",\"d\":\"4月4日 周三\",\"v\":73},{\"id\":\"k1_4\",\"d\":\"5月5日\",\"v\":74},{\"id\":\"k1_5\",\"d\":\"6月6日 周三\",\"v\":75},{\"id\":\"k1_6\",\"d\":\"7月7日\",\"v\":76},{\"id\":\"k1_7\",\"d\":\"8月8日 周三\",\"v\":70},{\"id\":\"k1_8\",\"d\":\"9月9日\",\"v\":71},{\"id\":\"k1_9\",\"d\":\"10月10日 周三\",\"v\":72},{\"id\":\"k1_10\",\"d\":\"11月11日\",\"v\":73},{\"id\":\"k1_11\",\"d\":\"12月12日 周三\",\"v\":74}]},{\"id\":\"rt_weight\",\"domain\":\"fitness\",\"name\":\"体重\",\"mode\":\"number\",\"unit\":\"kg\",\"quick\":true,\"logs\":[{\"id\":\"k2_0\",\"d\":\"1月1日\",\"v\":70},{\"id\":\"k2_1\",\"d\":\"2月2日 周三\",\"v\":71},{\"id\":\"k2_2\",\"d\":\"3月3日\",\"v\":72},{\"id\":\"k2_3\",\"d\":\"4月4日 周三\",\"v\":73},{\"id\":\"k2_4\",\"d\":\"5月5日\",\"v\":74},{\"id\":\"k2_5\",\"d\":\"6月6日 周三\",\"v\":75},{\"id\":\"k2_6\",\"d\":\"7月7日\",\"v\":76},{\"id\":\"k2_7\",\"d\":\"8月8日 周三\",\"v\":70},{\"id\":\"k2_8\",\"d\":\"9月9日\",\"v\":71},{\"id\":\"k2_9\",\"d\":\"10月10日 周三\",\"v\":72},{\"id\":\"k2_10\",\"d\":\"11月11日\",\"v\":73},{\"id\":\"k2_11\",\"d\":\"12月12日 周三\",\"v\":74}]},{\"id\":\"rt_strength\",\"domain\":\"fitness\",\"name\":\"力量训练\",\"mode\":\"text\",\"unit\":\"\",\"quick\":false,\"logs\":[{\"id\":\"k3_0\",\"d\":\"1月1日\",\"v\":\"内容 0\"},{\"id\":\"k3_1\",\"d\":\"2月2日 周三\",\"v\":\"内容 1\"},{\"id\":\"k3_2\",\"d\":\"3月3日\",\"v\":\"内容 2\"},{\"id\":\"k3_3\",\"d\":\"4月4日 周三\",\"v\":\"内容 3\"},{\"id\":\"k3_4\",\"d\":\"5月5日\",\"v\":\"内容 4\"},{\"id\":\"k3_5\",\"d\":\"6月6日 周三\",\"v\":\"内容 5\"},{\"id\":\"k3_6\",\"d\":\"7月7日\",\"v\":\"内容 6\"},{\"id\":\"k3_7\",\"d\":\"8月8日 周三\",\"v\":\"内容 7\"},{\"id\":\"k3_8\",\"d\":\"9月9日\",\"v\":\"内容 8\"},{\"id\":\"k3_9\",\"d\":\"10月10日 周三\",\"v\":\"内容 9\"},{\"id\":\"k3_10\",\"d\":\"11月11日\",\"v\":\"内容 10\"},{\"id\":\"k3_11\",\"d\":\"12月12日 周三\",\"v\":\"内容 11\"}]},{\"id\":\"rt_cardio\",\"domain\":\"fitness\",\"name\":\"有氧\",\"mode\":\"text\",\"unit\":\"\",\"quick\":false,\"logs\":[{\"id\":\"k4_0\",\"d\":\"1月1日\",\"v\":\"内容 0\"},{\"id\":\"k4_1\",\"d\":\"2月2日 周三\",\"v\":\"内容 1\"},{\"id\":\"k4_2\",\"d\":\"3月3日\",\"v\":\"内容 2\"},{\"id\":\"k4_3\",\"d\":\"4月4日 周三\",\"v\":\"内容 3\"},{\"id\":\"k4_4\",\"d\":\"5月5日\",\"v\":\"内容 4\"},{\"id\":\"k4_5\",\"d\":\"6月6日 周三\",\"v\":\"内容 5\"},{\"id\":\"k4_6\",\"d\":\"7月7日\",\"v\":\"内容 6\"},{\"id\":\"k4_7\",\"d\":\"8月8日 周三\",\"v\":\"内容 7\"},{\"id\":\"k4_8\",\"d\":\"9月9日\",\"v\":\"内容 8\"},{\"id\":\"k4_9\",\"d\":\"10月10日 周三\",\"v\":\"内容 9\"},{\"id\":\"k4_10\",\"d\":\"11月11日\",\"v\":\"内容 10\"},{\"id\":\"k4_11\",\"d\":\"12月12日 周三\",\"v\":\"内容 11\"}]},{\"id\":\"rt_squat\",\"domain\":\"fitness\",\"name\":\"深蹲最大重量\",\"mode\":\"number\",\"unit\":\"kg\",\"quick\":false,\"logs\":[{\"id\":\"k5_0\",\"d\":\"1月1日\",\"v\":70},{\"id\":\"k5_1\",\"d\":\"2月2日 周三\",\"v\":71},{\"id\":\"k5_2\",\"d\":\"3月3日\",\"v\":72},{\"id\":\"k5_3\",\"d\":\"4月4日 周三\",\"v\":73},{\"id\":\"k5_4\",\"d\":\"5月5日\",\"v\":74},{\"id\":\"k5_5\",\"d\":\"6月6日 周三\",\"v\":75},{\"id\":\"k5_6\",\"d\":\"7月7日\",\"v\":76},{\"id\":\"k5_7\",\"d\":\"8月8日 周三\",\"v\":70},{\"id\":\"k5_8\",\"d\":\"9月9日\",\"v\":71},{\"id\":\"k5_9\",\"d\":\"10月10日 周三\",\"v\":72},{\"id\":\"k5_10\",\"d\":\"11月11日\",\"v\":73},{\"id\":\"k5_11\",\"d\":\"12月12日 周三\",\"v\":74}]},{\"id\":\"rt_book\",\"domain\":\"study\",\"name\":\"读书\",\"mode\":\"number\",\"unit\":\"页\",\"quick\":false,\"logs\":[{\"id\":\"k6_0\",\"d\":\"1月1日\",\"v\":70},{\"id\":\"k6_1\",\"d\":\"2月2日 周三\",\"v\":71},{\"id\":\"k6_2\",\"d\":\"3月3日\",\"v\":72},{\"id\":\"k6_3\",\"d\":\"4月4日 周三\",\"v\":73},{\"id\":\"k6_4\",\"d\":\"5月5日\",\"v\":74},{\"id\":\"k6_5\",\"d\":\"6月6日 周三\",\"v\":75},{\"id\":\"k6_6\",\"d\":\"7月7日\",\"v\":76},{\"id\":\"k6_7\",\"d\":\"8月8日 周三\",\"v\":70},{\"id\":\"k6_8\",\"d\":\"9月9日\",\"v\":71},{\"id\":\"k6_9\",\"d\":\"10月10日 周三\",\"v\":72},{\"id\":\"k6_10\",\"d\":\"11月11日\",\"v\":73},{\"id\":\"k6_11\",\"d\":\"12月12日 周三\",\"v\":74}]},{\"id\":\"rt_note\",\"domain\":\"study\",\"name\":\"学习笔记\",\"mode\":\"text\",\"unit\":\"\",\"quick\":false,\"logs\":[{\"id\":\"k7_0\",\"d\":\"1月1日\",\"v\":\"内容 0\"},{\"id\":\"k7_1\",\"d\":\"2月2日 周三\",\"v\":\"内容 1\"},{\"id\":\"k7_2\",\"d\":\"3月3日\",\"v\":\"内容 2\"},{\"id\":\"k7_3\",\"d\":\"4月4日 周三\",\"v\":\"内容 3\"},{\"id\":\"k7_4\",\"d\":\"5月5日\",\"v\":\"内容 4\"},{\"id\":\"k7_5\",\"d\":\"6月6日 周三\",\"v\":\"内容 5\"},{\"id\":\"k7_6\",\"d\":\"7月7日\",\"v\":\"内容 6\"},{\"id\":\"k7_7\",\"d\":\"8月8日 周三\",\"v\":\"内容 7\"},{\"id\":\"k7_8\",\"d\":\"9月9日\",\"v\":\"内容 8\"},{\"id\":\"k7_9\",\"d\":\"10月10日 周三\",\"v\":\"内容 9\"},{\"id\":\"k7_10\",\"d\":\"11月11日\",\"v\":\"内容 10\"},{\"id\":\"k7_11\",\"d\":\"12月12日 周三\",\"v\":\"内容 11\"}]}],\"CAPTURE_MODES\":[{\"k\":\"auto\",\"t\":\"自动判断\",\"on\":true,\"lock\":true},{\"k\":\"todo\",\"t\":\"待办\",\"on\":true},{\"k\":\"note\",\"t\":\"随心记\",\"on\":true},{\"k\":\"money\",\"t\":\"记一笔支出\",\"on\":true},{\"k\":\"inbox\",\"t\":\"只丢进收件箱\",\"on\":true}],\"AUTO_RULES\":[{\"id\":\"u-squat\",\"sys\":false,\"on\":true,\"t\":\"深蹲／硬拉／卧推 → 力量训练\",\"kw\":\"深蹲,硬拉,卧推,引体,划船\",\"to\":\"rt_strength\"},{\"id\":\"sys-kcal\",\"sys\":true,\"on\":true,\"t\":\"提到卡路里 → 热量摄入\",\"kw\":\"kcal,千卡,大卡,卡路里\",\"to\":\"rt_kcal_in\"},{\"id\":\"sys-weight\",\"sys\":true,\"on\":true,\"t\":\"提到公斤 → 体重\",\"kw\":\"kg,公斤,千克,斤\",\"ex\":\"×|组|次|深蹲|硬拉|卧推\",\"to\":\"rt_weight\"},{\"id\":\"sys-money\",\"sys\":true,\"on\":true,\"t\":\"数字在开头 → 记一笔支出\",\"re\":\"^(¥|￥|RMB)?\\\\s*\\\\d+(\\\\.\\\\d+)?\",\"ex\":\"公里|千米|km|米|次|页|分钟|小时|组|个|杯|瓶|步\",\"to\":\"money\"}],\"TODAY_LOGS\":[{\"time\":\"08:15\",\"label\":\"早餐 ¥12 · 餐饮\",\"id\":\"tlmudhjf40-1\"},{\"time\":\"10:30\",\"label\":\"体重 71.4 kg\",\"ref\":{\"k\":\"rt\",\"rtId\":\"rt_weight\",\"logId\":\"k6\"},\"id\":\"tlmudhjf40-2\"},{\"time\":\"12:40\",\"label\":\"午餐 ¥32 · 餐饮\",\"ref\":{\"k\":\"money\",\"id\":\"lg1\"},\"id\":\"tlmudhjf40-3\"}],\"CAT_WORDS\":{\"餐饮\":[\"早餐\",\"早饭\",\"午餐\",\"午饭\",\"晚餐\",\"晚饭\",\"咖啡\",\"奶茶\",\"外卖\",\"吃饭\",\"聚餐\",\"零食\",\"夜宵\",\"水果\"],\"出行\":[\"地铁\",\"公交\",\"打车\",\"出租\",\"加油\",\"高铁\",\"机票\",\"停车\",\"单车\",\"过路费\"],\"数码\":[\"硬盘\",\"鼠标\",\"键盘\",\"手机\",\"电脑\",\"耳机\",\"充电\",\"数据线\",\"显示器\",\"内存\"],\"生活\":[\"房租\",\"水电\",\"物业\",\"超市\",\"日用品\",\"纸巾\",\"洗衣\",\"理发\",\"快递\",\"话费\"],\"娱乐\":[\"电影\",\"游戏\",\"演出\",\"门票\",\"唱歌\",\"演唱会\",\"展览\"],\"医疗\":[\"药\",\"挂号\",\"体检\",\"医院\",\"牙\",\"诊所\"],\"服饰\":[\"衣服\",\"鞋\",\"裤\",\"外套\",\"袜\",\"帽子\"]},\"CATS\":[\"餐饮\",\"出行\",\"数码\",\"生活\",\"娱乐\",\"医疗\",\"服饰\"],\"CAP_CFG\":{\"order\":[],\"common\":{}},\"REV_TRENDS\":[{\"k\":\"money\"},{\"k\":\"rt\",\"id\":\"rt_weight\"},{\"k\":\"rt\",\"id\":\"rt_kcal_in\"}],\"QUAD_COLORS\":{\"q1\":\"#abcdef\"}},\"s\":{\"CURRENT\":\"today\",\"DOMAIN_ID\":\"\",\"CAPTURE_MODE\":\"auto\",\"CAP_AUTO_CLOSE\":true,\"TICK_DONE\":\"\",\"NOTIFY_ON\":false}}",
+ "snapshot.readonly": "{\"v\":{\"ITEMS\":[{\"id\":\"it0\",\"title\":\"待办 0\",\"dom\":null,\"due\":\"2026-09-13\",\"status\":\"done\",\"parent\":null,\"imp\":true,\"urg\":true},{\"id\":\"it1\",\"title\":\"待办 1\",\"dom\":\"study\",\"due\":\"2026-09-14\",\"status\":\"todo\",\"parent\":null,\"imp\":false,\"urg\":false},{\"id\":\"it2\",\"title\":\"待办 2\",\"dom\":\"work\",\"due\":\"2026-09-15\",\"status\":\"todo\",\"parent\":null,\"imp\":true,\"urg\":false},{\"id\":\"it3\",\"title\":\"待办 3\",\"dom\":\"life\",\"due\":\"2026-09-18\",\"status\":\"done\",\"parent\":null,\"imp\":false,\"urg\":true},{\"id\":\"it4\",\"title\":\"待办 4\",\"dom\":\"fitness\",\"due\":\"2026-09-20\",\"status\":\"todo\",\"parent\":null,\"imp\":true,\"urg\":false},{\"id\":\"it5\",\"title\":\"待办 5\",\"dom\":\"study\",\"due\":\"2026-09-21\",\"status\":\"todo\",\"parent\":\"it4\",\"imp\":false,\"urg\":false},{\"id\":\"it6\",\"title\":\"待办 6\",\"dom\":\"work\",\"due\":\"2026-08-31\",\"status\":\"done\",\"parent\":null,\"imp\":true,\"urg\":true},{\"id\":\"it7\",\"title\":\"待办 7\",\"dom\":\"life\",\"due\":\"2026-09-30\",\"status\":\"todo\",\"parent\":null,\"imp\":false,\"urg\":false},{\"id\":\"it8\",\"title\":\"待办 8\",\"dom\":\"fitness\",\"due\":\"2026-10-01\",\"status\":\"todo\",\"parent\":null,\"imp\":true,\"urg\":false},{\"id\":\"it9\",\"title\":\"待办 9\",\"dom\":null,\"due\":null,\"status\":\"done\",\"parent\":null,\"imp\":false,\"urg\":true},{\"id\":\"it10\",\"title\":\"待办 10\",\"dom\":\"work\",\"due\":\"2026-09-13\",\"status\":\"todo\",\"parent\":\"it9\",\"imp\":true,\"urg\":false},{\"id\":\"it11\",\"title\":\"待办 11\",\"dom\":\"life\",\"due\":\"2026-09-14\",\"status\":\"todo\",\"parent\":null,\"imp\":false,\"urg\":false},{\"id\":\"it12\",\"title\":\"待办 12\",\"dom\":\"fitness\",\"due\":\"2026-09-15\",\"status\":\"done\",\"parent\":null,\"imp\":true,\"urg\":true},{\"id\":\"it13\",\"title\":\"待办 13\",\"dom\":\"study\",\"due\":\"2026-09-18\",\"status\":\"todo\",\"parent\":null,\"imp\":false,\"urg\":false},{\"id\":\"it14\",\"title\":\"待办 14\",\"dom\":\"work\",\"due\":\"2026-09-20\",\"status\":\"todo\",\"parent\":null,\"imp\":true,\"urg\":false},{\"id\":\"it15\",\"title\":\"待办 15\",\"dom\":\"life\",\"due\":\"2026-09-21\",\"status\":\"done\",\"parent\":\"it14\",\"imp\":false,\"urg\":true},{\"id\":\"it16\",\"title\":\"待办 16\",\"dom\":\"fitness\",\"due\":\"2026-08-31\",\"status\":\"todo\",\"parent\":null,\"imp\":true,\"urg\":false},{\"id\":\"it17\",\"title\":\"待办 17\",\"dom\":\"study\",\"due\":\"2026-09-30\",\"status\":\"todo\",\"parent\":null,\"imp\":false,\"urg\":false},{\"id\":\"it18\",\"title\":\"待办 18\",\"dom\":null,\"due\":\"2026-10-01\",\"status\":\"done\",\"parent\":null,\"imp\":true,\"urg\":true},{\"id\":\"it19\",\"title\":\"待办 19\",\"dom\":\"life\",\"due\":null,\"status\":\"todo\",\"parent\":null,\"imp\":false,\"urg\":false},{\"id\":\"it20\",\"title\":\"待办 20\",\"dom\":\"fitness\",\"due\":\"2026-09-13\",\"status\":\"todo\",\"parent\":\"it19\",\"imp\":true,\"urg\":false},{\"id\":\"it21\",\"title\":\"待办 21\",\"dom\":\"study\",\"due\":\"2026-09-14\",\"status\":\"done\",\"parent\":null,\"imp\":false,\"urg\":true},{\"id\":\"it22\",\"title\":\"待办 22\",\"dom\":\"work\",\"due\":\"2026-09-15\",\"status\":\"todo\",\"parent\":null,\"imp\":true,\"urg\":false},{\"id\":\"it23\",\"title\":\"待办 23\",\"dom\":\"life\",\"due\":\"2026-09-18\",\"status\":\"todo\",\"parent\":null,\"imp\":false,\"urg\":false},{\"id\":\"it24\",\"title\":\"待办 24\",\"dom\":\"fitness\",\"due\":\"2026-09-20\",\"status\":\"done\",\"parent\":null,\"imp\":true,\"urg\":true},{\"id\":\"it25\",\"title\":\"待办 25\",\"dom\":\"study\",\"due\":\"2026-09-21\",\"status\":\"todo\",\"parent\":\"it24\",\"imp\":false,\"urg\":false},{\"id\":\"it26\",\"title\":\"待办 26\",\"dom\":\"work\",\"due\":\"2026-08-31\",\"status\":\"todo\",\"parent\":null,\"imp\":true,\"urg\":false},{\"id\":\"it27\",\"title\":\"待办 27\",\"dom\":null,\"due\":\"2026-09-30\",\"status\":\"done\",\"parent\":null,\"imp\":false,\"urg\":true},{\"id\":\"it28\",\"title\":\"待办 28\",\"dom\":\"fitness\",\"due\":\"2026-10-01\",\"status\":\"todo\",\"parent\":null,\"imp\":true,\"urg\":false},{\"id\":\"it29\",\"title\":\"待办 29\",\"dom\":\"study\",\"due\":null,\"status\":\"todo\",\"parent\":null,\"imp\":false,\"urg\":false},{\"id\":\"it30\",\"title\":\"待办 30\",\"dom\":\"work\",\"due\":\"2026-09-13\",\"status\":\"done\",\"parent\":\"it29\",\"imp\":true,\"urg\":true},{\"id\":\"it31\",\"title\":\"待办 31\",\"dom\":\"life\",\"due\":\"2026-09-14\",\"status\":\"todo\",\"parent\":null,\"imp\":false,\"urg\":false},{\"id\":\"it32\",\"title\":\"待办 32\",\"dom\":\"fitness\",\"due\":\"2026-09-15\",\"status\":\"todo\",\"parent\":null,\"imp\":true,\"urg\":false},{\"id\":\"it33\",\"title\":\"待办 33\",\"dom\":\"study\",\"due\":\"2026-09-18\",\"status\":\"done\",\"parent\":null,\"imp\":false,\"urg\":true},{\"id\":\"it34\",\"title\":\"待办 34\",\"dom\":\"work\",\"due\":\"2026-09-20\",\"status\":\"todo\",\"parent\":null,\"imp\":true,\"urg\":false},{\"id\":\"it35\",\"title\":\"待办 35\",\"dom\":\"life\",\"due\":\"2026-09-21\",\"status\":\"todo\",\"parent\":\"it34\",\"imp\":false,\"urg\":false},{\"id\":\"it36\",\"title\":\"待办 36\",\"dom\":null,\"due\":\"2026-08-31\",\"status\":\"done\",\"parent\":null,\"imp\":true,\"urg\":true},{\"id\":\"it37\",\"title\":\"待办 37\",\"dom\":\"study\",\"due\":\"2026-09-30\",\"status\":\"todo\",\"parent\":null,\"imp\":false,\"urg\":false},{\"id\":\"it38\",\"title\":\"待办 38\",\"dom\":\"work\",\"due\":\"2026-10-01\",\"status\":\"todo\",\"parent\":null,\"imp\":true,\"urg\":false},{\"id\":\"it39\",\"title\":\"待办 39\",\"dom\":\"life\",\"due\":null,\"status\":\"done\",\"parent\":null,\"imp\":false,\"urg\":true},{\"id\":\"it40\",\"title\":\"待办 40\",\"dom\":\"fitness\",\"due\":\"2026-09-13\",\"status\":\"todo\",\"parent\":\"it39\",\"imp\":true,\"urg\":false},{\"id\":\"it41\",\"title\":\"待办 41\",\"dom\":\"study\",\"due\":\"2026-09-14\",\"status\":\"todo\",\"parent\":null,\"imp\":false,\"urg\":false},{\"id\":\"it42\",\"title\":\"待办 42\",\"dom\":\"work\",\"due\":\"2026-09-15\",\"status\":\"done\",\"parent\":null,\"imp\":true,\"urg\":true},{\"id\":\"it43\",\"title\":\"待办 43\",\"dom\":\"life\",\"due\":\"2026-09-18\",\"status\":\"todo\",\"parent\":null,\"imp\":false,\"urg\":false},{\"id\":\"it44\",\"title\":\"待办 44\",\"dom\":\"fitness\",\"due\":\"2026-09-20\",\"status\":\"todo\",\"parent\":null,\"imp\":true,\"urg\":false},{\"id\":\"it45\",\"title\":\"待办 45\",\"dom\":null,\"due\":\"2026-09-21\",\"status\":\"done\",\"parent\":\"it44\",\"imp\":false,\"urg\":true},{\"id\":\"it46\",\"title\":\"待办 46\",\"dom\":\"work\",\"due\":\"2026-08-31\",\"status\":\"todo\",\"parent\":null,\"imp\":true,\"urg\":false},{\"id\":\"it47\",\"title\":\"待办 47\",\"dom\":\"life\",\"due\":\"2026-09-30\",\"status\":\"todo\",\"parent\":null,\"imp\":false,\"urg\":false},{\"id\":\"it48\",\"title\":\"待办 48\",\"dom\":\"fitness\",\"due\":\"2026-10-01\",\"status\":\"done\",\"parent\":null,\"imp\":true,\"urg\":true},{\"id\":\"it49\",\"title\":\"待办 49\",\"dom\":\"study\",\"due\":null,\"status\":\"todo\",\"parent\":null,\"imp\":false,\"urg\":false},{\"id\":\"it50\",\"title\":\"待办 50\",\"dom\":\"work\",\"due\":\"2026-09-13\",\"status\":\"todo\",\"parent\":\"it49\",\"imp\":true,\"urg\":false},{\"id\":\"it51\",\"title\":\"待办 51\",\"dom\":\"life\",\"due\":\"2026-09-14\",\"status\":\"done\",\"parent\":null,\"imp\":false,\"urg\":true},{\"id\":\"it52\",\"title\":\"待办 52\",\"dom\":\"fitness\",\"due\":\"2026-09-15\",\"status\":\"todo\",\"parent\":null,\"imp\":true,\"urg\":false},{\"id\":\"it53\",\"title\":\"待办 53\",\"dom\":\"study\",\"due\":\"2026-09-18\",\"status\":\"todo\",\"parent\":null,\"imp\":false,\"urg\":false},{\"id\":\"it54\",\"title\":\"待办 54\",\"dom\":null,\"due\":\"2026-09-20\",\"status\":\"done\",\"parent\":null,\"imp\":true,\"urg\":true},{\"id\":\"it55\",\"title\":\"待办 55\",\"dom\":\"life\",\"due\":\"2026-09-21\",\"status\":\"todo\",\"parent\":\"it54\",\"imp\":false,\"urg\":false},{\"id\":\"it56\",\"title\":\"待办 56\",\"dom\":\"fitness\",\"due\":\"2026-08-31\",\"status\":\"todo\",\"parent\":null,\"imp\":true,\"urg\":false},{\"id\":\"it57\",\"title\":\"待办 57\",\"dom\":\"study\",\"due\":\"2026-09-30\",\"status\":\"done\",\"parent\":null,\"imp\":false,\"urg\":true},{\"id\":\"it58\",\"title\":\"待办 58\",\"dom\":\"work\",\"due\":\"2026-10-01\",\"status\":\"todo\",\"parent\":null,\"imp\":true,\"urg\":false},{\"id\":\"it59\",\"title\":\"待办 59\",\"dom\":\"life\",\"due\":null,\"status\":\"todo\",\"parent\":null,\"imp\":false,\"urg\":false},{\"id\":\"itOrphan\",\"title\":\"孤儿\",\"dom\":null,\"due\":\"2026-09-18\",\"status\":\"todo\",\"parent\":\"itNope\",\"imp\":false,\"urg\":false}],\"HABIT_LOGS\":[{\"key\":\"h-fit-1\",\"date\":\"2026-06-01\"},{\"key\":\"h-fit-1\",\"date\":\"2026-06-02\"},{\"key\":\"h-fit-1\",\"date\":\"2026-06-03\"},{\"key\":\"h-fit-1\",\"date\":\"2026-06-04\"},{\"key\":\"h-fit-1\",\"date\":\"2026-06-05\"},{\"key\":\"h-fit-1\",\"date\":\"2026-06-06\"},{\"key\":\"h-fit-1\",\"date\":\"2026-06-08\"},{\"key\":\"h-fit-1\",\"date\":\"2026-06-09\"},{\"key\":\"h-fit-1\",\"date\":\"2026-06-10\"},{\"key\":\"h-fit-1\",\"date\":\"2026-06-11\"},{\"key\":\"h-fit-1\",\"date\":\"2026-06-12\"},{\"key\":\"h-fit-1\",\"date\":\"2026-06-13\"},{\"key\":\"h-fit-1\",\"date\":\"2026-06-15\"},{\"key\":\"h-fit-1\",\"date\":\"2026-06-16\"},{\"key\":\"h-fit-1\",\"date\":\"2026-06-17\"},{\"key\":\"h-fit-1\",\"date\":\"2026-06-18\"},{\"key\":\"h-fit-1\",\"date\":\"2026-06-19\"},{\"key\":\"h-fit-1\",\"date\":\"2026-06-20\"},{\"key\":\"h-fit-1\",\"date\":\"2026-06-22\"},{\"key\":\"h-fit-1\",\"date\":\"2026-06-23\"},{\"key\":\"h-fit-1\",\"date\":\"2026-06-24\"},{\"key\":\"h-fit-1\",\"date\":\"2026-06-25\"},{\"key\":\"h-fit-1\",\"date\":\"2026-06-26\"},{\"key\":\"h-fit-1\",\"date\":\"2026-06-27\"},{\"key\":\"h-fit-1\",\"date\":\"2026-06-29\"},{\"key\":\"h-fit-1\",\"date\":\"2026-06-30\"},{\"key\":\"h-fit-1\",\"date\":\"2026-07-01\"},{\"key\":\"h-fit-1\",\"date\":\"2026-07-02\"},{\"key\":\"h-fit-1\",\"date\":\"2026-07-03\"},{\"key\":\"h-fit-1\",\"date\":\"2026-07-04\"},{\"key\":\"h-fit-1\",\"date\":\"2026-07-06\"},{\"key\":\"h-fit-1\",\"date\":\"2026-07-07\"},{\"key\":\"h-fit-1\",\"date\":\"2026-07-08\"},{\"key\":\"h-fit-1\",\"date\":\"2026-07-09\"},{\"key\":\"h-fit-1\",\"date\":\"2026-07-10\"},{\"key\":\"hDup1\",\"date\":\"2026-06-01\"},{\"key\":\"hDup1\",\"date\":\"2026-06-02\"},{\"key\":\"hDup1\",\"date\":\"2026-06-03\"},{\"key\":\"hDup1\",\"date\":\"2026-06-04\"},{\"key\":\"hDup1\",\"date\":\"2026-06-05\"},{\"key\":\"hDup1\",\"date\":\"2026-06-07\"},{\"key\":\"hDup1\",\"date\":\"2026-06-08\"},{\"key\":\"hDup1\",\"date\":\"2026-06-09\"},{\"key\":\"hDup1\",\"date\":\"2026-06-10\"},{\"key\":\"hDup1\",\"date\":\"2026-06-11\"},{\"key\":\"hDup1\",\"date\":\"2026-06-12\"},{\"key\":\"hDup1\",\"date\":\"2026-06-14\"},{\"key\":\"hDup1\",\"date\":\"2026-06-15\"},{\"key\":\"hDup1\",\"date\":\"2026-06-16\"},{\"key\":\"hDup1\",\"date\":\"2026-06-17\"},{\"key\":\"hDup1\",\"date\":\"2026-06-18\"},{\"key\":\"hDup1\",\"date\":\"2026-06-19\"},{\"key\":\"hDup1\",\"date\":\"2026-06-21\"},{\"key\":\"hDup1\",\"date\":\"2026-06-22\"},{\"key\":\"hDup1\",\"date\":\"2026-06-23\"},{\"key\":\"hDup1\",\"date\":\"2026-06-24\"},{\"key\":\"hDup1\",\"date\":\"2026-06-25\"},{\"key\":\"hDup1\",\"date\":\"2026-06-26\"},{\"key\":\"hDup1\",\"date\":\"2026-06-28\"},{\"key\":\"hDup1\",\"date\":\"2026-06-29\"},{\"key\":\"hDup1\",\"date\":\"2026-06-30\"},{\"key\":\"hDup1\",\"date\":\"2026-07-01\"},{\"key\":\"hDup1\",\"date\":\"2026-07-02\"},{\"key\":\"hDup1\",\"date\":\"2026-07-03\"},{\"key\":\"hDup1\",\"date\":\"2026-07-05\"},{\"key\":\"hDup1\",\"date\":\"2026-07-06\"},{\"key\":\"hDup1\",\"date\":\"2026-07-07\"},{\"key\":\"hDup1\",\"date\":\"2026-07-08\"},{\"key\":\"hDup1\",\"date\":\"2026-07-09\"},{\"key\":\"hDup1\",\"date\":\"2026-07-10\"},{\"key\":\"hDeep2\",\"date\":\"2026-06-01\"},{\"key\":\"hDeep2\",\"date\":\"2026-06-02\"},{\"key\":\"hDeep2\",\"date\":\"2026-06-03\"},{\"key\":\"hDeep2\",\"date\":\"2026-06-05\"},{\"key\":\"hDeep2\",\"date\":\"2026-06-06\"},{\"key\":\"hDeep2\",\"date\":\"2026-06-07\"},{\"key\":\"hDeep2\",\"date\":\"2026-06-08\"},{\"key\":\"hDeep2\",\"date\":\"2026-06-09\"},{\"key\":\"hDeep2\",\"date\":\"2026-06-10\"},{\"key\":\"hDeep2\",\"date\":\"2026-06-12\"},{\"key\":\"hDeep2\",\"date\":\"2026-06-13\"},{\"key\":\"hDeep2\",\"date\":\"2026-06-14\"},{\"key\":\"hDeep2\",\"date\":\"2026-06-15\"},{\"key\":\"hDeep2\",\"date\":\"2026-06-16\"},{\"key\":\"hDeep2\",\"date\":\"2026-06-17\"},{\"key\":\"hDeep2\",\"date\":\"2026-06-19\"},{\"key\":\"hDeep2\",\"date\":\"2026-06-20\"},{\"key\":\"hDeep2\",\"date\":\"2026-06-21\"},{\"key\":\"hDeep2\",\"date\":\"2026-06-22\"},{\"key\":\"hDeep2\",\"date\":\"2026-06-23\"},{\"key\":\"hDeep2\",\"date\":\"2026-06-24\"},{\"key\":\"hDeep2\",\"date\":\"2026-06-26\"},{\"key\":\"hDeep2\",\"date\":\"2026-06-27\"},{\"key\":\"hDeep2\",\"date\":\"2026-06-28\"},{\"key\":\"hDeep2\",\"date\":\"2026-06-29\"},{\"key\":\"hDeep2\",\"date\":\"2026-06-30\"},{\"key\":\"hDeep2\",\"date\":\"2026-07-01\"},{\"key\":\"hDeep2\",\"date\":\"2026-07-03\"},{\"key\":\"hDeep2\",\"date\":\"2026-07-04\"},{\"key\":\"hDeep2\",\"date\":\"2026-07-05\"},{\"key\":\"hDeep2\",\"date\":\"2026-07-06\"},{\"key\":\"hDeep2\",\"date\":\"2026-07-07\"},{\"key\":\"hDeep2\",\"date\":\"2026-07-08\"},{\"key\":\"hDeep2\",\"date\":\"2026-07-10\"},{\"key\":\"hDeep3\",\"date\":\"2026-06-01\"},{\"key\":\"hDeep3\",\"date\":\"2026-06-02\"},{\"key\":\"hDeep3\",\"date\":\"2026-06-04\"},{\"key\":\"hDeep3\",\"date\":\"2026-06-05\"},{\"key\":\"hDeep3\",\"date\":\"2026-06-06\"},{\"key\":\"hDeep3\",\"date\":\"2026-06-07\"},{\"key\":\"hDeep3\",\"date\":\"2026-06-08\"},{\"key\":\"hDeep3\",\"date\":\"2026-06-09\"},{\"key\":\"hDeep3\",\"date\":\"2026-06-11\"},{\"key\":\"hDeep3\",\"date\":\"2026-06-12\"},{\"key\":\"hDeep3\",\"date\":\"2026-06-13\"},{\"key\":\"hDeep3\",\"date\":\"2026-06-14\"},{\"key\":\"hDeep3\",\"date\":\"2026-06-15\"},{\"key\":\"hDeep3\",\"date\":\"2026-06-16\"},{\"key\":\"hDeep3\",\"date\":\"2026-06-18\"},{\"key\":\"hDeep3\",\"date\":\"2026-06-19\"},{\"key\":\"hDeep3\",\"date\":\"2026-06-20\"},{\"key\":\"hDeep3\",\"date\":\"2026-06-21\"},{\"key\":\"hDeep3\",\"date\":\"2026-06-22\"},{\"key\":\"hDeep3\",\"date\":\"2026-06-23\"},{\"key\":\"hDeep3\",\"date\":\"2026-06-25\"},{\"key\":\"hDeep3\",\"date\":\"2026-06-26\"},{\"key\":\"hDeep3\",\"date\":\"2026-06-27\"},{\"key\":\"hDeep3\",\"date\":\"2026-06-28\"},{\"key\":\"hDeep3\",\"date\":\"2026-06-29\"},{\"key\":\"hDeep3\",\"date\":\"2026-06-30\"},{\"key\":\"hDeep3\",\"date\":\"2026-07-02\"},{\"key\":\"hDeep3\",\"date\":\"2026-07-03\"},{\"key\":\"hDeep3\",\"date\":\"2026-07-04\"},{\"key\":\"hDeep3\",\"date\":\"2026-07-05\"},{\"key\":\"hDeep3\",\"date\":\"2026-07-06\"},{\"key\":\"hDeep3\",\"date\":\"2026-07-07\"},{\"key\":\"hDeep3\",\"date\":\"2026-07-09\"},{\"key\":\"hDeep3\",\"date\":\"2026-07-10\"},{\"key\":\"hDup2\",\"date\":\"2026-06-02\"},{\"key\":\"hDup2\",\"date\":\"2026-06-03\"},{\"key\":\"hDup2\",\"date\":\"2026-06-04\"},{\"key\":\"hDup2\",\"date\":\"2026-06-05\"},{\"key\":\"hDup2\",\"date\":\"2026-06-06\"},{\"key\":\"hDup2\",\"date\":\"2026-06-07\"},{\"key\":\"hDup2\",\"date\":\"2026-06-09\"},{\"key\":\"hDup2\",\"date\":\"2026-06-10\"},{\"key\":\"hDup2\",\"date\":\"2026-06-11\"},{\"key\":\"hDup2\",\"date\":\"2026-06-12\"},{\"key\":\"hDup2\",\"date\":\"2026-06-13\"},{\"key\":\"hDup2\",\"date\":\"2026-06-14\"},{\"key\":\"hDup2\",\"date\":\"2026-06-16\"},{\"key\":\"hDup2\",\"date\":\"2026-06-17\"},{\"key\":\"hDup2\",\"date\":\"2026-06-18\"},{\"key\":\"hDup2\",\"date\":\"2026-06-19\"},{\"key\":\"hDup2\",\"date\":\"2026-06-20\"},{\"key\":\"hDup2\",\"date\":\"2026-06-21\"},{\"key\":\"hDup2\",\"date\":\"2026-06-23\"},{\"key\":\"hDup2\",\"date\":\"2026-06-24\"},{\"key\":\"hDup2\",\"date\":\"2026-06-25\"},{\"key\":\"hDup2\",\"date\":\"2026-06-26\"},{\"key\":\"hDup2\",\"date\":\"2026-06-27\"},{\"key\":\"hDup2\",\"date\":\"2026-06-28\"},{\"key\":\"hDup2\",\"date\":\"2026-06-30\"},{\"key\":\"hDup2\",\"date\":\"2026-07-01\"},{\"key\":\"hDup2\",\"date\":\"2026-07-02\"},{\"key\":\"hDup2\",\"date\":\"2026-07-03\"},{\"key\":\"hDup2\",\"date\":\"2026-07-04\"},{\"key\":\"hDup2\",\"date\":\"2026-07-05\"},{\"key\":\"hDup2\",\"date\":\"2026-07-07\"},{\"key\":\"hDup2\",\"date\":\"2026-07-08\"},{\"key\":\"hDup2\",\"date\":\"2026-07-09\"},{\"key\":\"hDup2\",\"date\":\"2026-07-10\"},{\"key\":\"h-work-1\",\"date\":\"2026-06-01\"},{\"key\":\"h-work-1\",\"date\":\"2026-06-02\"},{\"key\":\"h-work-1\",\"date\":\"2026-06-03\"},{\"key\":\"h-work-1\",\"date\":\"2026-06-04\"},{\"key\":\"h-work-1\",\"date\":\"2026-06-05\"},{\"key\":\"h-work-1\",\"date\":\"2026-06-06\"},{\"key\":\"h-work-1\",\"date\":\"2026-06-08\"},{\"key\":\"h-work-1\",\"date\":\"2026-06-09\"},{\"key\":\"h-work-1\",\"date\":\"2026-06-10\"},{\"key\":\"h-work-1\",\"date\":\"2026-06-11\"},{\"key\":\"h-work-1\",\"date\":\"2026-06-12\"},{\"key\":\"h-work-1\",\"date\":\"2026-06-13\"},{\"key\":\"h-work-1\",\"date\":\"2026-06-15\"},{\"key\":\"h-work-1\",\"date\":\"2026-06-16\"},{\"key\":\"h-work-1\",\"date\":\"2026-06-17\"},{\"key\":\"h-work-1\",\"date\":\"2026-06-18\"},{\"key\":\"h-work-1\",\"date\":\"2026-06-19\"},{\"key\":\"h-work-1\",\"date\":\"2026-06-20\"},{\"key\":\"h-work-1\",\"date\":\"2026-06-22\"},{\"key\":\"h-work-1\",\"date\":\"2026-06-23\"},{\"key\":\"h-work-1\",\"date\":\"2026-06-24\"},{\"key\":\"h-work-1\",\"date\":\"2026-06-25\"},{\"key\":\"h-work-1\",\"date\":\"2026-06-26\"},{\"key\":\"h-work-1\",\"date\":\"2026-06-27\"},{\"key\":\"h-work-1\",\"date\":\"2026-06-29\"},{\"key\":\"h-work-1\",\"date\":\"2026-06-30\"},{\"key\":\"h-work-1\",\"date\":\"2026-07-01\"},{\"key\":\"h-work-1\",\"date\":\"2026-07-02\"},{\"key\":\"h-work-1\",\"date\":\"2026-07-03\"},{\"key\":\"h-work-1\",\"date\":\"2026-07-04\"},{\"key\":\"h-work-1\",\"date\":\"2026-07-06\"},{\"key\":\"h-work-1\",\"date\":\"2026-07-07\"},{\"key\":\"h-work-1\",\"date\":\"2026-07-08\"},{\"key\":\"h-work-1\",\"date\":\"2026-07-09\"},{\"key\":\"h-work-1\",\"date\":\"2026-07-10\"},{\"key\":\"h-life-2\",\"date\":\"2026-06-01\"},{\"key\":\"h-life-2\",\"date\":\"2026-06-02\"},{\"key\":\"h-life-2\",\"date\":\"2026-06-03\"},{\"key\":\"h-life-2\",\"date\":\"2026-06-04\"},{\"key\":\"h-life-2\",\"date\":\"2026-06-06\"},{\"key\":\"h-life-2\",\"date\":\"2026-06-07\"},{\"key\":\"h-life-2\",\"date\":\"2026-06-08\"},{\"key\":\"h-life-2\",\"date\":\"2026-06-09\"},{\"key\":\"h-life-2\",\"date\":\"2026-06-10\"},{\"key\":\"h-life-2\",\"date\":\"2026-06-11\"},{\"key\":\"h-life-2\",\"date\":\"2026-06-13\"},{\"key\":\"h-life-2\",\"date\":\"2026-06-14\"},{\"key\":\"h-life-2\",\"date\":\"2026-06-15\"},{\"key\":\"h-life-2\",\"date\":\"2026-06-16\"},{\"key\":\"h-life-2\",\"date\":\"2026-06-17\"},{\"key\":\"h-life-2\",\"date\":\"2026-06-18\"},{\"key\":\"h-life-2\",\"date\":\"2026-06-20\"},{\"key\":\"h-life-2\",\"date\":\"2026-06-21\"},{\"key\":\"h-life-2\",\"date\":\"2026-06-22\"},{\"key\":\"h-life-2\",\"date\":\"2026-06-23\"},{\"key\":\"h-life-2\",\"date\":\"2026-06-24\"},{\"key\":\"h-life-2\",\"date\":\"2026-06-25\"},{\"key\":\"h-life-2\",\"date\":\"2026-06-27\"},{\"key\":\"h-life-2\",\"date\":\"2026-06-28\"},{\"key\":\"h-life-2\",\"date\":\"2026-06-29\"},{\"key\":\"h-life-2\",\"date\":\"2026-06-30\"},{\"key\":\"h-life-2\",\"date\":\"2026-07-01\"},{\"key\":\"h-life-2\",\"date\":\"2026-07-02\"},{\"key\":\"h-life-2\",\"date\":\"2026-07-04\"},{\"key\":\"h-life-2\",\"date\":\"2026-07-05\"},{\"key\":\"h-life-2\",\"date\":\"2026-07-06\"},{\"key\":\"h-life-2\",\"date\":\"2026-07-07\"},{\"key\":\"h-life-2\",\"date\":\"2026-07-08\"},{\"key\":\"h-life-2\",\"date\":\"2026-07-09\"},{\"key\":\"h-life-3\",\"date\":\"2026-06-01\"},{\"key\":\"h-life-3\",\"date\":\"2026-06-02\"},{\"key\":\"h-life-3\",\"date\":\"2026-06-03\"},{\"key\":\"h-life-3\",\"date\":\"2026-06-05\"},{\"key\":\"h-life-3\",\"date\":\"2026-06-06\"},{\"key\":\"h-life-3\",\"date\":\"2026-06-07\"},{\"key\":\"h-life-3\",\"date\":\"2026-06-08\"},{\"key\":\"h-life-3\",\"date\":\"2026-06-09\"},{\"key\":\"h-life-3\",\"date\":\"2026-06-10\"},{\"key\":\"h-life-3\",\"date\":\"2026-06-12\"},{\"key\":\"h-life-3\",\"date\":\"2026-06-13\"},{\"key\":\"h-life-3\",\"date\":\"2026-06-14\"},{\"key\":\"h-life-3\",\"date\":\"2026-06-15\"},{\"key\":\"h-life-3\",\"date\":\"2026-06-16\"},{\"key\":\"h-life-3\",\"date\":\"2026-06-17\"},{\"key\":\"h-life-3\",\"date\":\"2026-06-19\"},{\"key\":\"h-life-3\",\"date\":\"2026-06-20\"},{\"key\":\"h-life-3\",\"date\":\"2026-06-21\"},{\"key\":\"h-life-3\",\"date\":\"2026-06-22\"},{\"key\":\"h-life-3\",\"date\":\"2026-06-23\"},{\"key\":\"h-life-3\",\"date\":\"2026-06-24\"},{\"key\":\"h-life-3\",\"date\":\"2026-06-26\"},{\"key\":\"h-life-3\",\"date\":\"2026-06-27\"},{\"key\":\"h-life-3\",\"date\":\"2026-06-28\"},{\"key\":\"h-life-3\",\"date\":\"2026-06-29\"},{\"key\":\"h-life-3\",\"date\":\"2026-06-30\"},{\"key\":\"h-life-3\",\"date\":\"2026-07-01\"},{\"key\":\"h-life-3\",\"date\":\"2026-07-03\"},{\"key\":\"h-life-3\",\"date\":\"2026-07-04\"},{\"key\":\"h-life-3\",\"date\":\"2026-07-05\"},{\"key\":\"h-life-3\",\"date\":\"2026-07-06\"},{\"key\":\"h-life-3\",\"date\":\"2026-07-07\"},{\"key\":\"h-life-3\",\"date\":\"2026-07-08\"},{\"key\":\"h-life-3\",\"date\":\"2026-07-10\"},{\"key\":\"hGhost\",\"date\":\"2026-06-15\"},{\"key\":\"h-fit-1\",\"date\":\"\"}],\"INBOX\":[{\"id\":\"in1\",\"text\":\"问问李工那个接口文档在哪\",\"at\":\"2026-09-22\"},{\"id\":\"in2\",\"text\":\"想学一下 GraphRAG\",\"at\":\"2026-09-22\"},{\"id\":\"in3\",\"text\":\"换一盒充电电池\",\"at\":\"2026-09-23\"}],\"NOTES\":[{\"id\":\"nt1\",\"d\":\"2026-09-22\",\"text\":\"今天试着把周报提前到周三写完，发现其实两个小时就够。之前一直拖到周五，大概是怕写完就要面对下一周。\"},{\"id\":\"nt2\",\"d\":\"2026-09-20\",\"text\":\"早睡这件事，卡住我的不是工作，是手机。\"},{\"id\":\"nt3\",\"d\":\"2026-09-17\",\"text\":\"体检报告出来了，其他都好，就是血脂偏高。要开始认真对待吃饭这件事了。\"}],\"NOTE_PROMPTS\":[\"最近哪件事让你反复想起？\",\"这周有件事想做没做成，卡在哪一步？\",\"这一周只能留一件事，你留哪件？\",\"有什么事你一直没说出口？\",\"最近一次觉得「这样挺好」是什么时候？\",\"今天哪个瞬间你想慢一点？\"],\"LOGS\":[{\"id\":\"lg0\",\"kind\":\"money\",\"date\":\"2026-08-01\",\"category\":\"餐饮\",\"value\":0},{\"id\":\"lg1\",\"kind\":\"money\",\"date\":\"2026-08-02\",\"category\":\"出行\",\"value\":3.33},{\"id\":\"lg2\",\"kind\":\"money\",\"date\":\"2026-08-03\",\"category\":\"\",\"value\":6.66},{\"id\":\"lg3\",\"kind\":\"money\",\"date\":\"2026-08-04\",\"category\":null,\"value\":9.99},{\"id\":\"lg4\",\"kind\":\"money\",\"date\":\"2026-08-05\",\"category\":\"娱乐\",\"value\":13.32},{\"id\":\"lg5\",\"kind\":\"money\",\"date\":\"2026-08-06\",\"category\":\"餐饮\",\"value\":16.65},{\"id\":\"lg6\",\"kind\":\"money\",\"date\":\"2026-08-07\",\"category\":\"出行\",\"value\":19.98},{\"id\":\"lg7\",\"kind\":\"money\",\"date\":\"2026-08-08\",\"category\":\"\",\"value\":23.310000000000002},{\"id\":\"lg8\",\"kind\":\"money\",\"date\":\"2026-08-09\",\"category\":null,\"value\":26.64},{\"id\":\"lg9\",\"kind\":\"money\",\"date\":\"2026-08-10\",\"category\":\"娱乐\",\"value\":29.97},{\"id\":\"lg10\",\"kind\":\"money\",\"date\":\"2026-08-11\",\"category\":\"餐饮\",\"value\":33.3},{\"id\":\"lg11\",\"kind\":\"money\",\"date\":\"2026-08-12\",\"category\":\"出行\",\"value\":36.63},{\"id\":\"lg12\",\"kind\":\"money\",\"date\":\"2026-08-13\",\"category\":\"\",\"value\":39.96},{\"id\":\"lg13\",\"kind\":\"money\",\"date\":\"2026-08-14\",\"category\":null,\"value\":43.29},{\"id\":\"lg14\",\"kind\":\"money\",\"date\":\"2026-08-15\",\"category\":\"娱乐\",\"value\":46.620000000000005},{\"id\":\"lg15\",\"kind\":\"money\",\"date\":\"2026-08-16\",\"category\":\"餐饮\",\"value\":49.95},{\"id\":\"lg16\",\"kind\":\"money\",\"date\":\"2026-08-17\",\"category\":\"出行\",\"value\":53.28},{\"id\":\"lg17\",\"kind\":\"money\",\"date\":\"2026-08-18\",\"category\":\"\",\"value\":0},{\"id\":\"lg18\",\"kind\":\"money\",\"date\":\"2026-08-19\",\"category\":null,\"value\":3.33},{\"id\":\"lg19\",\"kind\":\"money\",\"date\":\"2026-08-20\",\"category\":\"娱乐\",\"value\":6.66},{\"id\":\"lg20\",\"kind\":\"money\",\"date\":\"2026-08-21\",\"category\":\"餐饮\",\"value\":9.99},{\"id\":\"lg21\",\"kind\":\"money\",\"date\":\"2026-08-22\",\"category\":\"出行\",\"value\":13.32},{\"id\":\"lg22\",\"kind\":\"money\",\"date\":\"2026-08-23\",\"category\":\"\",\"value\":16.65},{\"id\":\"lg23\",\"kind\":\"money\",\"date\":\"2026-08-24\",\"category\":null,\"value\":19.98},{\"id\":\"lg24\",\"kind\":\"money\",\"date\":\"2026-08-25\",\"category\":\"娱乐\",\"value\":23.310000000000002},{\"id\":\"lg25\",\"kind\":\"money\",\"date\":\"2026-08-26\",\"category\":\"餐饮\",\"value\":26.64},{\"id\":\"lg26\",\"kind\":\"money\",\"date\":\"2026-08-27\",\"category\":\"出行\",\"value\":29.97},{\"id\":\"lg27\",\"kind\":\"money\",\"date\":\"2026-08-28\",\"category\":\"\",\"value\":33.3},{\"id\":\"lg28\",\"kind\":\"money\",\"date\":\"2026-08-29\",\"category\":null,\"value\":36.63},{\"id\":\"lg29\",\"kind\":\"money\",\"date\":\"2026-08-30\",\"category\":\"娱乐\",\"value\":39.96},{\"id\":\"lg30\",\"kind\":\"money\",\"date\":\"2026-08-31\",\"category\":\"餐饮\",\"value\":43.29},{\"id\":\"lg31\",\"kind\":\"money\",\"date\":\"2026-09-01\",\"category\":\"出行\",\"value\":46.620000000000005},{\"id\":\"lg32\",\"kind\":\"money\",\"date\":\"2026-09-02\",\"category\":\"\",\"value\":49.95},{\"id\":\"lg33\",\"kind\":\"money\",\"date\":\"2026-09-03\",\"category\":null,\"value\":53.28},{\"id\":\"lg34\",\"kind\":\"money\",\"date\":\"2026-09-04\",\"category\":\"娱乐\",\"value\":0},{\"id\":\"lg35\",\"kind\":\"money\",\"date\":\"2026-09-05\",\"category\":\"餐饮\",\"value\":3.33},{\"id\":\"lg36\",\"kind\":\"money\",\"date\":\"2026-09-06\",\"category\":\"出行\",\"value\":6.66},{\"id\":\"lg37\",\"kind\":\"money\",\"date\":\"2026-09-07\",\"category\":\"\",\"value\":9.99},{\"id\":\"lg38\",\"kind\":\"money\",\"date\":\"2026-09-08\",\"category\":null,\"value\":13.32},{\"id\":\"lg39\",\"kind\":\"money\",\"date\":\"2026-09-09\",\"category\":\"娱乐\",\"value\":16.65},{\"id\":\"lg40\",\"kind\":\"money\",\"date\":\"2026-09-10\",\"category\":\"餐饮\",\"value\":19.98},{\"id\":\"lg41\",\"kind\":\"money\",\"date\":\"2026-09-11\",\"category\":\"出行\",\"value\":23.310000000000002},{\"id\":\"lg42\",\"kind\":\"money\",\"date\":\"2026-09-12\",\"category\":\"\",\"value\":26.64},{\"id\":\"lg43\",\"kind\":\"money\",\"date\":\"2026-09-13\",\"category\":null,\"value\":29.97},{\"id\":\"lg44\",\"kind\":\"money\",\"date\":\"2026-09-14\",\"category\":\"娱乐\",\"value\":33.3},{\"id\":\"lg45\",\"kind\":\"money\",\"date\":\"2026-09-15\",\"category\":\"餐饮\",\"value\":36.63},{\"id\":\"lg46\",\"kind\":\"money\",\"date\":\"2026-09-16\",\"category\":\"出行\",\"value\":39.96},{\"id\":\"lg47\",\"kind\":\"money\",\"date\":\"2026-09-17\",\"category\":\"\",\"value\":43.29},{\"id\":\"lg48\",\"kind\":\"money\",\"date\":\"2026-09-18\",\"category\":null,\"value\":46.620000000000005},{\"id\":\"lg49\",\"kind\":\"money\",\"date\":\"2026-09-19\",\"category\":\"娱乐\",\"value\":49.95},{\"id\":\"lg50\",\"kind\":\"money\",\"date\":\"2026-09-20\",\"category\":\"餐饮\",\"value\":53.28},{\"id\":\"lg51\",\"kind\":\"money\",\"date\":\"2026-09-21\",\"category\":\"出行\",\"value\":0},{\"id\":\"lg52\",\"kind\":\"money\",\"date\":\"2026-09-22\",\"category\":\"\",\"value\":3.33},{\"id\":\"lg53\",\"kind\":\"money\",\"date\":\"2026-09-23\",\"category\":null,\"value\":6.66},{\"id\":\"lg54\",\"kind\":\"money\",\"date\":\"2026-09-24\",\"category\":\"娱乐\",\"value\":9.99},{\"id\":\"lg55\",\"kind\":\"money\",\"date\":\"2026-09-25\",\"category\":\"餐饮\",\"value\":13.32},{\"id\":\"lg56\",\"kind\":\"money\",\"date\":\"2026-09-26\",\"category\":\"出行\",\"value\":16.65},{\"id\":\"lg57\",\"kind\":\"money\",\"date\":\"2026-09-27\",\"category\":\"\",\"value\":19.98},{\"id\":\"lg58\",\"kind\":\"money\",\"date\":\"2026-09-28\",\"category\":null,\"value\":23.310000000000002},{\"id\":\"lg59\",\"kind\":\"money\",\"date\":\"2026-09-29\",\"category\":\"娱乐\",\"value\":26.64},{\"id\":\"lg60\",\"kind\":\"money\",\"date\":\"2026-09-30\",\"category\":\"餐饮\",\"value\":29.97},{\"id\":\"lg61\",\"kind\":\"money\",\"date\":\"2026-08-01\",\"category\":\"出行\",\"value\":33.3},{\"id\":\"lg62\",\"kind\":\"money\",\"date\":\"2026-08-02\",\"category\":\"\",\"value\":36.63},{\"id\":\"lg63\",\"kind\":\"money\",\"date\":\"2026-08-03\",\"category\":null,\"value\":39.96},{\"id\":\"lg64\",\"kind\":\"money\",\"date\":\"2026-08-04\",\"category\":\"娱乐\",\"value\":43.29},{\"id\":\"lg65\",\"kind\":\"money\",\"date\":\"2026-08-05\",\"category\":\"餐饮\",\"value\":46.620000000000005},{\"id\":\"lg66\",\"kind\":\"money\",\"date\":\"2026-08-06\",\"category\":\"出行\",\"value\":49.95},{\"id\":\"lg67\",\"kind\":\"money\",\"date\":\"2026-08-07\",\"category\":\"\",\"value\":53.28},{\"id\":\"lg68\",\"kind\":\"money\",\"date\":\"2026-08-08\",\"category\":null,\"value\":0},{\"id\":\"lg69\",\"kind\":\"money\",\"date\":\"2026-08-09\",\"category\":\"娱乐\",\"value\":3.33},{\"id\":\"lg70\",\"kind\":\"money\",\"date\":\"2026-08-10\",\"category\":\"餐饮\",\"value\":6.66},{\"id\":\"lg71\",\"kind\":\"money\",\"date\":\"2026-08-11\",\"category\":\"出行\",\"value\":9.99},{\"id\":\"lg72\",\"kind\":\"money\",\"date\":\"2026-08-12\",\"category\":\"\",\"value\":13.32},{\"id\":\"lg73\",\"kind\":\"money\",\"date\":\"2026-08-13\",\"category\":null,\"value\":16.65},{\"id\":\"lg74\",\"kind\":\"money\",\"date\":\"2026-08-14\",\"category\":\"娱乐\",\"value\":19.98},{\"id\":\"lg75\",\"kind\":\"money\",\"date\":\"2026-08-15\",\"category\":\"餐饮\",\"value\":23.310000000000002},{\"id\":\"lg76\",\"kind\":\"money\",\"date\":\"2026-08-16\",\"category\":\"出行\",\"value\":26.64},{\"id\":\"lg77\",\"kind\":\"money\",\"date\":\"2026-08-17\",\"category\":\"\",\"value\":29.97},{\"id\":\"lg78\",\"kind\":\"money\",\"date\":\"2026-08-18\",\"category\":null,\"value\":33.3},{\"id\":\"lg79\",\"kind\":\"money\",\"date\":\"2026-08-19\",\"category\":\"娱乐\",\"value\":36.63},{\"id\":\"lg80\",\"kind\":\"money\",\"date\":\"2026-08-20\",\"category\":\"餐饮\",\"value\":39.96},{\"id\":\"lg81\",\"kind\":\"money\",\"date\":\"2026-08-21\",\"category\":\"出行\",\"value\":43.29},{\"id\":\"lg82\",\"kind\":\"money\",\"date\":\"2026-08-22\",\"category\":\"\",\"value\":46.620000000000005},{\"id\":\"lg83\",\"kind\":\"money\",\"date\":\"2026-08-23\",\"category\":null,\"value\":49.95},{\"id\":\"lg84\",\"kind\":\"money\",\"date\":\"2026-08-24\",\"category\":\"娱乐\",\"value\":53.28},{\"id\":\"lg85\",\"kind\":\"money\",\"date\":\"2026-08-25\",\"category\":\"餐饮\",\"value\":0},{\"id\":\"lg86\",\"kind\":\"money\",\"date\":\"2026-08-26\",\"category\":\"出行\",\"value\":3.33},{\"id\":\"lg87\",\"kind\":\"money\",\"date\":\"2026-08-27\",\"category\":\"\",\"value\":6.66},{\"id\":\"lg88\",\"kind\":\"money\",\"date\":\"2026-08-28\",\"category\":null,\"value\":9.99},{\"id\":\"lg89\",\"kind\":\"money\",\"date\":\"2026-08-29\",\"category\":\"娱乐\",\"value\":13.32},{\"id\":\"lgBad\",\"kind\":\"money\",\"date\":\"\",\"category\":\"餐饮\",\"value\":\"oops\"},{\"id\":\"lgNaN\",\"kind\":\"money\",\"date\":\"2026-09-10\",\"category\":\"餐饮\"}],\"DOMAINS\":[{\"id\":\"fitness\",\"name\":\"健身\",\"pinned\":true,\"habits\":[{\"id\":\"h-fit-1\",\"t\":\"训练日打卡\",\"m\":\"每周 4 次\",\"parent\":null},{\"id\":\"hDup1\",\"t\":\"重名习惯\",\"m\":\"每周 3 次\",\"parent\":null},{\"id\":\"hDeep\",\"t\":\"深层父\",\"m\":\"每天\",\"parent\":null},{\"id\":\"hDeep2\",\"t\":\"中层\",\"m\":\"每天\",\"parent\":\"hDeep\"},{\"id\":\"hDeep3\",\"t\":\"最内层\",\"m\":\"每天\",\"parent\":\"hDeep2\"}],\"goals\":[{\"id\":\"g-fitness-1\",\"t\":\"硬拉 100kg\",\"m\":\"当前 80kg × 5 次\",\"p\":80,\"parent\":null},{\"id\":\"g-fitness-1a\",\"t\":\"周期一：85kg × 5\",\"m\":\"两周内\",\"p\":100,\"parent\":\"g-fitness-1\"},{\"id\":\"g-fitness-1b\",\"t\":\"周期二：95kg × 3\",\"m\":\"再两周\",\"p\":40,\"parent\":\"g-fitness-1\"},{\"id\":\"g-fitness-2\",\"t\":\"体脂降到 18%\",\"m\":\"当前约 21%\",\"p\":35,\"parent\":null}]},{\"id\":\"study\",\"name\":\"学习\",\"pinned\":false,\"habits\":[{\"id\":\"h-study-1\",\"t\":\"阅读 30 分钟\",\"m\":\"每天\",\"parent\":null},{\"id\":\"hDup2\",\"t\":\"重名习惯\",\"m\":\"每月 2 次\",\"parent\":null}],\"goals\":[{\"id\":\"g-study-1\",\"t\":\"读完《置身事内》\",\"m\":\"每周 30 页 · 已读 210/350 页\",\"p\":60,\"parent\":null},{\"id\":\"g-study-1a\",\"t\":\"第 1–5 章\",\"m\":\"讲财政\",\"p\":100,\"parent\":\"g-study-1\"},{\"id\":\"g-study-1b\",\"t\":\"第 6–10 章\",\"m\":\"当前在这\",\"p\":50,\"parent\":\"g-study-1\"}]},{\"id\":\"work\",\"name\":\"工作\",\"pinned\":false,\"habits\":[{\"id\":\"h-work-1\",\"t\":\"下班前清空收件箱\",\"m\":\"工作日\",\"parent\":null}],\"goals\":[{\"id\":\"g-work-1\",\"t\":\"知识库项目 v1 上线\",\"m\":\"方案已定 · 待开工\",\"p\":45,\"parent\":null}]},{\"id\":\"life\",\"name\":\"个人\",\"pinned\":false,\"habits\":[{\"id\":\"h-life-1\",\"t\":\"健康作息\",\"m\":\"一组习惯\",\"parent\":null},{\"id\":\"h-life-2\",\"t\":\"饮水 2L\",\"m\":\"每天\",\"parent\":\"h-life-1\"},{\"id\":\"h-life-3\",\"t\":\"23:30 前睡\",\"m\":\"工作日\",\"parent\":\"h-life-1\"}],\"goals\":[{\"id\":\"g-life-1\",\"t\":\"家庭年度旅行成行\",\"m\":\"还没定目的地\",\"p\":50,\"parent\":null},{\"id\":\"g-life-1a\",\"t\":\"定目的地和日期\",\"m\":\"这个月内\",\"p\":100,\"parent\":\"g-life-1\"},{\"id\":\"g-life-1b\",\"t\":\"办签证\",\"m\":\"看目的地\",\"p\":20,\"parent\":\"g-life-1\"}]}],\"RECORD_TYPES\":[{\"id\":\"rt_kcal_in\",\"domain\":\"fitness\",\"name\":\"热量摄入\",\"mode\":\"number\",\"unit\":\"kcal\",\"quick\":true,\"logs\":[{\"id\":\"k0_0\",\"d\":\"1月1日\",\"v\":70},{\"id\":\"k0_1\",\"d\":\"2月2日 周三\",\"v\":71},{\"id\":\"k0_2\",\"d\":\"3月3日\",\"v\":72},{\"id\":\"k0_3\",\"d\":\"4月4日 周三\",\"v\":73},{\"id\":\"k0_4\",\"d\":\"5月5日\",\"v\":74},{\"id\":\"k0_5\",\"d\":\"6月6日 周三\",\"v\":75},{\"id\":\"k0_6\",\"d\":\"7月7日\",\"v\":76},{\"id\":\"k0_7\",\"d\":\"8月8日 周三\",\"v\":70},{\"id\":\"k0_8\",\"d\":\"9月9日\",\"v\":71},{\"id\":\"k0_9\",\"d\":\"10月10日 周三\",\"v\":72},{\"id\":\"k0_10\",\"d\":\"11月11日\",\"v\":73},{\"id\":\"k0_11\",\"d\":\"12月12日 周三\",\"v\":74}],\"retired\":true},{\"id\":\"rt_kcal_out\",\"domain\":\"fitness\",\"name\":\"热量消耗\",\"mode\":\"number\",\"unit\":\"kcal\",\"quick\":true,\"logs\":[{\"id\":\"k1_0\",\"d\":\"1月1日\",\"v\":70},{\"id\":\"k1_1\",\"d\":\"2月2日 周三\",\"v\":71},{\"id\":\"k1_2\",\"d\":\"3月3日\",\"v\":72},{\"id\":\"k1_3\",\"d\":\"4月4日 周三\",\"v\":73},{\"id\":\"k1_4\",\"d\":\"5月5日\",\"v\":74},{\"id\":\"k1_5\",\"d\":\"6月6日 周三\",\"v\":75},{\"id\":\"k1_6\",\"d\":\"7月7日\",\"v\":76},{\"id\":\"k1_7\",\"d\":\"8月8日 周三\",\"v\":70},{\"id\":\"k1_8\",\"d\":\"9月9日\",\"v\":71},{\"id\":\"k1_9\",\"d\":\"10月10日 周三\",\"v\":72},{\"id\":\"k1_10\",\"d\":\"11月11日\",\"v\":73},{\"id\":\"k1_11\",\"d\":\"12月12日 周三\",\"v\":74}]},{\"id\":\"rt_weight\",\"domain\":\"fitness\",\"name\":\"体重\",\"mode\":\"number\",\"unit\":\"kg\",\"quick\":true,\"logs\":[{\"id\":\"k2_0\",\"d\":\"1月1日\",\"v\":70},{\"id\":\"k2_1\",\"d\":\"2月2日 周三\",\"v\":71},{\"id\":\"k2_2\",\"d\":\"3月3日\",\"v\":72},{\"id\":\"k2_3\",\"d\":\"4月4日 周三\",\"v\":73},{\"id\":\"k2_4\",\"d\":\"5月5日\",\"v\":74},{\"id\":\"k2_5\",\"d\":\"6月6日 周三\",\"v\":75},{\"id\":\"k2_6\",\"d\":\"7月7日\",\"v\":76},{\"id\":\"k2_7\",\"d\":\"8月8日 周三\",\"v\":70},{\"id\":\"k2_8\",\"d\":\"9月9日\",\"v\":71},{\"id\":\"k2_9\",\"d\":\"10月10日 周三\",\"v\":72},{\"id\":\"k2_10\",\"d\":\"11月11日\",\"v\":73},{\"id\":\"k2_11\",\"d\":\"12月12日 周三\",\"v\":74}]},{\"id\":\"rt_strength\",\"domain\":\"fitness\",\"name\":\"力量训练\",\"mode\":\"text\",\"unit\":\"\",\"quick\":false,\"logs\":[{\"id\":\"k3_0\",\"d\":\"1月1日\",\"v\":\"内容 0\"},{\"id\":\"k3_1\",\"d\":\"2月2日 周三\",\"v\":\"内容 1\"},{\"id\":\"k3_2\",\"d\":\"3月3日\",\"v\":\"内容 2\"},{\"id\":\"k3_3\",\"d\":\"4月4日 周三\",\"v\":\"内容 3\"},{\"id\":\"k3_4\",\"d\":\"5月5日\",\"v\":\"内容 4\"},{\"id\":\"k3_5\",\"d\":\"6月6日 周三\",\"v\":\"内容 5\"},{\"id\":\"k3_6\",\"d\":\"7月7日\",\"v\":\"内容 6\"},{\"id\":\"k3_7\",\"d\":\"8月8日 周三\",\"v\":\"内容 7\"},{\"id\":\"k3_8\",\"d\":\"9月9日\",\"v\":\"内容 8\"},{\"id\":\"k3_9\",\"d\":\"10月10日 周三\",\"v\":\"内容 9\"},{\"id\":\"k3_10\",\"d\":\"11月11日\",\"v\":\"内容 10\"},{\"id\":\"k3_11\",\"d\":\"12月12日 周三\",\"v\":\"内容 11\"}]},{\"id\":\"rt_cardio\",\"domain\":\"fitness\",\"name\":\"有氧\",\"mode\":\"text\",\"unit\":\"\",\"quick\":false,\"logs\":[{\"id\":\"k4_0\",\"d\":\"1月1日\",\"v\":\"内容 0\"},{\"id\":\"k4_1\",\"d\":\"2月2日 周三\",\"v\":\"内容 1\"},{\"id\":\"k4_2\",\"d\":\"3月3日\",\"v\":\"内容 2\"},{\"id\":\"k4_3\",\"d\":\"4月4日 周三\",\"v\":\"内容 3\"},{\"id\":\"k4_4\",\"d\":\"5月5日\",\"v\":\"内容 4\"},{\"id\":\"k4_5\",\"d\":\"6月6日 周三\",\"v\":\"内容 5\"},{\"id\":\"k4_6\",\"d\":\"7月7日\",\"v\":\"内容 6\"},{\"id\":\"k4_7\",\"d\":\"8月8日 周三\",\"v\":\"内容 7\"},{\"id\":\"k4_8\",\"d\":\"9月9日\",\"v\":\"内容 8\"},{\"id\":\"k4_9\",\"d\":\"10月10日 周三\",\"v\":\"内容 9\"},{\"id\":\"k4_10\",\"d\":\"11月11日\",\"v\":\"内容 10\"},{\"id\":\"k4_11\",\"d\":\"12月12日 周三\",\"v\":\"内容 11\"}]},{\"id\":\"rt_squat\",\"domain\":\"fitness\",\"name\":\"深蹲最大重量\",\"mode\":\"number\",\"unit\":\"kg\",\"quick\":false,\"logs\":[{\"id\":\"k5_0\",\"d\":\"1月1日\",\"v\":70},{\"id\":\"k5_1\",\"d\":\"2月2日 周三\",\"v\":71},{\"id\":\"k5_2\",\"d\":\"3月3日\",\"v\":72},{\"id\":\"k5_3\",\"d\":\"4月4日 周三\",\"v\":73},{\"id\":\"k5_4\",\"d\":\"5月5日\",\"v\":74},{\"id\":\"k5_5\",\"d\":\"6月6日 周三\",\"v\":75},{\"id\":\"k5_6\",\"d\":\"7月7日\",\"v\":76},{\"id\":\"k5_7\",\"d\":\"8月8日 周三\",\"v\":70},{\"id\":\"k5_8\",\"d\":\"9月9日\",\"v\":71},{\"id\":\"k5_9\",\"d\":\"10月10日 周三\",\"v\":72},{\"id\":\"k5_10\",\"d\":\"11月11日\",\"v\":73},{\"id\":\"k5_11\",\"d\":\"12月12日 周三\",\"v\":74}]},{\"id\":\"rt_book\",\"domain\":\"study\",\"name\":\"读书\",\"mode\":\"number\",\"unit\":\"页\",\"quick\":false,\"logs\":[{\"id\":\"k6_0\",\"d\":\"1月1日\",\"v\":70},{\"id\":\"k6_1\",\"d\":\"2月2日 周三\",\"v\":71},{\"id\":\"k6_2\",\"d\":\"3月3日\",\"v\":72},{\"id\":\"k6_3\",\"d\":\"4月4日 周三\",\"v\":73},{\"id\":\"k6_4\",\"d\":\"5月5日\",\"v\":74},{\"id\":\"k6_5\",\"d\":\"6月6日 周三\",\"v\":75},{\"id\":\"k6_6\",\"d\":\"7月7日\",\"v\":76},{\"id\":\"k6_7\",\"d\":\"8月8日 周三\",\"v\":70},{\"id\":\"k6_8\",\"d\":\"9月9日\",\"v\":71},{\"id\":\"k6_9\",\"d\":\"10月10日 周三\",\"v\":72},{\"id\":\"k6_10\",\"d\":\"11月11日\",\"v\":73},{\"id\":\"k6_11\",\"d\":\"12月12日 周三\",\"v\":74}]},{\"id\":\"rt_note\",\"domain\":\"study\",\"name\":\"学习笔记\",\"mode\":\"text\",\"unit\":\"\",\"quick\":false,\"logs\":[{\"id\":\"k7_0\",\"d\":\"1月1日\",\"v\":\"内容 0\"},{\"id\":\"k7_1\",\"d\":\"2月2日 周三\",\"v\":\"内容 1\"},{\"id\":\"k7_2\",\"d\":\"3月3日\",\"v\":\"内容 2\"},{\"id\":\"k7_3\",\"d\":\"4月4日 周三\",\"v\":\"内容 3\"},{\"id\":\"k7_4\",\"d\":\"5月5日\",\"v\":\"内容 4\"},{\"id\":\"k7_5\",\"d\":\"6月6日 周三\",\"v\":\"内容 5\"},{\"id\":\"k7_6\",\"d\":\"7月7日\",\"v\":\"内容 6\"},{\"id\":\"k7_7\",\"d\":\"8月8日 周三\",\"v\":\"内容 7\"},{\"id\":\"k7_8\",\"d\":\"9月9日\",\"v\":\"内容 8\"},{\"id\":\"k7_9\",\"d\":\"10月10日 周三\",\"v\":\"内容 9\"},{\"id\":\"k7_10\",\"d\":\"11月11日\",\"v\":\"内容 10\"},{\"id\":\"k7_11\",\"d\":\"12月12日 周三\",\"v\":\"内容 11\"}]}],\"CAPTURE_MODES\":[{\"k\":\"auto\",\"t\":\"自动判断\",\"on\":true,\"lock\":true},{\"k\":\"todo\",\"t\":\"待办\",\"on\":true},{\"k\":\"note\",\"t\":\"随心记\",\"on\":true},{\"k\":\"money\",\"t\":\"记一笔支出\",\"on\":true},{\"k\":\"inbox\",\"t\":\"只丢进收件箱\",\"on\":true}],\"AUTO_RULES\":[{\"id\":\"u-squat\",\"sys\":false,\"on\":true,\"t\":\"深蹲／硬拉／卧推 → 力量训练\",\"kw\":\"深蹲,硬拉,卧推,引体,划船\",\"to\":\"rt_strength\"},{\"id\":\"sys-kcal\",\"sys\":true,\"on\":true,\"t\":\"提到卡路里 → 热量摄入\",\"kw\":\"kcal,千卡,大卡,卡路里\",\"to\":\"rt_kcal_in\"},{\"id\":\"sys-weight\",\"sys\":true,\"on\":true,\"t\":\"提到公斤 → 体重\",\"kw\":\"kg,公斤,千克,斤\",\"ex\":\"×|组|次|深蹲|硬拉|卧推\",\"to\":\"rt_weight\"},{\"id\":\"sys-money\",\"sys\":true,\"on\":true,\"t\":\"数字在开头 → 记一笔支出\",\"re\":\"^(¥|￥|RMB)?\\\\s*\\\\d+(\\\\.\\\\d+)?\",\"ex\":\"公里|千米|km|米|次|页|分钟|小时|组|个|杯|瓶|步\",\"to\":\"money\"}],\"TODAY_LOGS\":[{\"time\":\"08:15\",\"label\":\"早餐 ¥12 · 餐饮\",\"id\":\"tlmudhjf40-1\"},{\"time\":\"10:30\",\"label\":\"体重 71.4 kg\",\"ref\":{\"k\":\"rt\",\"rtId\":\"rt_weight\",\"logId\":\"k6\"},\"id\":\"tlmudhjf40-2\"},{\"time\":\"12:40\",\"label\":\"午餐 ¥32 · 餐饮\",\"ref\":{\"k\":\"money\",\"id\":\"lg1\"},\"id\":\"tlmudhjf40-3\"}],\"CAT_WORDS\":{\"餐饮\":[\"早餐\",\"早饭\",\"午餐\",\"午饭\",\"晚餐\",\"晚饭\",\"咖啡\",\"奶茶\",\"外卖\",\"吃饭\",\"聚餐\",\"零食\",\"夜宵\",\"水果\"],\"出行\":[\"地铁\",\"公交\",\"打车\",\"出租\",\"加油\",\"高铁\",\"机票\",\"停车\",\"单车\",\"过路费\"],\"数码\":[\"硬盘\",\"鼠标\",\"键盘\",\"手机\",\"电脑\",\"耳机\",\"充电\",\"数据线\",\"显示器\",\"内存\"],\"生活\":[\"房租\",\"水电\",\"物业\",\"超市\",\"日用品\",\"纸巾\",\"洗衣\",\"理发\",\"快递\",\"话费\"],\"娱乐\":[\"电影\",\"游戏\",\"演出\",\"门票\",\"唱歌\",\"演唱会\",\"展览\"],\"医疗\":[\"药\",\"挂号\",\"体检\",\"医院\",\"牙\",\"诊所\"],\"服饰\":[\"衣服\",\"鞋\",\"裤\",\"外套\",\"袜\",\"帽子\"]},\"CATS\":[\"餐饮\",\"出行\",\"数码\",\"生活\",\"娱乐\",\"医疗\",\"服饰\"],\"CAP_CFG\":{\"order\":[],\"common\":{}},\"REV_TRENDS\":[{\"k\":\"money\"},{\"k\":\"rt\",\"id\":\"rt_weight\"},{\"k\":\"rt\",\"id\":\"rt_kcal_in\"}],\"QUAD_COLORS\":{\"q1\":\"#abcdef\"},\"IN_CATS\":[\"理财\",\"副业\",\"工资\"]},\"s\":{\"CURRENT\":\"today\",\"DOMAIN_ID\":\"\",\"CAPTURE_MODE\":\"auto\",\"CAP_AUTO_CLOSE\":true,\"TICK_DONE\":\"\",\"NOTIFY_ON\":false}}",
  "saveStateText.initial": {
   "bad": false,
   "text": ""
@@ -12779,6 +13545,7 @@
    "DOMAINS": "array:0",
    "HABIT_LOGS": "array:0",
    "INBOX": "array:0",
+   "IN_CATS": "array:3",
    "ITEMS": "array:0",
    "LOGS": "array:0",
    "NOTES": "array:0",
@@ -12799,7 +13566,7 @@
    "notes": 0,
    "records": 0
   },
-  "{\"v\":{\"ITEMS\":[],\"HABIT_LOGS\":[],\"INBOX\":[],\"NOTES\":[],\"NOTE_PROMPTS\":[],\"LOGS\":[],\"DOMAINS\":[],\"RECORD_TYPES\":[],\"CAPTURE_MODES\":[],\"AUTO_RULES\":[],\"TODAY_LOGS\":[],\"CAT_WORDS\":{},\"CATS\":[],\"CAP_CFG\":{\"order\":[],\"common\":{}},\"REV_TRENDS\":[],\"QUAD_COLORS\":{}},\"s\":{\"CURRENT\":\"today\",\"DOMAIN_ID\":\"\",\"CAPTURE_MODE\":\"auto\",\"CAP_AUTO_CLOSE\":true,\"TICK_DONE\":\"\",\"NOTIFY_ON\":false}}",
+  "{\"v\":{\"ITEMS\":[],\"HABIT_LOGS\":[],\"INBOX\":[],\"NOTES\":[],\"NOTE_PROMPTS\":[],\"LOGS\":[],\"DOMAINS\":[],\"RECORD_TYPES\":[],\"CAPTURE_MODES\":[],\"AUTO_RULES\":[],\"TODAY_LOGS\":[],\"CAT_WORDS\":{},\"CATS\":[],\"CAP_CFG\":{\"order\":[],\"common\":{}},\"REV_TRENDS\":[],\"QUAD_COLORS\":{},\"IN_CATS\":[\"理财\",\"副业\",\"工资\"]},\"s\":{\"CURRENT\":\"today\",\"DOMAIN_ID\":\"\",\"CAPTURE_MODE\":\"auto\",\"CAP_AUTO_CLOSE\":true,\"TICK_DONE\":\"\",\"NOTIFY_ON\":false}}",
   "--q1:#D64545;--q1-bg:#fae9e9;--q2:#E08E2B;--q2-bg:#fbf1e6;--q3:#3B7DD8;--q3-bg:#e7effa;--q4:#8A8F99;--q4-bg:#f1f2f3"
  ],
  "seq.addSubOrder": {
@@ -12945,7 +13712,7 @@
    "habits": 4,
    "inbox": 8,
    "items": 16,
-   "logs": 7,
+   "logs": 9,
    "notes": 3,
    "records": 18
   },
@@ -13011,7 +13778,7 @@
    "habits": 6,
    "inbox": 3,
    "items": 18,
-   "logs": 7,
+   "logs": 9,
    "notes": 3,
    "records": 18
   }
@@ -13024,7 +13791,7 @@
    "habits": 6,
    "inbox": 3,
    "items": 18,
-   "logs": 7,
+   "logs": 9,
    "notes": 3,
    "records": 18
   },
@@ -13049,6 +13816,7 @@
    "DOMAINS": "array:0",
    "HABIT_LOGS": "array:0",
    "INBOX": "array:0",
+   "IN_CATS": "array:3",
    "ITEMS": "array:0",
    "LOGS": "array:0",
    "NOTES": "array:0",
@@ -13067,7 +13835,7 @@
    "habits": 6,
    "inbox": 3,
    "items": 18,
-   "logs": 7,
+   "logs": 9,
    "notes": 3,
    "records": 18
   },
@@ -13078,12 +13846,12 @@
    "habits": 6,
    "inbox": 3,
    "items": 18,
-   "logs": 7,
+   "logs": 9,
    "notes": 3,
    "records": 18
   },
   "err": "",
-  "keys": "AUTO_RULES,CAPTURE_MODES,CAP_CFG,CATS,CAT_WORDS,DOMAINS,HABIT_LOGS,INBOX,ITEMS,LOGS,NOTES,NOTE_PROMPTS,RECORD_TYPES,REV_TRENDS,TODAY_LOGS"
+  "keys": "AUTO_RULES,CAPTURE_MODES,CAP_CFG,CATS,CAT_WORDS,DOMAINS,HABIT_LOGS,INBOX,IN_CATS,ITEMS,LOGS,NOTES,NOTE_PROMPTS,RECORD_TYPES,REV_TRENDS,TODAY_LOGS"
  },
  "seq.importSnapshot.bad": {
   "before": {
@@ -13093,7 +13861,7 @@
    "habits": 6,
    "inbox": 3,
    "items": 18,
-   "logs": 7,
+   "logs": 9,
    "notes": 3,
    "records": 18
   },
@@ -13104,7 +13872,7 @@
    "habits": 6,
    "inbox": 3,
    "items": 18,
-   "logs": 7,
+   "logs": 9,
    "notes": 3,
    "records": 18
   },
@@ -13371,5 +14139,229 @@
  "seq.habitRemind.legacyArchive": {
   "plan": 0,
   "stats": 0
+ },
+ "seq.income.add": {
+  "dates": [
+   "2026-09-23",
+   "2026-09-23",
+   "2026-09-23",
+   "2026-09-23",
+   "2026-09-23"
+  ],
+  "flow": [
+   "支出 ¥50 · 未分类",
+   "支出 ¥9 · 餐饮",
+   "支出 ¥32 · 餐饮",
+   "收入 ¥120 · 未分类 · 加班打车"
+  ],
+  "monthIn": 12306.5,
+  "monthOut": 1772,
+  "records": [
+   {
+    "category": "",
+    "dir": "in",
+    "note": "加班打车",
+    "value": 120
+   },
+   {
+    "category": "餐饮",
+    "dir": "(缺)",
+    "note": "(缺)",
+    "value": 32
+   },
+   {
+    "category": "餐饮",
+    "dir": "(缺)",
+    "note": "(缺)",
+    "value": 9
+   },
+   {
+    "category": "",
+    "dir": "(缺)",
+    "note": "(缺)",
+    "value": 50
+   },
+   null
+  ]
+ },
+ "seq.income.editSwitch": [
+  [
+   "dir",
+   "value",
+   "category",
+   "note",
+   "date"
+  ],
+  [
+   "dir",
+   "value",
+   "category",
+   "note",
+   "date"
+  ],
+  "餐饮",
+  {
+   "changed": [
+    "方向 支出 → 收入"
+   ]
+  },
+  {
+   "category": "餐饮",
+   "dir": "in"
+  },
+  {
+   "changed": [
+    "方向 收入 → 支出"
+   ]
+  },
+  {
+   "dirOf": "out",
+   "hasDir": false
+  },
+  {
+   "changed": [
+    "备注「没有」→「周五聚餐」"
+   ]
+  },
+  "周五聚餐",
+  {
+   "changed": [
+    "备注「周五聚餐」→「没有」"
+   ]
+  },
+  false
+ ],
+ "seq.income.catCrud": [
+  [
+   {
+    "name": "奖金"
+   },
+   [
+    "理财",
+    "副业",
+    "工资",
+    "奖金"
+   ],
+   [
+    "餐饮",
+    "出行",
+    "数码",
+    "生活",
+    "娱乐",
+    "医疗",
+    "服饰"
+   ]
+  ],
+  {
+   "error": "已经有「奖金」了"
+  },
+  {
+   "name": "餐饮"
+  },
+  [
+   {
+    "moved": 2,
+    "name": "薪水"
+   },
+   [
+    "理财",
+    "副业",
+    "薪水",
+    "奖金",
+    "餐饮"
+   ]
+  ],
+  {
+   "wordsHasGongzi": false,
+   "wordsHasXinshui": false
+  },
+  {
+   "error": "已经有「奖金」了"
+  },
+  [
+   {
+    "name": "奖金",
+    "used": 0
+   },
+   [
+    "理财",
+    "副业",
+    "薪水",
+    "餐饮"
+   ]
+  ],
+  [
+   [
+    "out",
+    "餐饮"
+   ],
+   [
+    "in",
+    "薪水"
+   ],
+   [
+    "out",
+    "餐饮"
+   ],
+   [
+    "out",
+    "出行"
+   ],
+   [
+    "out",
+    "餐饮"
+   ],
+   [
+    "out",
+    "数码"
+   ],
+   [
+    "out",
+    "餐饮"
+   ],
+   [
+    "out",
+    "生活"
+   ],
+   [
+    "out",
+    "娱乐"
+   ],
+   [
+    "in",
+    "薪水"
+   ],
+   [
+    "in",
+    "理财"
+   ]
+  ],
+  [
+   "餐饮",
+   "出行",
+   "数码",
+   "生活",
+   "娱乐",
+   "医疗",
+   "服饰"
+  ]
+ ],
+ "seq.income.legacyArchive": {
+  "count": 2,
+  "dirs": [
+   "out",
+   "out"
+  ],
+  "err": "",
+  "inCats": [
+   "理财",
+   "副业",
+   "工资"
+  ],
+  "inSum": 0,
+  "outSum": "NaN"
+ },
+ "seq.income.emptyInCatsKept": {
+  "afterImport": []
  }
 }

@@ -65,6 +65,10 @@ async function collect(M) {
     openEdit, closeEdit, editFields, ED,
     money, fmtCN, fmtCNWide, weekdayCN, dayCount, shiftDays, startOfWeek, startOfMonth, endOfMonth, pad2: pad,
     monthMoney,
+    /* 收支方向（2026-10-04 加）。放一行的理由和上面那些一样：
+       对拍的取材脚本要能**看得见**新行为，否则「收入」这一整块就在回归网之外。 */
+    dirOf, isIncome, dirName, monthSummary, moneyIn, addMoney, commitMoneyText,
+    addCat, renameCat, delCat, DEFAULT_IN_CATS,
     quadOf, setQuad, quadName, quadTone, quadColorOf, quadVarStyle, setQuadColor,
     FREQ_UNITS, parseFreq, freqText,
     parseDatePhrase, firstNumber, restOf, resolveCapture, describeCapture,
@@ -244,6 +248,7 @@ async function collect(M) {
   cap('catList', () => catList())
   cap('metricDefs', () => metricDefs())
   cap('metricLine.money', () => metricLine({ k: 'money', name: '支出', unit: '¥' }, reviewData()))
+  cap('metricLine.income', () => metricLine({ k: 'income', name: '收入', unit: '¥' }, reviewData()))
   cap('metricLine.todo', () => metricLine({ k: 'todo', name: '待办完成', unit: '' }, reviewData()))
   cap('trendRows', () => trendRows())
   cap('trendCandidates', () => trendCandidates())
@@ -269,6 +274,30 @@ async function collect(M) {
   cap('restOf', () => [restOf('体重 71.4 kg', 71.4), restOf('1800 kcal', 1800), restOf('', null)])
   cap('guessCategory', () => ['午餐', '打车', '看电影', '凭空一句'].map(guessCategory))
   cap('catUsed', () => catList().map(c => [c, catUsed(c)]))
+
+  /* ============ 收支方向（2026-10-04 加）============
+     `dir` 是后加的可选字段，**缺失 = 支出**。这一组钉住的就是那条契约：
+     老档案里每一笔都没有 dir，它们必须原样算支出；而「收入」这一路要能单独取出来。 */
+  cap('money.dirOf.probe', () => [
+    dirOf({}), dirOf({ dir: 'in' }), dirOf({ dir: 'out' }), dirOf({ dir: null }),
+    dirOf({ dir: 'IN' }), dirOf({ dir: 1 }), dirOf(null), dirOf(undefined),
+    isIncome({}), isIncome({ dir: 'in' })
+  ])
+  cap('money.dirName', () => [dirName('in'), dirName('out'), dirName(''), dirName('x')])
+  cap('money.DEFAULT_IN_CATS', () => DEFAULT_IN_CATS)
+  /* 造数据的 LOGS 里一笔收入都没有（都是 `dir` 缺失的老记录）——
+     所以 out 应当等于老的 monthMoney 总数，in 必须是 0。 */
+  cap('money.monthMoney.sides', () => [
+    monthMoney('2026-09'), monthMoney('2026-09', 'out').sum,
+    monthMoney('2026-09', 'in'), monthMoney('2026-09', 'IN').sum,
+    monthSummary('2026-09')
+  ])
+  cap('money.moneyIn.sides', () => [
+    moneyIn('2026-09-01', '2026-09-30'), moneyIn('2026-09-01', '2026-09-30', 'out'),
+    moneyIn('2026-09-01', '2026-09-30', 'in')
+  ])
+  cap('catList.dir', () => [catList(), catList('out'), catList('in')])
+  cap('typeof.catArrIn', () => [typeof db.IN_CATS, Array.isArray(db.IN_CATS), db.IN_CATS.length])
 
   cap('summaryOf', () => db.DOMAINS.map(d => summaryOf(d, recordTypesOf(db.RECORD_TYPES, d.id).length)))
   cap('recordTypesOf', () => db.DOMAINS.map(d => recordTypesOf(db.RECORD_TYPES, d.id).map(t => t.id)))
@@ -341,7 +370,7 @@ async function collect(M) {
     const r = clearAllData()
     const keys = ['ITEMS', 'HABIT_LOGS', 'INBOX', 'NOTES', 'NOTE_PROMPTS', 'LOGS', 'DOMAINS',
       'RECORD_TYPES', 'CAPTURE_MODES', 'AUTO_RULES', 'TODAY_LOGS', 'CAT_WORDS', 'CATS',
-      'CAP_CFG', 'REV_TRENDS', 'QUAD_COLORS', 'CLOSED_NODES']
+      'CAP_CFG', 'REV_TRENDS', 'QUAD_COLORS', 'IN_CATS', 'CLOSED_NODES']
     const shape = {}
     for (const k of keys) {
       const v = db[k]
@@ -718,6 +747,128 @@ async function collect(M) {
     const archive = { app: 'spine', fmt: 2, at: 0, v: { ITEMS: [], LOGS: [] }, s: {} }
     M.importSnapshot(JSON.stringify(archive))
     return { plan: remindPlan(7, Date.now()).length, stats: remindStats().on }
+  })
+
+  /* ============ 收入的写入路径（2026-10-04 加）============ */
+
+  /* 记一笔收入：落库的形状 + 流水行说了什么。
+     关键断言是 `dir` **只在收入时出现** —— 支出那笔必须没有这个键，
+     否则「缺失 = 支出」那条契约就没人验了。 */
+  cap('seq.income.add', () => {
+    loadSeed()
+    const a = addMoney(120, '打车', '', 'in', '加班打车')
+    const b = addMoney(32, '午餐', '', 'out', '')
+    const c = addMoney(9, '午餐', '')
+    const d = addMoney(50, '看错方向', '', 'IN')
+    const e = addMoney(-5, 'x', '', 'in')
+    const shape = l => l && ({
+      dir: Object.prototype.hasOwnProperty.call(l, 'dir') ? l.dir : '(缺)',
+      category: l.category, value: l.value,
+      /* 备注也只能在**非空**时出现 —— 空串不落库，否则导出的 JSON 会多出一堆 "" */
+      note: l.note === undefined ? '(缺)' : l.note
+    })
+    return {
+      records: [shape(a), shape(b), shape(c), shape(d), shape(e)],
+      /* 分类：收入不猜（没有收入词表），支出照旧猜 */
+      dates: db.LOGS.slice(0, 5).map(l => l.date),
+      flow: db.TODAY_LOGS.slice(0, 4).map(e2 => e2.label),
+      /* 今日页那一行读的是 moneyTotalOf（只算支出），收入不该进来。
+         注意这是**整月**的数（TODAY 那一月），名字别写成 today。 */
+      monthOut: monthSummary(TODAY.slice(0, 7)).out.sum,
+      monthIn: monthSummary(TODAY.slice(0, 7)).in.sum
+    }
+  })
+
+  /* 改方向：支出 → 收入 → 再改回支出，`dir` 这个键必须真的消失。 */
+  cap('seq.income.editSwitch', () => {
+    loadSeed()
+    const r = []
+    r.push(openEdit('money:lg1') && editFields().map(f => f.k))
+    ED.draft.dir = 'in'
+    r.push(editFields().map(f => f.k))
+    /* 切到收入之后，原来那个「餐饮」必须仍在候选里（缀在末尾），
+       否则 chip 一排全不高亮，看着像分类丢了。 */
+    r.push(ED.draft.category)
+    r.push(M.commitEdit())
+    const lg = db.LOGS.find(x => x.id === 'lg1')
+    r.push({ dir: lg.dir, category: lg.category })
+    /* 再改回支出：字段要真的被删掉，不能留一个 'out' */
+    openEdit('money:lg1')
+    ED.draft.dir = 'out'
+    r.push(M.commitEdit())
+    const lg2 = db.LOGS.find(x => x.id === 'lg1')
+    r.push({ hasDir: Object.prototype.hasOwnProperty.call(lg2, 'dir'), dirOf: dirOf(lg2) })
+    /* 备注：写了要落库，清空要**把键删掉**（不是存成空串 ——
+       空串和「没有这个字段」在显示层是一回事，存下来只是让档案变胖） */
+    openEdit('money:lg1')
+    ED.draft.note = '周五聚餐'
+    r.push(M.commitEdit())
+    r.push(db.LOGS.find(x => x.id === 'lg1').note)
+    openEdit('money:lg1')
+    ED.draft.note = ''
+    r.push(M.commitEdit())
+    r.push(Object.prototype.hasOwnProperty.call(db.LOGS.find(x => x.id === 'lg1'), 'note'))
+    closeEdit()
+    return r
+  })
+
+  /* 收入品类的增改删：和支出那一套同代码，但**两份清单各管各的**。
+     尤其是改名 —— 只能改动**同方向**已记的那几笔，而且不许碰 CAT_WORDS。 */
+  cap('seq.income.catCrud', () => {
+    loadSeed()
+    addMoney(12000, '工资', '工资', 'in')
+    addMoney(32, '午餐', '餐饮', 'out')
+    const r = []
+    r.push([addCat('奖金', 'in'), db.IN_CATS.slice(), db.CATS.slice()])
+    r.push(addCat('奖金', 'in'))                       /* 重名挡住 */
+    r.push(addCat('餐饮', 'in'))                       /* 和支出清单同名**不算**冲突：两份清单 */
+    r.push([renameCat('工资', '薪水', 'in'), db.IN_CATS.slice()])
+    /* ⚠️ 收入侧改名不动 CAT_WORDS */
+    r.push({ wordsHasGongzi: !!db.CAT_WORDS['工资'], wordsHasXinshui: !!db.CAT_WORDS['薪水'] })
+    r.push(renameCat('薪水', '奖金', 'in'))            /* 撞名挡住 */
+    r.push([delCat('奖金', 'in'), db.IN_CATS.slice()])
+    r.push(db.LOGS.filter(l => l.kind === 'money').map(l => [dirOf(l), l.category]))
+    /* 支出那一路一个字节都不该变 */
+    r.push(db.CATS.slice())
+    return r
+  })
+
+  /* **老档案兼容**：这份档案里 LOGS 一笔 dir 都没有、整份没有 IN_CATS。
+     导入之后：每一笔仍算支出（不是被清空、也不是被当成收入），
+     IN_CATS 填内置默认（而不是空数组，那样收入那边一个类都选不到）。 */
+  cap('seq.income.legacyArchive', () => {
+    loadSeed()
+    const archive = {
+      app: 'spine', fmt: 2, at: 0,
+      v: {
+        ITEMS: [],
+        LOGS: [{ id: 'L1', kind: 'money', date: '2026-09-01', category: '餐饮', value: 10 },
+          { id: 'L2', kind: 'money', date: '2026-09-02', category: '出行', value: 'oops' }]
+      },
+      s: {}
+    }
+    const err = M.importSnapshot(JSON.stringify(archive))
+    return {
+      err,
+      /* 缺 IN_CATS → 内置默认（这正是 ensureIds 那一步该干的事） */
+      inCats: db.IN_CATS.slice(),
+      /* 两笔都没有 dir → 都算支出 */
+      dirs: db.LOGS.map(l => dirOf(l)),
+      outSum: monthSummary('2026-09').out.sum,
+      inSum: monthSummary('2026-09').in.sum,
+      count: db.LOGS.length
+    }
+  })
+
+  /* 反面：用户**主动**把收入分类删光（[]），导入之后再进来不该被补回默认。
+     `undefined` 和 `[]` 必须分得清 —— 混为一谈就等于跟用户的选择对抗。 */
+  cap('seq.income.emptyInCatsKept', () => {
+    loadSeed()
+    db.IN_CATS.length = 0
+    const text = M.exportText()
+    db.IN_CATS = ['会被替换掉']
+    M.importSnapshot(text)
+    return { afterImport: db.IN_CATS.slice() }
   })
 
   return out
