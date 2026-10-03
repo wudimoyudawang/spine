@@ -69,6 +69,8 @@ async function collect(M) {
        对拍的取材脚本要能**看得见**新行为，否则「收入」这一整块就在回归网之外。 */
     dirOf, isIncome, dirName, monthSummary, moneyIn, addMoney, commitMoneyText,
     addCat, renameCat, delCat, DEFAULT_IN_CATS,
+    /* 打开应用先看哪一页（2026-10-04 加） */
+    setHomePage, applyHomePage,
     quadOf, setQuad, quadName, quadTone, quadColorOf, quadVarStyle, setQuadColor,
     FREQ_UNITS, parseFreq, freqText,
     parseDatePhrase, firstNumber, restOf, resolveCapture, describeCapture,
@@ -869,6 +871,29 @@ async function collect(M) {
     db.IN_CATS = ['会被替换掉']
     M.importSnapshot(text)
     return { afterImport: db.IN_CATS.slice() }
+  })
+
+  /* ============ 「打开应用先看哪一页」（2026-10-04 加）============
+     三档：'' = 上次停留 / 'today' / 'ledger'。
+     **默认那一档必须什么都不做** —— 它代表的是「这一条加进来之前的行为」，
+     这里要是动了 `CURRENT`，老用户升级之后落地页就被悄悄换掉了。
+     会改 db.CURRENT，所以放 seq 组，最后收回 'today'。 */
+  cap('seq.homePage', () => {
+    loadSeed()
+    const r = []
+    db.CURRENT = 'review'
+    /* 空串 = 上次停留：一动不动 */
+    r.push(setHomePage(''), applyHomePage(), db.CURRENT)
+    /* 选了首页就一律落它，上次停在哪儿不算数 */
+    r.push(setHomePage('ledger'), applyHomePage(), db.CURRENT)
+    db.CURRENT = 'quadrant'
+    r.push(applyHomePage(), db.CURRENT)
+    r.push(setHomePage('today'), applyHomePage(), db.CURRENT)
+    /* 非法值、以及不是首页候选的值，一律回「上次停留」，不抛错 */
+    r.push(setHomePage('inbox'), setHomePage('nope'), setHomePage(null), setHomePage(), db.HOME_PAGE)
+    r.push(applyHomePage(), db.CURRENT)
+    db.CURRENT = 'today'
+    return r
   })
 
   return out

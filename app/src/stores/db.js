@@ -154,6 +154,16 @@ export const db = reactive({
      归档时少写一个键，老档案读回来也不会出错。） */
   PAY_OPEN: false,
   PAY_DIR: 'out',
+  /* 「打开应用先看哪一页」（2026-10-04 加）。三档：
+       ''        上次停留（**默认**，也是这一条加进之前的行为）
+       'today'   今日
+       'ledger'  记账
+     为什么默认是「上次停留」而不是「今日」：这一条加进来之前，`CURRENT` 从存储里
+     恢复回来，所以关掉再打开**回到你上次待的那一页**。默认改成「今日」等于
+     悄悄改掉所有人的习惯 —— 而 AGENTS.md 6.3 那条是「行为变更能不改就不改」。
+     进 UI_KEYS：这是「我这台设备打开先看什么」，跟着设备走，不该跟着档案走
+     （档案是数据，不是偏好）。 */
+  HOME_PAGE: '',
   /* 「记一笔」那排胶囊：哪些进这一排、按什么顺序。
      存成一张**独立的偏好表**，不去动 CAPTURE_MODES / RECORD_TYPES 本身 ——
      那两个是「有什么可记」（数据），这张是「你想怎么摆」（偏好）。
@@ -195,7 +205,7 @@ export const DATA_KEYS = ['ITEMS', 'HABIT_LOGS', 'INBOX', 'NOTES', 'NOTE_PROMPTS
  * （importSnapshot 里把 CURRENT 显式还原回去了）。
  * 所以「跟着设备走」是**结果**，不是「没写进文件」——原来那句注释说的是前者、写成了后者。
  * 另外 replaceAll（导入的整体替换）只换 DATA_KEYS，不碰 UI_KEYS 里这些。 */
-export const UI_KEYS = ['CURRENT', 'DOMAIN_ID', 'CAPTURE_MODE', 'CAP_AUTO_CLOSE', 'TICK_DONE', 'NOTIFY_ON']
+export const UI_KEYS = ['CURRENT', 'DOMAIN_ID', 'CAPTURE_MODE', 'CAP_AUTO_CLOSE', 'TICK_DONE', 'NOTIFY_ON', 'HOME_PAGE']
 
 export function loadSeed() {
   const d = deepCopy(SEED_DATA)
@@ -1121,6 +1131,28 @@ export function go(name) {
      看起来像「这个页面少了东西」，而不是「我上次看到这儿」。
      duration 0 是瞬时的：切页本来就该直接落在头上，动画只会让人等着。 */
   try { uni.pageScrollTo({ scrollTop: 0, duration: 0 }) } catch (e) {}
+}
+
+/* 「打开应用先看哪一页」的设置值。只认 today / ledger，别的（含空串）
+   一律回「上次停留」。非法值不报错、静默回默认 —— 它是界面偏好，
+   为它弹一句提示比不管它更烦。 */
+export function setHomePage(v) {
+  const s = String(v || '')
+  db.HOME_PAGE = (s === 'today' || s === 'ledger') ? s : ''
+  return db.HOME_PAGE
+}
+
+/* 冷启动时按设置把落地页盖掉。**只在 main.js 里、`loadState()` 之后调一次。**
+ *
+ * 为什么不在 `loadState()` 里面顺手做：`loadState` 还被「从备份恢复」那条路
+ * 间接用着（见 restoreBackup 的说明），在那里盖 CURRENT 会变成
+ * 「恢复一份上周的备份，人也被踢回首页」—— 那是两件事。
+ *
+ * 空串 = 不动 `CURRENT`，也就是「回到上次待的那一页」，和加这一条之前一样。 */
+export function applyHomePage() {
+  const h = db.HOME_PAGE
+  if (h === 'today' || h === 'ledger') db.CURRENT = h
+  return db.CURRENT
 }
 
 /* ---------------- 写 ---------------- */
