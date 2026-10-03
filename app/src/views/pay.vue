@@ -1,38 +1,30 @@
 <template>
-  <!-- 记账录入页：**整页浮层**，不是底栏里的一格。
-       为什么是浮层而不是 pages 里的一个新页面：这一页要盖住底栏
-       （截图里它没有底栏，四格加上那颗加号会把键盘挤上去），
-       而「盖住底栏」这件事项目里已有现成做法 —— 和 CaptureSheet 同一个形状。
-       它也不进 pages/index.vue 那 9 个视图：那些是 v-show 切来切去的同级页面，
-       这一页是「从哪儿进来、返回就回哪儿」的临时态。 -->
-  <view v-if="db.PAY_OPEN" class="paywrap" :class="'is-' + dir">
-    <!-- 顶栏：返回 / 支出·收入 / 看账本 -->
-    <view class="paytop">
-      <view class="tbtn" @click="close">
-        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-             stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M15 4.5 7.5 12 15 19.5" />
-        </svg>
-      </view>
+  <!-- 记一笔：**记账那一格的第二个镜头**，不是一个浮层。
+       （2026-10-04 先做成了整页浮层，宇随后要求「记账默认进入记一笔，
+       进入记一笔的时候保留『记账-记一笔』」—— 那个两格切换器要一直在，
+       所以它必须是个和「记账」平级的正常页面，不是盖在上面的临时态。）
+       浮层那版还有个副作用：顶栏只有返回箭头，两页之间没法互相看见。 -->
+  <view class="page pay-page" :class="'is-' + dir">
+    <PageHead title="记一笔" />
 
-      <!-- 只有支出 / 收入两格。截图里还有「转账」，但转账要有账户体系
-           （转出账户 → 转入账户），数据里一个字都没有 —— 放一个点了没反应的
-           tab，比不放更糟（仓库里「不许显示假交互」是硬规矩）。 -->
-      <view class="dseg">
-        <view class="dseg-b" :class="{ 'is-on': dir === 'out' }" @click="setDir('out')">
-          <text class="dseg-t">支出</text>
-        </view>
-        <view class="dseg-b" :class="{ 'is-on': dir === 'in' }" @click="setDir('in')">
-          <text class="dseg-t">收入</text>
-        </view>
-      </view>
+    <!-- 镜头：记账 / 记一笔。和「收集 / 随心记」用的是同一套（ViewSeg 的 group）。
+         **两页上各有一颗、位置一样** —— 切过去的时候它不跳，才知道自己还在同一格底下。 -->
+    <ViewSeg group="money" />
 
-      <view class="tbtn" @click="toLedger">
-        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-             stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M4.5 5.2A1.7 1.7 0 0 1 6.2 3.5h12.3v17H6.2a1.7 1.7 0 0 1-1.7-1.7z" />
-          <path d="M8 3.5v17M11.5 7.5h4M11.5 11h4" />
-        </svg>
+    <!-- 方向：支出 / 收入。
+         它切的是**下面那一本分类清单**（两份清单各管各的），所以贴着网格放 ——
+         放在页头的话，隔了半个屏幕，「它改了什么」要靠想。
+         小一号 + 窄（和记账页那颗「支出/收入」同款）：它是这一页的第二层，
+         不是和上面那颗镜头并列的东西。 -->
+    <view class="seg blk-seg dirseg">
+      <view
+        v-for="d in PAY_DIRS"
+        :key="d.k"
+        class="seg-b"
+        :class="{ 'is-on': dir === d.k }"
+        @click="setDir(d.k)"
+      >
+        <text class="seg-t">{{ d.n }}</text>
       </view>
     </view>
 
@@ -62,8 +54,8 @@
       </view>
     </view>
 
-    <!-- 下半屏钉死：金额卡 + 自绘键盘。不聚焦任何 input，
-         所以不会冒出系统键盘把键盘区顶掉一半。 -->
+    <!-- 金额卡 + 自绘键盘，钉在这一页的最下面。
+         不聚焦任何 input，所以不会冒出系统键盘把键盘区顶掉一半。 -->
     <view class="foot">
       <view class="amt">
         <view class="amt-l">
@@ -124,13 +116,15 @@
 
 <script setup>
 import { computed, ref, watch } from 'vue'
-import { db, TODAY, money, fmtCN, catList, addMoney, closePay, go, saveState } from '../stores/db'
-import CatIcon from './CatIcon.vue'
-import CatSheet from './CatSheet.vue'
+import { db, TODAY, money, fmtCN, catList, addMoney, go, saveState, PAY_DIRS } from '../stores/db'
+import PageHead from '../components/PageHead.vue'
+import ViewSeg from '../components/ViewSeg.vue'
+import CatIcon from '../components/CatIcon.vue'
+import CatSheet from '../components/CatSheet.vue'
 import { toast } from '../lib/ui'
 
-/* 方向跟着 db 走（不是本地 ref）：底栏那个加号面板点「记账」时
-   要把方向一起带进来（openPay('out')），本地 ref 接不住那个入参。 */
+/* 方向跟着 db 走（不是本地 ref）：从外面进来时由 `openPay(dir)` 把它定下来，
+   本地 ref 接不住那个入参。 */
 const dir = computed(function () { return db.PAY_DIR === 'in' ? 'in' : 'out' })
 
 const cats = computed(function () { return catList(dir.value) })
@@ -210,13 +204,16 @@ function commit(again) {
   if (again) {
     /* 「保存再记」保留方向、分类和日期，只清金额和备注 ——
        连着记几笔同类（一顿饭分两次付）时不用每次重挑分类。
-       「完成」把整页收掉，「保存再记」留在原地。 */
+       「完成」走人，「保存再记」留在原地。 */
     amount.value = ''
     note.value = ''
     toast(msg)
     return
   }
-  closePay()
+  /* 「完成」= 记下 + 去记账页。原来浮层那版是「关掉浮层」，现在没有「关掉」
+     这回事了，所以给它一个自然的去处：记账页的最近流水里正好能看到刚记的这一笔，
+     那比回到一个空键盘上更像「记完了」。 */
+  go('ledger')
   toast(msg)
 }
 
@@ -237,24 +234,16 @@ function onDate(e) {
   date.value = e.detail.value || TODAY
 }
 
-function close() {
-  /* 返回不弹「要丢弃吗」。这一页没有需要保护的长草稿 ——
-     金额是按几下键的事，重按比每次返回都确认一遍快；
-     真要保存，「完成」就在右下角那颗。 */
-  closePay()
-}
-
-function toLedger() {
-  closePay()
-  go('ledger')
-}
-
-/* 每次打开都从头开始：分类空着（必选、不预选，和记账原来的规矩一致）、
+/* 每次**进来**都从头开始：分类空着（必选、不预选，和记账原来的规矩一致）、
    金额和备注清空、日期回到今天。
    日期**不记住上次那个** —— 补记上周的一笔之后忘了改回来，
-   下次记今天就会落到上周，那种错在流水里才看得出来。 */
-watch(() => db.PAY_OPEN, function (v) {
-  if (!v) return
+   下次记今天就会落到上周，那种错在流水里才看得出来。
+
+   **方向不在这里重置**（它归 `openPay(dir)` 管）：从底栏/今日页/空间页进来时
+   归零成「支出」，而在「记账」和「记一笔」两个镜头之间来回切时保持不动 ——
+   后者是同一格底下的切换，每次都被按回「支出」等于跟人作对。 */
+watch(() => db.CURRENT, function (v) {
+  if (v !== 'pay') return
   picked.value = ''
   amount.value = ''
   note.value = ''
@@ -264,80 +253,28 @@ watch(() => db.PAY_OPEN, function (v) {
 </script>
 
 <style scoped>
-/* 整页。宽度守手机宽度（fixed 元素不跟着 .sp-root 的 max-width 走）——
-   在电脑浏览器里打开时，它不该被拉成一整条。 */
-.paywrap {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  /* 底栏是 30、捕获面板是 70、通用弹窗是 80 —— 夹在中间：
-     从面板点「记账」时面板已经先收了，但 CatSheet 要能盖在这一页上面。 */
-  z-index: 75;
-  max-width: var(--app-w, 430px);
-  margin: 0 auto;
+/* 这一页要**撑满一屏、把键盘钉在最下面** —— 键盘页的键必须在拇指够得着的地方，
+   不能跟着内容往上飘（内容矮的时候，键浮在半空看着就坏了）。
+   高度用 100vh 减掉底栏：底栏是 fixed 的，不参与文档流。 */
+.pay-page {
   display: flex;
   flex-direction: column;
-  background: var(--bg);
-  /* 键盘区不许被挤出去，所以整页不滚，滚的只有中间的分类网格 */
-  overflow: hidden;
+  min-height: calc(100vh - var(--tabbar-h, 54px) - env(safe-area-inset-bottom));
+  /* 底栏 + 一点点缝。`.page` 那份 76px 是给「行尾按钮别被浮起来的加号压住」留的，
+     这一页最后一行是键盘，不需要那 22px 余量。 */
+  padding-bottom: calc(var(--tabbar-h, 54px) + 6px + env(safe-area-inset-bottom));
 }
 
-/* ---- 顶栏 ---- */
-.paytop {
+/* 方向那颗：窄的，贴着网格左对齐。 */
+.dirseg {
   flex: none;
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  padding: 8px 6px 6px;
+  width: 148px;
+  margin: 0 0 8px;
 }
-.tbtn {
-  flex: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  color: var(--text);
-}
-.tbtn:active { background: var(--line); }
-.ic { width: 22px; height: 22px; }
-
-/* 支出 / 收入两格。画法照 `base.scss` 的 `.seg`，但选中色要跟着方向走、
-   不能用全局 accent，所以这一份留在本组件里（scoped 特异性高于全局）。 */
-.dseg {
-  /* 定宽 + flex:none，不靠 flex-grow —— 靠 grow 撑到 max-width 之后
-     两端 auto 外边距分到的是「剩下的」空白，居中不稳（试过，偏左）。
-     定宽之后 44 + auto + 176 + auto + 44 必然平分左右，居中是可算的。 */
-  flex: none;
-  width: 176px;
-  display: flex;
-  flex-direction: row;
-  align-self: center;
-  /* 左右 auto 把它压在两个 44px 图标钮的正中间 ——
-     不加的话它贴着返回箭头，看着像「返回」的一部分。 */
-  margin: 0 auto;
-  padding: 3px;
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: 10px;
-}
-.dseg-b {
-  display: flex;
-  flex: 1 1 0;
-  min-width: 0;
-  align-items: center;
-  justify-content: center;
-  min-height: 32px;
-  border-radius: 8px;
-}
-.dseg-t { font-size: 13px; color: var(--sub); }
-.is-out .dseg-b.is-on { background: var(--danger); }
-.is-in .dseg-b.is-on { background: var(--ok); }
-.is-out .dseg-b.is-on .dseg-t,
-.is-in .dseg-b.is-on .dseg-t { color: #fff; font-weight: 500; }
+/* 支出红、收入绿（和金额数字、选中的分类格同一套）。
+   只在这一页里覆盖 `.seg-b.is-on` 那颗蓝的。 */
+.is-out .dirseg .seg-b.is-on { background: var(--danger); }
+.is-in .dirseg .seg-b.is-on { background: var(--ok); }
 
 /* ---- 分类网格 ---- */
 .grid {
@@ -348,7 +285,7 @@ watch(() => db.PAY_OPEN, function (v) {
   flex-direction: row;
   flex-wrap: wrap;
   align-content: flex-start;
-  padding: 4px 10px 10px;
+  margin: 0 -4px;
 }
 /* 一行 5 格（照截图）。用百分比宽度而不是 grid：uni-app 各端对 display:grid
    的支持不一致，flex + 百分比最稳。 */
@@ -406,11 +343,8 @@ watch(() => db.PAY_OPEN, function (v) {
 }
 .gempty-t { font-size: 13px; color: var(--muted); }
 
-/* ---- 下半屏 ---- */
-.foot {
-  flex: none;
-  padding: 0 10px calc(8px + env(safe-area-inset-bottom));
-}
+/* ---- 金额卡 + 键盘 ---- */
+.foot { flex: none; }
 
 .amt {
   display: flex;
@@ -497,6 +431,7 @@ watch(() => db.PAY_OPEN, function (v) {
   background: var(--bg);
   color: var(--sub);
 }
+.ic { width: 22px; height: 22px; }
 .ic-cal { width: 13px; height: 13px; }
 .amt-date-t { margin-left: 4px; font-size: 11px; color: var(--sub); }
 

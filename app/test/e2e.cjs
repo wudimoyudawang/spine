@@ -258,11 +258,14 @@ async function main() {
     check('切回「待办」档', await goTab('待办'), 'true')
     check('切回来待办又铺出来了', await cdp.eval("document.querySelector('.block').innerText.indexOf('交上月报销单')>=0"), 'true')
 
-    /* 金额行整行可点 → 记账页（「去记账」三个字删了，底栏已经有那一格）。 */
+    /* 金额行整行可点 → **记一笔**（记账那一格的默认镜头）。
+       「去记账」三个字删了，底栏已经有那一格。 */
     const toLedgerByLine = await cdp.eval("(()=>{const m=document.querySelector('.moneyline');if(!m)return false;m.click();return true})()")
     await cdp.wait(400)
-    check('点金额行进记账页', toLedgerByLine, 'true')
-    check('确实到了记账页（页头两格在）', await cdp.eval(segTexts + ".join('|')"), '记账|记一笔')
+    check('点金额行进记一笔', toLedgerByLine, 'true')
+    check('确实到了记一笔（页头两格在，且停在第一格）', await cdp.eval(segTexts + ".join('|')"), '记一笔|记账')
+    check('底栏那格也亮着（记账格底下两个镜头都算选中）',
+      await cdp.eval("(()=>{const n=document.querySelectorAll('.tabbar .navi')[3];return n&&n.className.indexOf('is-on')>=0?'true':'false'})()"), 'true')
     await clickTab(0)
 
     console.log('')
@@ -410,68 +413,98 @@ async function main() {
     await clickTab(1)
     check('再点「收集」格回到收集镜头', await cdp.eval("document.body.innerText.indexOf('收件箱') >= 0 ? 'true' : 'false'"), 'true')
 
-    /* ---- 记账那一格 ---- */
-    await clickTab(3); await shotCheck('7-ledger', '记账')
-    check('记账页头两格', await cdp.eval(segTexts + ".join('|')"), '记账|记一笔')
-    /* 第 2 格是**一扇门**，不是模式：点了把录入浮层压上来，关掉还在这儿。 */
-    const openPayFromHead = await cdp.eval(`(() => {
-      const b = Array.from(document.querySelectorAll('.seg-b'))
-        .filter(x => x.offsetParent !== null).find(x => x.innerText.trim() === '记一笔');
-      if (!b) return false; b.click(); return true;
-    })()`)
-    await cdp.wait(400)
-    check('记账页头点「记一笔」开录入页', openPayFromHead, 'true')
-    check('录入页真的起来了', await cdp.eval("!!document.querySelector('.paywrap')"), 'true')
-    await cdp.shot('7e-ledger-to-pay', SHOTS)
-    await cdp.eval("(()=>{const b=document.querySelector('.paywrap .tbtn');if(b)b.click();return !!b})()")
-    await cdp.wait(350)
-    check('关掉录入页仍停在记账页', await cdp.eval("!!document.querySelector('.paywrap')"), 'false')
+    /* ---- 记账那一格：两个镜头（记一笔 / 记账）----
+       宇定的默认是**记一笔**（记账最高频的动作），所以点底栏那格落在它上面。 */
+    await clickTab(3)
+    check('点「记账」格落在「记一笔」（默认镜头）',
+      await cdp.eval("document.querySelector('.pay-page') && document.querySelector('.pay-page').offsetParent !== null ? 'pay' : 'other'"), 'pay')
+    await shotCheck('7b-money-out', '记一笔')
+    check('记一笔页头两格（记一笔 | 记账）', await cdp.eval(segTexts + ".join('|')"), '记一笔|记账')
+    check('记一笔页上有方向两格，默认停在支出',
+      await cdp.eval("(()=>{const t=Array.from(document.querySelectorAll('.dirseg .seg-b')).map(x=>x.innerText.trim());return t.length+':'+t.join('|')})()"), '2:支出|收入')
+    check('金额起始是 ¥0', await cdp.eval("document.querySelector('.pay-page .amt-v').innerText"), '¥0')
+    /* 这一页**有底栏**（它是个正常镜头，不是浮层）——
+       和上一版（浮层盖住底栏）是刻意改的：那个两格切换器要一直在。
+       ⚠️ 不能用 `offsetParent !== null` 判底栏可见：`position: fixed` 的元素
+       `offsetParent` **恒为 null**（规范如此），会被误判成「看不见」。
+       用盒子高度。 */
+    check('记一笔是正常一页（底栏在，不是浮层）',
+      await cdp.eval("(()=>{const w=document.querySelector('.paywrap');const t=document.querySelector('.tabbar');const vis=!!(t&&t.getBoundingClientRect().height>0);return (!w&&vis)?'true':'false'})()"), 'true')
 
-    /* ---- 记账录入页（整页浮层）---------------------------------------------
-       它和上面那 9 个视图不是一回事：不进底栏、从「记一笔」点进来、记完返回。
-       所以它的回归必须**真的走一遍「点进去 → 挑分类 → 按键 → 完成 → 数落库」**，
-       光截图看不出「键按了但没记上」。
-       2026-10-04 加这一组：新页面上线时它不在任何回归网里。 */
-    const openPay = await cdp.eval(`(() => {
+    /* 切到「记账」格：**同一颗分段器、同一个位置**，切过去它不跳。 */
+    check('切到「记账」格', await cdp.eval(`(() => {
+      const b = Array.from(document.querySelectorAll('.seg-b'))
+        .filter(x => x.offsetParent !== null).find(x => x.innerText.trim() === '记账');
+      if (!b) return false; b.click(); return true;
+    })()`), 'true')
+    await cdp.wait(400)
+    check('记账页头还是那两格', await cdp.eval(segTexts + ".join('|')"), '记一笔|记账')
+    check('记账页的东西在（本月 / 最近流水）',
+      await cdp.eval("document.body.innerText.indexOf('最近流水') >= 0 ? 'true' : 'false'"), 'true')
+    await cdp.shot('7-ledger', SHOTS)
+
+    /* 再切回「记一笔」——**方向要保持不动**（格内切换不重置方向）。
+       重置的话，收/支来回看两遍就把人选的方向按回「支出」了。 */
+    await cdp.eval(`(() => {
       const b = Array.from(document.querySelectorAll('.seg-b'))
         .filter(x => x.offsetParent !== null).find(x => x.innerText.trim() === '记一笔');
-      if (!b) return false; b.click(); return true;
+      if (b) b.click(); return !!b;
     })()`)
     await cdp.wait(400)
-    check('从记账页点开「记一笔」', openPay, 'true')
-    check('录入页是整页浮层（盖住底栏）',
-      await cdp.eval("!!document.querySelector('.paywrap') && !document.querySelector('.paywrap .tabbar')"), 'true')
-    check('录入页有支出/收入两格，默认停在支出',
-      await cdp.eval("(()=>{const t=Array.from(document.querySelectorAll('.dseg-b'));return t.length+':'+(t[0]?(t[0].innerText.trim()+''):'')})()"), '2:支出')
-    check('金额起始是 ¥0', await cdp.eval("document.querySelector('.amt-v').innerText"), '¥0')
-    /* 分段器要**真的居中**：它被夹在两个 44px 图标钮中间，靠 auto 外边距定位。
-       左右留白不相等的话，它看着像贴着返回箭头的一部分。
-       （2026-10-04 就是先写成 `flex:1 + max-width`，看着偏左，量出来才发现
-         auto 外边距分到的是 grow 之后剩下的空白 —— 所以这条断言留着。）
-       ⚠️ 这里**必须返回字符串**：`check` 是 indexOf 的包含判断，
-       返回对象的话 `String(obj)` 会变成 `[object Object]`，断言恒假
-       （写这条时就踩了一次）。 */
-    const segGeom = await cdp.eval(`(() => {
-      const d = document.querySelector('.dseg').getBoundingClientRect();
-      const p = document.querySelector('.paytop').getBoundingClientRect();
-      const l = Math.round(d.left - p.left), r = Math.round(p.right - d.right);
-      const w = Math.round(d.width);
-      return (Math.abs(l - r) <= 2 && w >= 150 ? 'true' : 'false') +
-        ' 左=' + l + ' 右=' + r + ' 宽=' + w;
-    })()`)
-    check('顶栏分段器居中且够宽', segGeom, 'true')
+    check('切回「记一笔」',
+      await cdp.eval("(()=>{const p=document.querySelector('.pay-page');return (p&&p.offsetParent!==null)?'true':'false'})()"), 'true')
+    await cdp.shot('7e-ledger-to-pay', SHOTS)
+
+    /* ---- 记一笔那一页走一遍完整链路 -----------------------------------------
+       「点进去 → 挑分类 → 按键 → 完成 → 数落库」。
+       光截图看不出「键按了但没记上」，所以每一步都走真实点击。 */
+    check('方向两格是 支出|收入，默认停在支出',
+      await cdp.eval("(()=>{const t=Array.from(document.querySelectorAll('.dirseg .seg-b')).map(x=>x.innerText.trim());return t.length+':'+t.join('|')})()"), '2:支出|收入')
+    check('方向那颗是**窄的**（第二层，不和上面那颗镜头一样宽）',
+      await cdp.eval(`(() => {
+        const d = document.querySelector('.dirseg').getBoundingClientRect();
+        const s = document.querySelector('.pay-page .seg').getBoundingClientRect();
+        return (d.width < s.width - 100 ? 'true' : 'false') + ' 宽=' + Math.round(d.width) + '/' + Math.round(s.width);
+      })()`), 'true')
     await cdp.shot('7b-money-out', SHOTS)
+
+    /* ---- 真机尺寸下量一遍：键盘会不会被底栏挤出去 ----
+       这一版把「记一笔」从浮层改成了正常页面，**底栏从此常驻**，
+       于是多花掉 54px 高度 —— 键盘、金额卡、分类网格三样要一起挤进去。
+       桌面视口 1508px 高，这一页永远「装得下」，在它上面量不出手机上会不会挤。
+       换成 390×844（iPhone 14 那一档）再量。 */
+    await cdp.send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true })
+    await cdp.wait(500)
+    const mob = await cdp.eval(`(() => {
+      const g = document.querySelector('.pay-page .grid').getBoundingClientRect();
+      const a = document.querySelector('.pay-page .amt').getBoundingClientRect();
+      const k = document.querySelector('.pay-page .keys').getBoundingClientRect();
+      const t = document.querySelector('.tabbar').getBoundingClientRect();
+      return JSON.stringify({
+        grid: Math.round(g.height), amtTop: Math.round(a.top), keysBottom: Math.round(k.bottom),
+        barTop: Math.round(t.top), vh: Math.round(window.innerHeight)
+      });
+    })()`)
+    const mb = JSON.parse(mob)
+    check('手机尺寸下键盘不被底栏压住（键底 ' + mb.keysBottom + ' / 栏顶 ' + mb.barTop + '）',
+      mb.keysBottom <= mb.barTop + 1 ? 'true' : mob, 'true')
+    check('手机尺寸下金额卡和键盘都在视口里（卡顶 ' + mb.amtTop + ' / 视口 ' + mb.vh + '）',
+      mb.amtTop > 0 && mb.amtTop < mb.vh ? 'true' : mob, 'true')
+    check('手机尺寸下分类网格还有可用高度（' + mb.grid + 'px）', mb.grid >= 120 ? 'true' : mob, 'true')
+    await cdp.shot('7b2-pay-phone', SHOTS)
+    await cdp.send('Emulation.clearDeviceMetricsOverride', {})
+    await cdp.wait(300)
 
     /* 切到收入：**分类清单要换成另一套**（照截图，收入是理财/副业/工资），
        而且配色跟着变（支出红 / 收入绿）。 */
     await cdp.eval(`(() => {
-      const b = Array.from(document.querySelectorAll('.dseg-b')).find(x => x.innerText.trim() === '收入');
+      const b = Array.from(document.querySelectorAll('.dirseg .seg-b')).find(x => x.innerText.trim() === '收入');
       if (b) b.click(); return !!b;
     })()`)
     await cdp.wait(300)
     const inCats = await cdp.eval("Array.from(document.querySelectorAll('.cell:not(.cell-set) .cell-t')).map(x=>x.innerText).join(',')")
     check('切到收入后分类换成收入那一套', inCats, '工资')
-    check('录入页方向类名切到 is-in', await cdp.eval("!!document.querySelector('.paywrap.is-in')"), 'true')
+    check('这一页方向类名切到 is-in', await cdp.eval("!!document.querySelector('.pay-page.is-in')"), 'true')
     await cdp.shot('7c-money-in', SHOTS)
 
     /* 挑第一个分类 → 按 1 2 3 → 完成。三步都走真实点击。 */
@@ -491,7 +524,11 @@ async function main() {
     })()`)
     await cdp.wait(500)
     check('点「完成」', doneBtn, 'true')
-    check('记完这一页自己收起来', await cdp.eval("!!document.querySelector('.paywrap')"), 'false')
+    /* 「完成」= 记下 + 去**记账页**（原来浮层那版是「关掉浮层」，
+       现在没有「关掉」这回事了）。记账页的最近流水里正好能看到刚记的这一笔。
+       ⚠️ 不能用「`.pay-page` 还在不在」判：视图是 v-show 切的，它**留在 DOM 里**
+       只是 display:none。判「现在看得见哪一页」要看文本 —— innerText 不带隐藏的。 */
+    check('记完落在记账页', await cdp.eval("document.body.innerText.indexOf('最近流水') >= 0 ? 'true' : 'false'"), 'true')
     const afterPay = await cdp.eval("document.body.innerText.replace(/\\s+/g,' ')")
     check('这一笔记进了流水（收入 +¥123）', afterPay.indexOf('+¥123') >= 0 ? 'true' : afterPay.slice(0, 300), 'true')
     await cdp.shot('7d-ledger-after-pay', SHOTS)
@@ -539,12 +576,12 @@ async function main() {
        而那正是这一条的全部意义。 */
     check('设置里有「打开先看」三档',
       await cdp.eval("Array.from(document.querySelectorAll('.homechip')).map(x=>x.innerText.trim()).join('|')"),
-      '上次停留|今日|记账')
+      '上次停留|今日|记一笔')
     const pickHome = await cdp.eval(`(() => {
-      const b = Array.from(document.querySelectorAll('.homechip')).find(x => x.innerText.trim() === '记账');
+      const b = Array.from(document.querySelectorAll('.homechip')).find(x => x.innerText.trim() === '记一笔');
       if (!b) return false; b.click(); return true;
     })()`)
-    check('选「记账」', pickHome, 'true')
+    check('选「记一笔」', pickHome, 'true')
     await cdp.wait(400)
     await cdp.send('Page.reload', {})
     await cdp.wait(1500)
@@ -554,9 +591,9 @@ async function main() {
       if (!up) await cdp.wait(300)
     }
     const landed = await cdp.eval(
-      "document.body.innerText.indexOf('最近流水') >= 0 ? 'ledger' : " +
+      "document.querySelector('.pay-page') ? 'pay' : " +
       "(document.body.innerText.indexOf('今天记下的') >= 0 ? 'today' : 'other')")
-    check('重载之后落在「记账」（打开先看=记账）', landed, 'ledger')
+    check('重载之后落在「记一笔」（打开先看=记一笔）', landed, 'pay')
     await cdp.shot('12-home-ledger', SHOTS)
   } finally {
     if (cdp && !KEEP_OPEN) cdp.close()

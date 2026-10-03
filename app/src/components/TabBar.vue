@@ -30,7 +30,7 @@
 </template>
 
 <script setup>
-import { db, go, openCapture } from '../stores/db'
+import { db, go, openCapture, openPay } from '../stores/db'
 import PlusIcon from './PlusIcon.vue'
 
 /* 四个 Tab 分列「记一笔」两侧，它正好落在正中间。
@@ -55,7 +55,9 @@ const RIGHT = [
 const FAMILY = {
   today: ['today', 'calendar', 'quadrant'],
   /* 收集那一格底下是收件箱和随心记（页头分段器切）。 */
-  inbox: ['inbox', 'notes']
+  inbox: ['inbox', 'notes'],
+  /* 记账那一格底下是记一笔和记账页。 */
+  ledger: ['pay', 'ledger']
 }
 
 function isOn(k) {
@@ -74,7 +76,14 @@ function label(k, t) {
   return n ? t + ' ' + n : t
 }
 
-function pick(k) { go(k) }
+/* 点一格落在它底下的**默认镜头**上。
+   今日和收集的默认镜头就是第一格；记账那格也是第一格 ——
+   只是第一格叫「记一笔」不叫「记账」（宇定的：记账最高频的动作是记一笔）。
+   所以它走 `openPay('out')`：既落到那一页，也把方向归零成「支出」。 */
+function pick(k) {
+  if (k === 'ledger') { openPay('out'); return }
+  go(k)
+}
 </script>
 
 <style scoped>
@@ -100,7 +109,7 @@ function pick(k) { go(k) }
   min-width: 0;
   align-items: center;
   justify-content: center;
-  min-height: 54px;
+  min-height: var(--tabbar-h, 54px);
   padding: 4px 2px;
   color: var(--sub);
   font-size: 11px;

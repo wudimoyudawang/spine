@@ -69,8 +69,8 @@ async function collect(M) {
        对拍的取材脚本要能**看得见**新行为，否则「收入」这一整块就在回归网之外。 */
     dirOf, isIncome, dirName, monthSummary, moneyIn, addMoney, commitMoneyText,
     addCat, renameCat, delCat, DEFAULT_IN_CATS,
-    /* 打开应用先看哪一页（2026-10-04 加） */
-    setHomePage, applyHomePage,
+    /* 打开应用先看哪一页 / 去记一笔（2026-10-04 加） */
+    setHomePage, applyHomePage, openPay, PAY_DIRS,
     quadOf, setQuad, quadName, quadTone, quadColorOf, quadVarStyle, setQuadColor,
     FREQ_UNITS, parseFreq, freqText,
     parseDatePhrase, firstNumber, restOf, resolveCapture, describeCapture,
@@ -874,7 +874,7 @@ async function collect(M) {
   })
 
   /* ============ 「打开应用先看哪一页」（2026-10-04 加）============
-     三档：'' = 上次停留 / 'today' / 'ledger'。
+     三档：'' = 上次停留 / 'today' / 'pay'（记一笔 —— 记账那一格的默认镜头）。
      **默认那一档必须什么都不做** —— 它代表的是「这一条加进来之前的行为」，
      这里要是动了 `CURRENT`，老用户升级之后落地页就被悄悄换掉了。
      会改 db.CURRENT，所以放 seq 组，最后收回 'today'。 */
@@ -885,6 +885,10 @@ async function collect(M) {
     /* 空串 = 上次停留：一动不动 */
     r.push(setHomePage(''), applyHomePage(), db.CURRENT)
     /* 选了首页就一律落它，上次停在哪儿不算数 */
+    r.push(setHomePage('pay'), applyHomePage(), db.CURRENT)
+    /* 老值 'ledger' 归一到 'pay'：2026-10-04 之前那一档存的就是 'ledger'
+       （那时候记账那格的默认镜头是统计页）。不归一的话，设过它的人会被
+       静默退回「上次停留」—— 一个偏好被悄悄改掉，而他只会觉得「我明明设过」。 */
     r.push(setHomePage('ledger'), applyHomePage(), db.CURRENT)
     db.CURRENT = 'quadrant'
     r.push(applyHomePage(), db.CURRENT)
@@ -893,6 +897,26 @@ async function collect(M) {
     r.push(setHomePage('inbox'), setHomePage('nope'), setHomePage(null), setHomePage(), db.HOME_PAGE)
     r.push(applyHomePage(), db.CURRENT)
     db.CURRENT = 'today'
+    return r
+  })
+
+  /* 记账那一格的默认镜头是「记一笔」—— 点底栏那格走 openPay('out')：
+     既落到那一页，也把方向归零成「支出」。
+     （方向不记住上次那个：补记了一笔收入之后忘了改回来，下次记今天就会记成收入。） */
+  cap('seq.openPay', () => {
+    loadSeed()
+    db.CURRENT = 'today'
+    db.PAY_DIR = 'in'
+    const r = []
+    openPay('out')
+    r.push(db.CURRENT, db.PAY_DIR)
+    /* 不传 dir 就不动方向（格内切换走的是 go()，不经过这里） */
+    db.CURRENT = 'ledger'
+    openPay()
+    r.push(db.CURRENT, db.PAY_DIR)
+    /* 非法方向归零成支出，不是静默保留 */
+    openPay('nope')
+    r.push(db.PAY_DIR)
     return r
   })
 

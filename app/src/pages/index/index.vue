@@ -17,13 +17,12 @@
       <Spaces v-if="seen.spaces" v-show="db.CURRENT === 'spaces'" />
       <Review v-if="seen.review" v-show="db.CURRENT === 'review'" />
       <Ledger v-if="seen.ledger" v-show="db.CURRENT === 'ledger'" />
+      <!-- 记一笔和记账是**同一格底下的两个镜头**（2026-10-04）。 -->
+      <Pay v-if="seen.pay" v-show="db.CURRENT === 'pay'" />
       <Domain v-if="seen.domain" v-show="db.CURRENT === 'domain'" />
     </view>
 
     <CaptureSheet />
-    <!-- 记账录入页。**不进上面那排视图**：它是「从哪儿进来、返回就回哪儿」的
-         整页浮层（要盖住底栏），不是一个可以用底栏切过去的同级页面。 -->
-    <MoneyPage />
     <AddSheet />
     <EditSheet />
     <GoalSheet />
@@ -38,7 +37,6 @@ import { db, saveState, quadVarStyle } from '../../stores/db'
 
 import TabBar from '../../components/TabBar.vue'
 import CaptureSheet from '../../components/CaptureSheet.vue'
-import MoneyPage from '../../components/MoneyPage.vue'
 import AddSheet from '../../components/AddSheet.vue'
 import EditSheet from '../../components/EditSheet.vue'
 import GoalSheet from '../../components/GoalSheet.vue'
@@ -50,6 +48,7 @@ import Notes from '../../views/notes.vue'
 import Spaces from '../../views/spaces.vue'
 import Review from '../../views/review.vue'
 import Ledger from '../../views/ledger.vue'
+import Pay from '../../views/pay.vue'
 import Domain from '../../views/domain.vue'
 
 /* 懒渲染：第一次进某个页面才把它挂起来，之后再切回来只是显隐。

@@ -14368,11 +14368,14 @@
   "",
   "review",
   "review",
-  "ledger",
-  "ledger",
-  "ledger",
-  "ledger",
-  "ledger",
+  "pay",
+  "pay",
+  "pay",
+  "pay",
+  "pay",
+  "pay",
+  "pay",
+  "pay",
   "today",
   "today",
   "today",
@@ -14383,5 +14386,12 @@
   "",
   "today",
   "today"
+ ],
+ "seq.openPay": [
+  "pay",
+  "out",
+  "pay",
+  "out",
+  "out"
  ]
 }

@@ -6,10 +6,10 @@
     <ViewSeg />
 
     <!-- 今天花了多少。本月的合计也放这儿 —— 单看今天没参照。
-         整行可点 → 记账页。**不再写「去记账」三个字**：底栏已经有「记账」
-         那一格了，这儿再写一句就是同一件事的第二个入口（这个仓库一直在删的那种）。
+         整行可点 → **记一笔**（记账那一格的默认镜头）。**不再写「去记账」三个字**：
+         底栏已经有「记账」那一格了，这儿再写一句就是同一件事的第二个入口。
          右边那颗 › 是唯一的方向符号，有它就够说明「这一行能点」。 -->
-    <view class="moneyline" @click="go('ledger')">
+    <view class="moneyline" @click="openPay('out')">
       <text class="ml-s">今天</text>
       <text class="ml-b">{{ money(todaySum) }}</text>
       <text class="ml-s">· {{ todayLogs.length }} 笔</text>
@@ -145,7 +145,7 @@
 import { computed, ref } from 'vue'
 import {
   db, TODAY, money, go, fmtCNWide, pathPrefix, isLateRow, lateNote,
-  moneyTotalOf, openAdd, openEdit, openLogEdit, rowBody, dirOf,
+  moneyTotalOf, openAdd, openEdit, openLogEdit, rowBody, dirOf, openPay,
   openGoalAdd, openGoal, labelOf, todayTree, habitTree, goalTree,
   progressOf, domainName, saveState, quadOf, quadTone, rollRepeat
 } from '../stores/db'

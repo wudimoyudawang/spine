@@ -2,16 +2,10 @@
   <view class="page">
     <PageHead title="记账" />
 
-    <!-- 这一格底下的两格。**第 2 格不是模式，是一扇门** ——
-         点它把记账录入（整页浮层）压上来，关掉还是这一页。
-         所以它没有选中态：`记账` 是这一页唯一「在页」的状态，
-         给「记一笔」也做一个选中态就等于说这一页有两种模式，而它没有。
-         让它长得像一颗正常的格，是因为它和「记账」确实是并排的两个选择 ——
-         当下想记就点它，想看账就在这儿。 -->
-    <view class="seg blk-seg">
-      <view class="seg-b is-on"><text class="seg-t">记账</text></view>
-      <view class="seg-b" @click="openPay('out')"><text class="seg-t">记一笔</text></view>
-    </view>
+    <!-- 记一笔 / 记账。**和「记一笔」那一页上那颗是同一颗**（ViewSeg 的
+         `group="money"`），位置也一样 —— 切过去的时候它不跳，
+         才知道自己还在同一格底下。两格都是正常镜头，不是「一扇门」。 -->
+    <ViewSeg group="money" />
 
     <view class="block">
       <view class="block-h">
@@ -97,9 +91,10 @@
 import { computed, ref } from 'vue'
 import {
   db, TODAY, money, fmtCN, sumByCategory, monthSummary, dirOf, dirName,
-  openEdit, delArmed, openPay
+  openEdit, delArmed
 } from '../stores/db'
 import PageHead from '../components/PageHead.vue'
+import ViewSeg from '../components/ViewSeg.vue'
 import CatSheet from '../components/CatSheet.vue'
 import { toast, confirmDelete } from '../lib/ui'
 

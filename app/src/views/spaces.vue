@@ -364,7 +364,7 @@ import { computed, ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import {
   db, go, money, TODAY, pad2, summaryOf, recordTypesOf, togglePin, newDomain,
-  monthMoney,
+  monthMoney, openPay,
   storeFailed, importSnapshot, saveState, clearAllData,
   exportText, exportFileName, peekArchive, localCounts,
   backupList, restoreBackup,
@@ -405,7 +405,8 @@ function openDomain(d) {
 }
 
 function openMoney() {
-  go('ledger')
+  /* 记账那一格的默认镜头是「记一笔」（宇定的），所以这里也落它。 */
+  openPay('out')
 }
 
 /* ---------------- 新建领域 ---------------- */
@@ -486,12 +487,16 @@ function pickTick(v) {
 const HOME_OPTS = [
   { v: '', t: '上次停留' },
   { v: 'today', t: '今日' },
-  { v: 'ledger', t: '记账' }
+  /* 「记一笔」而不是「记账」：记账那一格底下有两个镜头（记一笔 / 记账），
+     而落地落的是**记一笔**（宇定的：记账最高频的动作是记一笔）。
+     写「记账」的话人会以为打开看到的是流水。 */
+  { v: 'pay', t: '记一笔' }
 ]
 function pickHome(v) {
   const got = setHomePage(v)
   saveState(true)
-  toast(got ? ('打开先看「' + (got === 'ledger' ? '记账' : '今日') + '」') : '打开先看「上次停留」')
+  const name = got === 'pay' ? '记一笔' : '今日'
+  toast(got ? ('打开先看「' + name + '」') : '打开先看「上次停留」')
 }
 
 /* ---------------- 习惯提醒 ----------------

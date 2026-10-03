@@ -36,6 +36,11 @@ page,
   --mask: rgba(31, 36, 48, .34);
   --r: 12px;
 
+  /* 底栏高度。TabBar 的 `.navi` 用的是同一个数 —— 两处各写一遍 54 的话，
+     改了一处另一处就悄悄不对（记一笔那一页要按它算「撑满一屏减掉底栏」，
+     差几个像素就是键盘浮在半空或者被底栏压住）。 */
+  --tabbar-h: 54px;
+
   /* 四象限的四个颜色（加各自的浅底）。
      这里是**兜底值** —— 真正的值由 index.vue 在根节点上用内联样式注入
      （db.QUAD_COLORS → quadVarStyle()），用户在设置里改的就是那份。
@@ -160,7 +165,10 @@ textarea {
  * 特异性高于这里，所以仍然赢。这是有意保留的：全局只放共性。 */
 
 .page {
-  padding: 14px 14px calc(76px + env(safe-area-inset-bottom));
+  /* 底部那块留白 = 底栏 + 22px 余量。
+     22px 是给「行尾的 × / + 别被浮起来的东西压住」留的 ——
+     记一笔那一页最后一行是键盘、不需要，所以在自己文件里覆盖掉。 */
+  padding: 14px 14px calc(var(--tabbar-h, 54px) + 22px + env(safe-area-inset-bottom));
 }
 
 .tag {
