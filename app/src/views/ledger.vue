@@ -5,31 +5,65 @@
     <view class="block">
       <view class="block-h">
         <text class="tag">本月</text>
-        <text class="block-note">{{ mm.count }} 笔</text>
+        <text class="block-note">{{ mm.out.count + mm.in.count }} 笔</text>
       </view>
+
+      <!-- 支出 / 收入切一格，下面的合计和柱状图一起跟着切。
+           不做成两块并排：并排之后两个柱状图各自只剩一半高度，
+           而「这个月花在哪儿了」才是打开这一页要看的那个问题。 -->
+      <view class="seg side-seg">
+        <view class="seg-b" :class="{ 'is-on': side === 'out' }" @click="side = 'out'">
+          <text class="seg-t">支出</text>
+        </view>
+        <view class="seg-b" :class="{ 'is-on': side === 'in' }" @click="side = 'in'">
+          <text class="seg-t">收入</text>
+        </view>
+      </view>
+
       <view class="stat">
-        <text class="stat-v">{{ money(monthSum) }}</text>
-        <text class="stat-s">支出合计</text>
+        <text class="stat-v" :class="'is-' + side">{{ money(cur.sum) }}</text>
+        <text class="stat-s">{{ sideName }}合计</text>
       </view>
-      <view v-if="!bars.length" class="empty"><text class="empty-t">这个月还没记账</text></view>
+
+      <view v-if="!bars.length" class="empty">
+        <text class="empty-t">这个月还没记{{ sideName }}</text>
+      </view>
       <view v-for="b in bars" :key="b.n" class="barrow">
         <text class="barrow-n">{{ b.n }}</text>
-        <view class="bar"><view class="bar-fill" :style="'width:' + b.w + '%'"></view></view>
+        <view class="bar"><view class="bar-fill" :class="'is-' + side" :style="'width:' + b.w + '%'"></view></view>
         <text class="barrow-v">{{ b.v }}</text>
+      </view>
+
+      <!-- 结余 = 收入 − 支出。可以负数 —— 花超了就该看见它是负的，
+           不做 0 截断（截断等于把「这个月透支了」这件事藏起来）。 -->
+      <view class="net">
+        <text class="net-k">结余</text>
+        <text class="net-v" :class="mm.net < 0 ? 'is-neg' : 'is-pos'">
+          {{ (mm.net < 0 ? '−' : '+') + money(Math.abs(mm.net)) }}
+        </text>
       </view>
     </view>
 
-    <!-- 记一笔的入口，输入框在品类那个弹层里（CatSheet）。
-         页面上不再常驻一个输入框：打开记账页最常看的是「这个月花了多少」，
-         其次才是记一笔 —— 记一笔多一步，换来统计和流水能往上提一截。 -->
-    <view class="block qe" @click="catOpen = true">
+    <!-- 记一笔进的是**整页录入**（有自绘键盘和分类图标网格）。
+         这一页从此只负责「看账」——记多一步，换来统计和流水能往上提一截。 -->
+    <view class="block qe" @click="openPay('out')">
       <view class="qe-row">
-        <text class="qe-k">记一笔 · 品类</text>
-        <text class="qe-v">{{ db.CATS.length }} 个品类</text>
+        <text class="qe-k">记一笔</text>
+        <text class="qe-v">支出 / 收入</text>
         <text class="qe-go">›</text>
       </view>
     </view>
 
+    <view class="block qe" @click="catOpen = true">
+      <view class="qe-row">
+        <text class="qe-k">品类</text>
+        <text class="qe-v">支出 {{ db.CATS.length }} 个 · 收入 {{ db.IN_CATS.length }} 个</text>
+        <text class="qe-go">›</text>
+      </view>
+    </view>
+
+    <!-- 从这一页进来管的是**支出**那份清单。收入那份在录入页的
+         「分类设置」格里 —— 那边切到收入 tab 再进去，管的就是收入那份。 -->
     <CatSheet :on="catOpen" @close="catOpen = false" />
 
     <view class="block">
@@ -38,15 +72,16 @@
         <text class="block-note">{{ flow.length }} 笔 · 点一行改</text>
       </view>
       <view v-if="!flow.length" class="empty">
-        <text class="empty-t">还没有记过支出</text>
-        <text class="empty-t">上面那个框写「32 午餐」就行</text>
+        <text class="empty-t">还没有记过账</text>
       </view>
       <view v-for="l in flow" :key="l.id" class="row">
         <view class="row-main" @click="edit(l)">
           <text class="row-t">{{ l.category || '未分类' }}</text>
-          <text class="row-m">{{ fmtCN(l.date) }}</text>
+          <text class="row-m">{{ fmtCN(l.date) }}<text v-if="l.note"> · {{ l.note }}</text></text>
         </view>
-        <text class="row-v">{{ money(l.value) }}</text>
+        <!-- ± 号是必要的，不是装饰：一行里光看「¥12000」分不出是进还是出，
+           而那正是扫一遍流水时第一个要回答的问题。颜色沿用同一套（支出红 / 收入绿）。 -->
+        <text class="row-v" :class="'is-' + dirOf(l)">{{ (dirOf(l) === 'in' ? '+' : '−') + money(l.value) }}</text>
         <view class="delbtn" :class="{ 'is-armed': armed === 'money:' + l.id }" @click.stop="del(l)">
           <text class="delbtn-t" :class="{ 'is-armed': armed === 'money:' + l.id }">{{ armed === 'money:' + l.id ? '确认删' : '×' }}</text>
         </view>
@@ -58,8 +93,8 @@
 <script setup>
 import { computed, ref } from 'vue'
 import {
-  db, TODAY, money, fmtCN, sumByCategory, monthMoney,
-  openEdit, delArmed
+  db, TODAY, money, fmtCN, sumByCategory, monthSummary, dirOf, dirName,
+  openEdit, delArmed, openPay
 } from '../stores/db'
 import PageHead from '../components/PageHead.vue'
 import CatSheet from '../components/CatSheet.vue'
@@ -68,17 +103,21 @@ import { toast, confirmDelete } from '../lib/ui'
 const month = TODAY.slice(0, 7)
 const armed = delArmed
 
-/* 明细与合计都从数据层那一份来（见 db.js 的 monthMoney）。
+/* 明细与合计都从数据层那一份来（见 db.js 的 monthSummary / monthMoney）。
    这一页是唯一需要明细的地方（柱状图），所以它给的就是明细；
-   合计不再自己 reduce 一遍 —— 原先三处各扫一遍 db.LOGS 算同一个数。 */
-const mm = computed(function () { return monthMoney(month) })
+   合计不再自己 reduce 一遍 —— 原先三处各扫一遍 db.LOGS 算同一个数。
+   ⚠️ 口径是「支出 / 收入 / 结余」三个数，**不合并成净额**：
+   这个月花了多少和进账多少是两个问题，混成一个数就都看不出来了。 */
+const mm = computed(function () { return monthSummary(month) })
 
-const monthSum = computed(function () { return mm.value.sum })
+const side = ref('out')
+const sideName = computed(function () { return dirName(side.value) })
+const cur = computed(function () { return side.value === 'in' ? mm.value.in : mm.value.out })
 
 /* 分类柱状图：按金额从多到少排，最长的那根占满宽度，其余按比例缩。
    高度用百分比而不是算像素 —— 换台屏宽不同的手机不用重算。 */
 const bars = computed(function () {
-  const by = sumByCategory(mm.value.list)
+  const by = sumByCategory(cur.value.list)
   const rows = Object.keys(by).map(function (k) { return { n: k, raw: by[k] } })
   rows.sort(function (a, b) { return b.raw - a.raw })
   const max = rows.length ? rows[0].raw : 0
@@ -132,8 +171,22 @@ const catOpen = ref(false)
   padding-bottom: 6px;
 }
 
-.stat { padding: 6px 0 14px; }
-.stat-v { display: block; font-size: 30px; font-weight: 500; color: var(--text); line-height: 1.2; }
+/* 支出 / 收入那一格。窄一点、贴着左边 —— 它是这一块的分段器，
+   不是页面的主控件，拉满整行会显得比下面的合计还重要。 */
+.side-seg {
+  width: 148px;
+  margin: 2px 0 4px;
+  padding: 2px;
+}
+.side-seg .seg-b { min-height: 28px; }
+.side-seg .seg-t { font-size: 12px; }
+
+.stat { padding: 4px 0 12px; }
+.stat-v { display: block; font-size: 30px; font-weight: 500; line-height: 1.2; }
+/* 支出红、收入绿 —— 中文记账的习惯（红=出去、绿=进来）。
+   和 base.scss 里那套 accent 分开，是因为这一页要一眼分清方向。 */
+.stat-v.is-out { color: var(--danger); }
+.stat-v.is-in { color: var(--ok); }
 .stat-s { display: block; margin-top: 2px; font-size: 12px; color: var(--muted); }
 
 .barrow {
@@ -151,9 +204,27 @@ const catOpen = ref(false)
   border-radius: 4px;
   overflow: hidden;
 }
-.bar-fill { height: 100%; background: var(--accent); border-radius: 4px; }
+.bar-fill { height: 100%; border-radius: 4px; }
+.bar-fill.is-out { background: var(--danger); }
+.bar-fill.is-in { background: var(--ok); }
 .barrow-v { width: 62px; text-align: right; font-size: 12px; color: var(--text); }
-.row-v { font-size: 14px; color: var(--text); }
+
+.net {
+  display: flex;
+  flex-direction: row;
+  align-items: baseline;
+  margin-top: 10px;
+  padding-top: 9px;
+  border-top: 1px solid var(--line);
+}
+.net-k { font-size: 12px; color: var(--muted); }
+.net-v { margin-left: auto; font-size: 14px; font-weight: 500; font-variant-numeric: tabular-nums; }
+.net-v.is-pos { color: var(--ok); }
+.net-v.is-neg { color: var(--danger); }
+
+.row-v { font-size: 14px; font-variant-numeric: tabular-nums; }
+.row-v.is-out { color: var(--danger); }
+.row-v.is-in { color: var(--ok); }
 
 /* × 那颗和 TreeRow 里那颗同一尺寸：同一页面上不同地方的删除钮，
    不该长得像两种东西（一个是一行流水的删除，一个是条目的删除）。 */
@@ -172,8 +243,8 @@ const catOpen = ref(false)
 .empty { padding: 12px 0 16px; }
 .empty-t { font-size: 13px; color: var(--muted); }
 
-/* ---- 「记一笔 · 品类」那个入口 ----
-   做成一行而不是一块卡片：它是个门，不是内容。
+/* ---- 两个入口行 ----
+   做成一行而不是一块卡片：它们是门，不是内容。
    右边那颗 › 是唯一的方向符号 —— 这一行整块都能点，不需要再加「进入」两个字。 */
 .qe:active { background: var(--bg); }
 .qe-row {

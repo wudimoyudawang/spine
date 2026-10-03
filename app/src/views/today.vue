@@ -129,7 +129,7 @@
 import { computed, ref } from 'vue'
 import {
   db, TODAY, money, go, fmtCNWide, pathPrefix, isLateRow, lateNote,
-  moneyTotalOf, openAdd, openEdit, openLogEdit, rowBody,
+  moneyTotalOf, openAdd, openEdit, openLogEdit, rowBody, dirOf,
   openGoalAdd, openGoal, labelOf, todayTree, habitTree, goalTree,
   progressOf, domainName, saveState, quadOf, quadTone, rollRepeat
 } from '../stores/db'
@@ -150,7 +150,11 @@ const tt = computed(() => todayTree(TODAY))
 const hb = computed(() => habitTree())
 const gl = computed(() => goalTree())
 
-const todayLogs = computed(() => db.LOGS.filter(l => l.date === TODAY && l.kind === 'money'))
+/* 这一行说的是「今天花了多少」，所以**只算支出**（`dirOf`）。
+   加收入那天定的：收入要进的是记账页 / 日历 / 复盘三处，这一行不动 ——
+   一行只有五个字的地方塞进收支两个数，两个都看不清；
+   而且「今天进账 12000」会把「今天花了 32」这件事整个盖掉。 */
+const todayLogs = computed(() => db.LOGS.filter(l => l.date === TODAY && l.kind === 'money' && dirOf(l) === 'out'))
 const todaySum = computed(() => todayLogs.value.reduce((s, l) => s + Number(l.value || 0), 0))
 
 /* 操作流水就在数据层那一堆里，新的在头上 —— 这里不重排，

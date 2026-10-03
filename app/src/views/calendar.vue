@@ -103,16 +103,18 @@
         </view>
 
         <!-- 记账。每一笔都列出来（分类 + 金额），合计放在标题右边 ——
-             只给合计的话看不出钱花在哪，还得再去记账页翻一遍。 -->
+             只给合计的话看不出钱花在哪，还得再去记账页翻一遍。
+             收支**分两个数写**、每一笔带 ± 号：那天进账 500 和花掉 32 是两件事，
+             滚成一个「净 +468」就把「今天花得凶不凶」这个判断抹掉了。 -->
         <view class="sec">
           <view class="sec-h">
             <text class="sec-k">记账</text>
-            <text class="sec-n">{{ marks.moneyCount ? money(marks.moneySum) + ' · ' + marks.moneyCount + ' 笔' : '' }}</text>
+            <text class="sec-n">{{ moneyNote }}</text>
           </view>
           <view v-if="!marks.moneyList.length" class="sec-e"><text class="sec-e-t">这天没记</text></view>
           <view v-for="(x, i) in marks.moneyList" :key="'m' + i" class="secrow">
             <text class="secrow-k">{{ x.category }}</text>
-            <text class="secrow-v">{{ money(x.value) }}</text>
+            <text class="secrow-v" :class="'is-' + x.dir">{{ (x.dir === 'in' ? '+' : '−') + money(x.value) }}</text>
           </view>
         </view>
 
@@ -265,6 +267,16 @@ const selNote = computed(function () {
   return open + ' 条没做完' + (done ? ' · ' + done + ' 条已完成' : '')
 })
 
+/* 那一天账目的合计。哪一边一笔都没有就整个不写那半句 ——
+   「收入 ¥0」不是信息，它只是占位（和今日页「今天 ¥X · N 笔」同一个规矩）。 */
+const moneyNote = computed(function () {
+  const m = marks.value
+  const parts = []
+  if (m.moneyCount) parts.push('支出 ' + money(m.moneySum) + ' · ' + m.moneyCount + ' 笔')
+  if (m.inCount) parts.push('收入 ' + money(m.inSum) + ' · ' + m.inCount + ' 笔')
+  return parts.join('，')
+})
+
 function setMode(m) {
   if (mode.value === m) return
   mode.value = m
@@ -303,7 +315,10 @@ function dayNote(d) {
   if (d.rows.length) p.push(d.rows.length + ' 件')
   if (d.done) p.push('已做 ' + d.done)
   if (d.habit) p.push('打卡 ' + d.habit)
+  /* 收支各说各的。合成净额的话，「这天赚了 500」会把「这天也花了 300」盖掉 ——
+     而周视图存在的意义恰恰是看这一周的节奏（见 db.js weekView 那一段）。 */
   if (d.moneySum) p.push('支出 ' + money(d.moneySum))
+  if (d.incomeSum) p.push('收入 ' + money(d.incomeSum))
   return p.length ? p.join(' · ') : '—'
 }
 
@@ -530,6 +545,10 @@ function toggleDone(it) {
 .secrow-k { flex: 1 1 auto; min-width: 0; font-size: 13px; color: var(--text); }
 .secrow-v { flex: none; margin-left: 8px; font-size: 13px; color: var(--sub); }
 .secrow-v.is-ok { color: var(--ok); }
+/* 一笔账的收支。颜色沿用记账页那一套（支出红 / 收入绿），
+   同一件事在三个页面里必须是同一个颜色，否则人要重新学一遍。 */
+.secrow-v.is-out { color: var(--danger); }
+.secrow-v.is-in { color: var(--ok); }
 
 .empty { padding: 10px 0 16px; }
 .empty-t { display: block; font-size: 13px; color: var(--muted); }

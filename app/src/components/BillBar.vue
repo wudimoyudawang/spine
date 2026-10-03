@@ -1,6 +1,8 @@
 <template>
   <view class="bill">
-    <view v-if="!bill.count" class="bill-none">
+    <!-- 空态要把**收入也算进去**判断：只说「还没有记账」而这一期明明有一笔工资，
+         那是这条汇总在说假话。 -->
+    <view v-if="!bill.count && !bill.inCount" class="bill-none">
       <text class="bill-none-t">{{ name }}还没有记账</text>
     </view>
     <template v-else>
@@ -8,6 +10,14 @@
         <text class="bill-l">{{ name }}支出</text>
         <text class="bill-v">{{ money(bill.sum) }}</text>
         <text class="bill-n">· {{ bill.count }} 笔</text>
+      </view>
+      <!-- 收入另起一行，不并到上面那条里，也不算「结余」——
+           这一条回答的是「这一期花了多少」，掺进收入就答不清了。
+           一笔收入都没有时整行不铺（不写「收入 ¥0」，那不是信息）。 -->
+      <view v-if="bill.inCount" class="bill-h bill-in">
+        <text class="bill-l">{{ name }}收入</text>
+        <text class="bill-v is-in">{{ money(bill.inSum) }}</text>
+        <text class="bill-n">· {{ bill.inCount }} 笔</text>
       </view>
       <view class="bchips">
         <view v-for="c in top" :key="c.name" class="bchip">
@@ -93,6 +103,11 @@ const diffClass = computed(function () {
 .bill-l { flex: none; font-size: 12px; color: var(--sub); }
 .bill-v { margin-left: 6px; font-size: 15px; font-weight: 500; color: var(--text); }
 .bill-n { margin-left: 5px; font-size: 11px; color: var(--muted); }
+/* 收入那行比支出矮一点、轻一点：这一条的主体仍然是「花了多少」，
+   两行同高同重的话，一眼看不出哪个是主角。 */
+.bill-in { margin-top: 3px; }
+.bill-in .bill-v { font-size: 13px; font-weight: 500; }
+.bill-v.is-in { color: var(--ok); }
 .bchips {
   display: flex;
   flex-direction: row;

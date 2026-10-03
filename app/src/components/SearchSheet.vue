@@ -102,7 +102,7 @@ const GROUPS = [
   { k: 'todos', n: '待办' },
   { k: 'habits', n: '习惯' },
   { k: 'goals', n: '计划' },
-  { k: 'money', n: '支出' },
+  { k: 'money', n: '记账' },
   { k: 'notes', n: '随心记' },
   { k: 'inbox', n: '收集箱' }
 ]

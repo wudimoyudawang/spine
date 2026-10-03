@@ -324,6 +324,74 @@ async function main() {
     check('从空间点进记账页', toLedger, 'true')
     await shotCheck('7-ledger', '记账')
 
+    /* ---- 记账录入页（整页浮层）---------------------------------------------
+       它和上面那 9 个视图不是一回事：不进底栏、从「记一笔」点进来、记完返回。
+       所以它的回归必须**真的走一遍「点进去 → 挑分类 → 按键 → 完成 → 数落库」**，
+       光截图看不出「键按了但没记上」。
+       2026-10-04 加这一组：新页面上线时它不在任何回归网里。 */
+    const openPay = await cdp.eval(`(() => {
+      const b = Array.from(document.querySelectorAll('.qe')).find(x => x.innerText.indexOf('记一笔') >= 0);
+      if (!b) return false; b.click(); return true;
+    })()`)
+    await cdp.wait(400)
+    check('从记账页点开「记一笔」', openPay, 'true')
+    check('录入页是整页浮层（盖住底栏）',
+      await cdp.eval("!!document.querySelector('.paywrap') && !document.querySelector('.paywrap .tabbar')"), 'true')
+    check('录入页有支出/收入两格，默认停在支出',
+      await cdp.eval("(()=>{const t=Array.from(document.querySelectorAll('.dseg-b'));return t.length+':'+(t[0]?(t[0].innerText.trim()+''):'')})()"), '2:支出')
+    check('金额起始是 ¥0', await cdp.eval("document.querySelector('.amt-v').innerText"), '¥0')
+    /* 分段器要**真的居中**：它被夹在两个 44px 图标钮中间，靠 auto 外边距定位。
+       左右留白不相等的话，它看着像贴着返回箭头的一部分。
+       （2026-10-04 就是先写成 `flex:1 + max-width`，看着偏左，量出来才发现
+         auto 外边距分到的是 grow 之后剩下的空白 —— 所以这条断言留着。）
+       ⚠️ 这里**必须返回字符串**：`check` 是 indexOf 的包含判断，
+       返回对象的话 `String(obj)` 会变成 `[object Object]`，断言恒假
+       （写这条时就踩了一次）。 */
+    const segGeom = await cdp.eval(`(() => {
+      const d = document.querySelector('.dseg').getBoundingClientRect();
+      const p = document.querySelector('.paytop').getBoundingClientRect();
+      const l = Math.round(d.left - p.left), r = Math.round(p.right - d.right);
+      const w = Math.round(d.width);
+      return (Math.abs(l - r) <= 2 && w >= 150 ? 'true' : 'false') +
+        ' 左=' + l + ' 右=' + r + ' 宽=' + w;
+    })()`)
+    check('顶栏分段器居中且够宽', segGeom, 'true')
+    await cdp.shot('7b-money-out', SHOTS)
+
+    /* 切到收入：**分类清单要换成另一套**（照截图，收入是理财/副业/工资），
+       而且配色跟着变（支出红 / 收入绿）。 */
+    await cdp.eval(`(() => {
+      const b = Array.from(document.querySelectorAll('.dseg-b')).find(x => x.innerText.trim() === '收入');
+      if (b) b.click(); return !!b;
+    })()`)
+    await cdp.wait(300)
+    const inCats = await cdp.eval("Array.from(document.querySelectorAll('.cell:not(.cell-set) .cell-t')).map(x=>x.innerText).join(',')")
+    check('切到收入后分类换成收入那一套', inCats, '工资')
+    check('录入页方向类名切到 is-in', await cdp.eval("!!document.querySelector('.paywrap.is-in')"), 'true')
+    await cdp.shot('7c-money-in', SHOTS)
+
+    /* 挑第一个分类 → 按 1 2 3 → 完成。三步都走真实点击。 */
+    await cdp.eval("(()=>{const c=document.querySelector('.cell:not(.cell-set)');if(c)c.click();return !!c})()")
+    await cdp.wait(150)
+    for (const d of ['1', '2', '3']) {
+      await cdp.eval(`(() => {
+        const k = Array.from(document.querySelectorAll('.k')).find(x => x.innerText.trim() === '${d}');
+        if (k) k.click(); return !!k;
+      })()`)
+      await cdp.wait(80)
+    }
+    check('按键进了金额框', await cdp.eval("document.querySelector('.amt-v').innerText"), '¥123')
+    const doneBtn = await cdp.eval(`(() => {
+      const k = Array.from(document.querySelectorAll('.k')).find(x => x.innerText.trim() === '完成');
+      if (!k) return false; k.click(); return true;
+    })()`)
+    await cdp.wait(500)
+    check('点「完成」', doneBtn, 'true')
+    check('记完这一页自己收起来', await cdp.eval("!!document.querySelector('.paywrap')"), 'false')
+    const afterPay = await cdp.eval("document.body.innerText.replace(/\\s+/g,' ')")
+    check('这一笔记进了流水（收入 +¥123）', afterPay.indexOf('+¥123') >= 0 ? 'true' : afterPay.slice(0, 300), 'true')
+    await cdp.shot('7d-ledger-after-pay', SHOTS)
+
     await clickTab(0)
     for (const [file, label] of [['8-calendar', '日历'], ['9-quadrant', '四象限']]) {
       const ok = await cdp.eval(`(()=>{const b=Array.from(document.querySelectorAll('.seg-b')).find(x=>x.innerText.trim()==='${label}');if(b)b.click();return !!b})()`)

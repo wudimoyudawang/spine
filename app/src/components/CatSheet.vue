@@ -4,31 +4,18 @@
 
     <view class="modal-box">
       <view class="modal-h">
-        <text class="modal-t">记一笔</text>
-        <text class="modal-note">{{ db.CATS.length }} 个品类</text>
+        <text class="modal-t">{{ isIn ? '收入品类' : '支出品类' }}</text>
+        <text class="modal-note">{{ list.length }} 个品类</text>
       </view>
-
-      <!-- 记下放在品类的上面：这一层的主用途是记，品类是顺手维护的。
-           提交走 commitMoneyText，和记账页上那个框是同一段逻辑。 -->
-      <view class="field">
-        <text class="field-k">这回花了多少</text>
-        <view class="cs-rec">
-          <input :maxlength="-1" v-model="recDraft" class="inline-in" :focus="focusRec"
-                 placeholder="比如 32 午餐，分类可以留空" confirm-type="done" @confirm="record" />
-          <view class="cs-rec-b" @click="record"><text class="cs-rec-b-t">记下</text></view>
-        </view>
-      </view>
-
-      <view class="cs-sep"></view>
 
       <!-- 记下的输入框留在上面不滚（和搜索框同一个道理），滚的只有品类列表 -->
       <view class="modal-body">
       <view class="cs-list">
-        <view v-if="!db.CATS.length && editOn !== 'new'" class="cs-empty">
-          <text class="cs-empty-t">还没有品类。不建也行，记的时候会归到「未分类」。</text>
+        <view v-if="!list.length && editOn !== 'new'" class="cs-empty">
+          <text class="cs-empty-t">还没有{{ isIn ? '收入' : '支出' }}品类。不建也行，记的时候会归到「未分类」。</text>
         </view>
 
-        <view v-for="c in db.CATS" :key="c" class="cs-row">
+        <view v-for="c in list" :key="c" class="cs-row">
           <view class="cs-main">
             <text class="cs-t">{{ c }}</text>
             <text v-if="usedOf(c)" class="cs-m">记过 {{ usedOf(c) }} 笔</text>
@@ -38,7 +25,7 @@
               <text class="cs-mini-t">{{ editOn === c ? '收起' : '改名' }}</text>
             </view>
             <view class="cs-mini cs-mini-del" @click="delGo(c)">
-              <text class="cs-mini-t">{{ armed === 'cat:' + c ? '确认删' : '删' }}</text>
+              <text class="cs-mini-t">{{ armed === catSpec(c) ? '确认删' : '删' }}</text>
             </view>
           </view>
 
@@ -66,7 +53,7 @@
       </view>
 
       <view class="modal-f">
-        <text class="modal-hint">删掉只去掉选项，已记的流水不改；改名会把那几笔一起改。</text>
+        <text class="modal-hint">{{ isIn ? '删掉只去掉选项，已记的收入不改；改名会把那几笔一起改。' : '删掉只去掉选项，已记的流水不改；改名会把那几笔一起改。' }}</text>
         <view class="btn btn-main" @click="$emit('close')"><text class="btn-t btn-main-t">完成</text></view>
       </view>
     </view>
@@ -74,50 +61,45 @@
 </template>
 
 <script setup>
-/* 记账品类的增删改。
- * 做成弹层而不是记账页里的一块：品类是「记一笔的时候偶尔要补一个」的东西，
- * 平时不该在记账页上占一整块 —— 那会让「记一笔」这一眼要看的东西往后退。
- * 增删改的逻辑原样从设置页搬过来（那边的入口已撤），规则没变：
- * 删只去掉选项、已记的流水不改；改名把已记的那几笔一起改过来。
+/* 记账品类的增删改。**支出和收入各一份清单**（`CATS` / `IN_CATS`），
+ * 所以整层带一个 `dir` 入参；数据层那几个函数也都收了尾部的 dir 参数，
+ * 这里只是把它透传下去 —— 一套代码服务两份清单，不写第二份。
+ *
+ * 它不再兼职「记一笔」（2026-10-04）：录入有了自己的整页（MoneyPage），
+ * 那个小输入框就是第二个入口做同一件事。这一层从此只管清单本身，
+ * 从记账录入页网格末尾那格「分类设置」进来。
  */
-import { nextTick, ref, watch } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import {
-  db, money, addCat, renameCat, catUsed, delArmed, saveState, commitMoneyText
+  db, catList, addCat, renameCat, catUsed, delArmed, saveState
 } from '../stores/db'
 import { toast, confirmDelete } from '../lib/ui'
 
 const props = defineProps({
-  on: { type: Boolean, default: false }
+  on: { type: Boolean, default: false },
+  /* 'out' = 支出（缺省，也是老的唯一行为），'in' = 收入 */
+  dir: { type: String, default: 'out' }
 })
 const emit = defineEmits(['close'])
+
+const isIn = computed(function () { return props.dir === 'in' })
+/* 清单走 catList(dir)：它 = 清单本身 + 历史里出现过、已被移出清单的那些。
+   直接用 db.CATS 的话，删过一个类之后老记录就再也改不回那个类了。 */
+const list = computed(function () { return catList(props.dir) })
 
 const editOn = ref('')   /* 'new' = 正在新建；否则是正在改名的那个品类名 */
 const draft = ref('')
 const focusInput = ref(false)
 const armed = delArmed
-
-/* 记那一笔。只在这层里收支出；分类可以留空（归到「未分类」） */
-const recDraft = ref('')
-const focusRec = ref(false)
-
-function record() {
-  const t = recDraft.value.trim()
-  if (!t) { toast('先写一句'); return }
-  const r = commitMoneyText(t)
-  if (r.error) { toast(r.error); return }
-  recDraft.value = ''
-  focusRec.value = false
-  saveState(true)
-  toast('记下 ' + money(r.rec.value))
-}
+/* 两段确认的闸门是全应用共用的（`delArmed`），所以 spec 必须带方向 ——
+   不然「支出·餐饮」正在武装时切到收入那边，看着也会是「确认删」。 */
+function catSpec(c) { return (isIn.value ? 'incat:' : 'cat:') + c }
 
 /* 每次打开都收起输入框：上回没提交的字留在这儿，会被人当成已经建好了 */
 watch(() => props.on, function (v) {
   if (!v) return
   editOn.value = ''
   draft.value = ''
-  recDraft.value = ''
-  focusRec.value = false
 })
 
 function startNew() {
@@ -136,12 +118,12 @@ function focus() {
   nextTick(function () { focusInput.value = true })
 }
 
-function usedOf(c) { return catUsed(c) }
+function usedOf(c) { return catUsed(c, props.dir) }
 
 function commit() {
   const v = draft.value.trim()
   if (!v) { toast('先写个名字'); return }
-  const r = editOn.value === 'new' ? addCat(v) : renameCat(editOn.value, v)
+  const r = editOn.value === 'new' ? addCat(v, props.dir) : renameCat(editOn.value, v, props.dir)
   if (r.error) { toast(r.error); return }
   editOn.value = ''
   focusInput.value = false
@@ -151,7 +133,7 @@ function commit() {
 
 function delGo(c) {
   /* 第一下不发提示（按钮自己会变成「确认删」），保持原样 */
-  const r = confirmDelete('cat:' + c)
+  const r = confirmDelete(catSpec(c))
   if (r.armed) return
   if (r.error) { toast(r.error); return }
   if (editOn.value === c) editOn.value = ''

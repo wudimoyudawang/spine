@@ -21,6 +21,9 @@
     </view>
 
     <CaptureSheet />
+    <!-- 记账录入页。**不进上面那排视图**：它是「从哪儿进来、返回就回哪儿」的
+         整页浮层（要盖住底栏），不是一个可以用底栏切过去的同级页面。 -->
+    <MoneyPage />
     <AddSheet />
     <EditSheet />
     <GoalSheet />
@@ -35,6 +38,7 @@ import { db, saveState, quadVarStyle } from '../../stores/db'
 
 import TabBar from '../../components/TabBar.vue'
 import CaptureSheet from '../../components/CaptureSheet.vue'
+import MoneyPage from '../../components/MoneyPage.vue'
 import AddSheet from '../../components/AddSheet.vue'
 import EditSheet from '../../components/EditSheet.vue'
 import GoalSheet from '../../components/GoalSheet.vue'

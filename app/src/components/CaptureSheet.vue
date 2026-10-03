@@ -16,34 +16,6 @@
            面板高一点（胶囊换行之后）也不能把记下的那颗顶出屏幕外。 -->
       <view class="capbody">
 
-      <!-- 记账：先挑品类，再填金额。
-           这条路上没有「自动判断」—— 选了记账就是「我知道这是支出、我要分类」，
-           再让规则去猜，等于把你的明确意图当成猜测的输入。 -->
-      <template v-if="kind === 'money'">
-        <view class="cats">
-          <view
-            v-for="c in cats"
-            :key="c"
-            class="mchip"
-            :class="{ 'is-on': picked === c }"
-            @click="picked = c"
-          >
-            <text class="mchip-t">{{ c }}</text>
-          </view>
-        </view>
-        <input :maxlength="-1"
-          v-model="amount"
-          class="capin"
-          type="digit"
-          :focus="focused"
-          placeholder="金额，比如 32"
-          confirm-type="done"
-          @confirm="submit"
-        />
-      </template>
-
-      <!-- 记一笔：写什么都行，规则自己判 -->
-      <template v-else>
         <input :maxlength="-1"
           v-model="draft"
           class="capin capin-first"
@@ -118,16 +90,18 @@
         <view v-if="showAll" class="allreset" @click="resetCfg">
           <text class="allreset-t">恢复默认</text>
         </view>
-      </template>
 
       </view>
 
-      <!-- 切换器紧贴在「记下」上面：手在下半屏操作时，它就在指头边上 -->
+      <!-- 切换器紧贴在「记下」上面：手在下半屏操作时，它就在指头边上。
+           「记账」那一格**不再切模式，而是跳到记账录入页**（2026-10-04）——
+           录入要自绘键盘和分类图标网格，这个矮盒子装不下；
+           在这儿再实现一份就等于两个入口做同一件事。 -->
       <view class="kindsw">
-        <view class="kindsw-b" :class="{ 'is-on': kind === 'quick' }" @click="setKind('quick')">
+        <view class="kindsw-b is-on">
           <text class="kindsw-t">记一笔</text>
         </view>
-        <view class="kindsw-b" :class="{ 'is-on': kind === 'money' }" @click="setKind('money')">
+        <view class="kindsw-b" @click="setKind('money')">
           <text class="kindsw-t">记账</text>
         </view>
       </view>
@@ -140,7 +114,7 @@
 <script setup>
 import { computed, nextTick, ref, watch } from 'vue'
 import {
-  db, money, fmtCN, catList, closeCapture,
+  db, money, fmtCN, closeCapture, openPay,
   addMoney, addTodo, addInbox, addNote, addRecord,
   resolveCapture, describeCapture, ruleName, recentPhrases,
   allCaptureOptions, commonCaptureOptions, moveCaptureOption, toggleCaptureCommon,
@@ -149,14 +123,8 @@ import {
 import { toast } from '../lib/ui'
 
 const draft = ref('')
-const amount = ref('')
-const picked = ref('')
 const mode = ref('auto')
 const focused = ref(false)
-
-const kind = computed(function () { return db.CAPTURE_KIND })
-
-const cats = computed(function () { return catList() })
 
 const showAll = ref(false)
 
@@ -246,15 +214,17 @@ function toggleAutoClose() {
   db.CAP_AUTO_CLOSE = !db.CAP_AUTO_CLOSE
 }
 
+/* 「记账」不在这个面板里切模式，而是**跳到记账录入页**（2026-10-04）。
+ * 为什么：录入要自绘数字键盘 + 分类图标网格，这个面板装不下（它得矮到让出输入法）；
+ * 在面板里再实现一份，就等于两个入口做同一件事 —— 那种重复正是这个仓库
+ * 一直在删的东西（见 AGENTS.md 第 9 节那几行「两处各写一份」的事故）。
+ * 所以这里只负责「把人送过去」，不负责「顺便也记一笔」。 */
 function setKind(k) {
-  if (db.CAPTURE_KIND === k) return
-  db.CAPTURE_KIND = k
-  /* 两种模式的输入不是一回事（一个是一句话，一个是金额）。
-     带过去只会让人提交一个自己没检查过的数。 */
-  draft.value = ''
-  amount.value = ''
-  picked.value = ''
-  refocus()
+  if (k === 'money') {
+    closeCapture()
+    openPay('out')
+    return
+  }
 }
 
 function refocus() {
@@ -263,25 +233,7 @@ function refocus() {
 }
 
 function submit() {
-  if (kind.value === 'money') { submitMoney(); return }
   submitQuick()
-}
-
-function submitMoney() {
-  if (!picked.value) {
-    toast('先选个品类')
-    return
-  }
-  const v = Number(amount.value)
-  if (!v || v <= 0) {
-    toast('填个金额')
-    return
-  }
-  addMoney(v, picked.value, picked.value)
-  const msg = '记下 ' + money(v) + ' · ' + picked.value
-  picked.value = ''
-  amount.value = ''
-  done(msg)
 }
 
 function submitQuick() {
@@ -331,17 +283,11 @@ function submitQuick() {
   draft.value = ''
 }
 
-/* 提交完的收尾。按那个开关决定收不收面板；
-   收起来时顺便把模式归回「记一笔」—— 下次点加号是重新开始，
-   不该莫名其妙停在上次那个模式上。 */
+/* 提交完的收尾。按那个开关决定收不收面板。 */
 function done(msg) {
   toast(msg)
-  if (db.CAP_AUTO_CLOSE) {
-    closeCapture()
-    db.CAPTURE_KIND = 'quick'
-  } else {
-    refocus()
-  }
+  if (db.CAP_AUTO_CLOSE) closeCapture()
+  else refocus()
 }
 </script>
 
@@ -575,14 +521,6 @@ function done(msg) {
 }
 .allreset-t { font-size: 12px; color: var(--sub); }
 .allreset:active { background: var(--bg); }
-
-.cats {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-  padding: 2px 0 4px;
-}
-.cats .mchip { margin: 5px 8px 0 0; }
 
 .mchip {
   display: inline-flex;
