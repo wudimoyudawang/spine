@@ -1,6 +1,11 @@
 <template>
   <view class="page">
     <PageHead title="复盘" />
+    <!-- 今日 / 日历 / 四象限 / 复盘 —— 和今日页头那颗是**同一颗**。
+         复盘 2026-10-04 从底栏挪进这一排之后，切进复盘页也要能看到它：
+         不铺的话，点「复盘」那颗分段器就没了，人不知道自己还在「今日」那一格底下，
+         也切不回另外三个镜头。和日历 / 四象限页铺的位置一样。 -->
+    <ViewSeg />
 
     <view class="seg">
       <view
@@ -139,6 +144,7 @@ import {
   habitTree, streakText
 } from '../stores/db'
 import PageHead from '../components/PageHead.vue'
+import ViewSeg from '../components/ViewSeg.vue'
 import PlusIcon from '../components/PlusIcon.vue'
 import { toast, confirmDelete } from '../lib/ui'
 

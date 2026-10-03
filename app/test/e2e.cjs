@@ -580,6 +580,16 @@ async function main() {
       check('切到「' + label + '」', ok, 'true')
       await cdp.shot(file, SHOTS)
     }
+    /* 停在「复盘」页时，页头那颗镜头分段器**必须还在** ——
+       2026-10-04 宇点名：点复盘之后选择器不要消失。
+       复盘页自己有一颗「本周/本月/自定义」，和这颗是两码事，
+       所以用「有没有『今日』和『日历』那两格」来判断那颗镜头分段器在不在。 */
+    check('复盘页上镜头分段器还在（能切回今日/日历/四象限）',
+      await cdp.eval(`(() => {
+        const b = Array.from(document.querySelectorAll('.seg-b'))
+          .filter(x => x.offsetParent !== null).map(x => x.innerText.trim());
+        return (b.indexOf('今日') >= 0 && b.indexOf('日历') >= 0 && b.indexOf('复盘') >= 0) ? 'true' : b.join('|');
+      })()`), 'true')
     /* 切回「今日」，读页头那颗镜头分段器（不是块里那颗小号的）——
        它下面紧跟着 .moneyline 金额行，用它定位。 */
     await clickTab(0)
