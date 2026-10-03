@@ -123,10 +123,10 @@ export const db = reactive({
   CAPTURE_MODE: 'auto',
   CAPTURE_CAT: '',
   CLOSED_NODES: {},
-    /* 提交完面板自己收不收。默认收（宇定的）——
-       连着记几笔的时候，把面板右上角那个开关打开就不必每次重新点加号。
-       它同时是设置页里的一条，两处改的是同一个值。 */
-    CAP_AUTO_CLOSE: true,
+    /* ⚠️ 这里原来还有 `CAP_AUTO_CLOSE`（「记完自动关」）。
+       2026-10-04 那个「记东西」的弹层并进收集页之后**删掉了** ——
+       没有「关掉面板」这回事了，那个开关也就没有意义。
+       `UI_KEYS` 里跟着去掉一项，老 localStorage 里多出来的那个键会被忽略。 */
     /* 打卡按钮「完成态」的颜色（hex），设置页里选（2026-09-23 加）。
        空串 = 用内置的绿。跟着设备走（UI_KEYS），清数据不清它 ——
        清的是记录，不该连外观偏好一起抹掉。 */
@@ -139,11 +139,9 @@ export const db = reactive({
        默认关的理由：这个应用的气质是「安静地记」，通知是唯一会主动打扰人的东西，
        必须由人自己打开（装完就弹权限申请也是同一件事的反面）。 */
     NOTIFY_ON: false,
-  /* 面板开着没有。
-     瞬时状态，**不进 UI_KEYS** —— 重开 App 时不该一进来就弹着个面板。
-     放在 db 里而不是组件内部，是因为底栏和面板是两个组件，
-     挂在任意一边另一边都得转发事件。 */
-  CAP_OPEN: false,
+  /* ⚠️ 这里原来还有 `CAP_OPEN`（那个弹层开着没有）。
+       2026-10-04 弹层并进收集页之后**删掉了** —— 记东西现在就在页面上，
+       没有「开着」「关着」这回事。 */
   /* 记一笔那一页记的是哪个方向（2026-10-04 加）。**不进 UI_KEYS** ——
      它和「停在哪一页」不是一回事：重开 App 时方向回到「支出」更安全
      （补记了一笔收入之后忘了改回来，下次记今天就会记成收入，那种错要到流水里才看得出来）。 */
@@ -201,7 +199,7 @@ export const DATA_KEYS = ['ITEMS', 'HABIT_LOGS', 'INBOX', 'NOTES', 'NOTE_PROMPTS
  * （importSnapshot 里把 CURRENT 显式还原回去了）。
  * 所以「跟着设备走」是**结果**，不是「没写进文件」——原来那句注释说的是前者、写成了后者。
  * 另外 replaceAll（导入的整体替换）只换 DATA_KEYS，不碰 UI_KEYS 里这些。 */
-export const UI_KEYS = ['CURRENT', 'DOMAIN_ID', 'CAPTURE_MODE', 'CAP_AUTO_CLOSE', 'TICK_DONE', 'NOTIFY_ON', 'HOME_PAGE']
+export const UI_KEYS = ['CURRENT', 'DOMAIN_ID', 'CAPTURE_MODE', 'TICK_DONE', 'NOTIFY_ON', 'HOME_PAGE']
 
 export function loadSeed() {
   const d = deepCopy(SEED_DATA)
@@ -219,7 +217,6 @@ export function loadSeed() {
   db.CAPTURE_MODE = 'auto'
   db.CAPTURE_CAT = ''
   db.CLOSED_NODES = deepCopy(SEED_UI.CLOSED_NODES) || {}
-  db.CAP_AUTO_CLOSE = true
   /* 提醒总开关不在种子数据里（它是设备偏好，且默认关）——
      不显式给一份的话，换过种子之后它可能留着上一次的值。 */
   db.NOTIFY_ON = false
@@ -1941,16 +1938,11 @@ function delDomain(id) {
    硬塞进 DOMAINS 得处处判空。 */
 export const MONEY_SPACE = { id: 'money', name: '记账', fixed: true }
 
-/* 面板开合。kind 现在只剩一个意思：传 'money' = **不打开面板，直接进记账录入页**
-   （面板底部那格「记账」走的就是这条路 —— 录入是一个整页，要键盘、要分类网格，
-   在面板里再实现一份就是两个入口做同一件事）。不传 = 打开「记一笔」面板。 */
-export function openCapture(kind) {
-  if (kind === 'money') { openPay('out'); return }
-  db.CAP_OPEN = true
-}
-export function closeCapture() {
-  db.CAP_OPEN = false
-}
+/* ⚠️ 这里原来是 `openCapture()` / `closeCapture()`（那个「记东西」弹层的开合）。
+   2026-10-04 弹层并进**收集页**之后两个都**删掉了** ——
+   记东西现在就在收集页顶部那一块，没有「打开」「关闭」这回事，
+   也没有第二个入口需要它们。谁要再引入一个「记东西」的浮层，先想清楚
+   为什么不能长在页面上（宇这一轮要的就是「长在页面上」）。 */
 
 /* 去「记一笔」那一页（2026-10-04）。
  *

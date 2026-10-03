@@ -154,12 +154,12 @@ async function main() {
     /* 等应用挂载 */
     let mounted = false
     for (let i = 0; i < 80 && !mounted; i++) {
-      try { mounted = await cdp.eval("document.querySelectorAll('.tabbar .navi').length === 5 && document.querySelectorAll('.block').length > 0") } catch (e) {}
+      try { mounted = await cdp.eval("document.querySelectorAll('.tabbar .navi').length === 3 && document.querySelectorAll('.block').length > 0") } catch (e) {}
       if (!mounted) await cdp.wait(300)
     }
     if (!mounted) throw new Error('应用没挂载起来（首屏没渲染出底栏与区块）')
 
-    /* 底栏是 今日|收集|＋|记账|复盘（2+1+2）—— 索引 2 是那颗加号，按它没意义。
+    /* 底栏是 今日 | 收集 | 记账 三格。索引 0/1/2，各是一个真实页面。
        下面每一段都用这两个小工具。 */
     const clickTab = async (i) => { await cdp.eval(`(()=>{const e=document.querySelectorAll('.tabbar .navi')[${i}];if(e)e.click();return !!e})()`); await cdp.wait(350) }
     const shotCheck = async (file, want) => {
@@ -167,7 +167,7 @@ async function main() {
       const t = await cdp.eval("document.body.innerText.slice(0,500)")
       check('「' + want + '」渲染正常', t.replace(/\s/g, '').length > 20 ? 'true' : t, 'true')
     }
-    /* 页面上有**多个** `.seg-b`（今日页三档、收集页两格、记账页两格）——
+    /* 页面上有**多个** `.seg-b`（今日页四档、收集页两格、记账页两格）——
        v-show 让别的页面留在 DOM 里但 display:none，所以按可见性筛，
        取到的就是「当前这一页上的那颗」。 */
     const segTexts = `Array.from(document.querySelectorAll('.seg-b')).filter(x => x.offsetParent !== null).map(x => x.innerText.replace(/\\s+/g,' ').trim())`
@@ -175,15 +175,15 @@ async function main() {
     console.log('=== 端到端：今日页渲染 ===')
     await cdp.shot('1-today', SHOTS)
 
-    /* ---- 底栏：五格、中间那颗加号、收集格带未归类条数 ----
-       必须是 2 + 1 + 2 —— 加号要落在正中间，左右格数就得相等。
-       所以「记账」那一格是拿「收集/随心记」并成一格换来的。 */
+    /* ---- 底栏：三格、收集带未归类条数 ----
+       「＋」和「复盘」2026-10-04 都挪走了（前者进收集页，后者进今日页第一排），
+       所以现在只剩 今日 | 收集 N | 记账，三格对称。 */
     const nav = await cdp.eval(`(() => {
       return Array.from(document.querySelectorAll('.tabbar .navi'))
-        .map(x => x.querySelector('.plus') ? '＋' : x.innerText.replace(/\\s+/g, ' ').trim())
+        .map(x => x.innerText.replace(/\\s+/g, ' ').trim())
         .join('|')
     })()`)
-    check('底栏：今日|收集|＋|记账|复盘（加号在正中）', nav, '今日|收集 3|＋|记账|复盘')
+    check('底栏：今日|收集|记账（三格，加号已撤）', nav, '今日|收集 3|记账')
 
     /* ---- 今日页有多长 ----
        「待办/习惯/计划 铺在一起太长了」是这一轮改动的起因，
@@ -265,7 +265,7 @@ async function main() {
     check('点金额行进记一笔', toLedgerByLine, 'true')
     check('确实到了记一笔（页头两格在，且停在第一格）', await cdp.eval(segTexts + ".join('|')"), '记一笔|记账')
     check('底栏那格也亮着（记账格底下两个镜头都算选中）',
-      await cdp.eval("(()=>{const n=document.querySelectorAll('.tabbar .navi')[3];return n&&n.className.indexOf('is-on')>=0?'true':'false'})()"), 'true')
+      await cdp.eval("(()=>{const n=document.querySelectorAll('.tabbar .navi')[2];return n&&n.className.indexOf('is-on')>=0?'true':'false'})()"), 'true')
     await clickTab(0)
 
     console.log('')
@@ -395,11 +395,15 @@ async function main() {
     console.log('')
     console.log('=== 逐页冒烟 + 截图（' + SHOTS + '）===')
 
-    /* ---- 收集那一格：底下两个镜头（收集 / 随心记）----
-       2026-10-04 之前它们是底栏并肩的两格，并成一格之后
-       「随心记还能不能进」这件事只能靠这条断言盯着。 */
+    /* ---- 收集那一格：底下两个镜头（收集 / 随心记），顶部是「记东西」----
+       2026-10-04 之前「记东西」是个弹层（底栏正中那颗加号），现在就在收集页顶部。 */
     await clickTab(1); await shotCheck('3-inbox', '收集')
     check('收集页头有两格镜头', await cdp.eval(segTexts + ".join('|')"), '收集|随心记')
+    /* 「记东西」在收集镜头上（不在随心记镜头上）：
+       默认模式是「只丢进收件箱」—— 那个胶囊应该高亮。 */
+    check('收集页顶部有输入框和「记下」', await cdp.eval("document.querySelector('.capin') && document.querySelector('.cap-go') ? 'true' : 'false'"), 'true')
+    check('默认模式是「只丢进收件箱」（那颗胶囊选中）',
+      await cdp.eval("(()=>{const m=Array.from(document.querySelectorAll('.cap .mchip')).find(x=>x.innerText.trim()==='只丢进收件箱');return m&&m.className.indexOf('is-on')>=0?'true':'false'})()"), 'true')
     const toNotes = await cdp.eval(`(() => {
       const b = Array.from(document.querySelectorAll('.seg-b'))
         .filter(x => x.offsetParent !== null).find(x => x.innerText.trim() === '随心记');
@@ -408,14 +412,30 @@ async function main() {
     await cdp.wait(400)
     check('收集格里的「随心记」镜头进得去', toNotes, 'true')
     await shotCheck('4-notes', '随心记')
+    check('「记东西」那一块**不在**随心记镜头上（它有自己的大框）',
+      await cdp.eval("(()=>{const c=document.querySelector('.cap');return (c&&c.offsetParent!==null)?'还在':'没了'})()"), '没了')
     /* 再点底栏那一格要**回收集**（固定回默认镜头，和「点今日格回今日」一致）——
        不回的话，那一格会变成「上次看的那个」，和「今日」那格的行为就对不上了。 */
     await clickTab(1)
     check('再点「收集」格回到收集镜头', await cdp.eval("document.body.innerText.indexOf('收件箱') >= 0 ? 'true' : 'false'"), 'true')
 
+    /* ---- 记东西那条链路：默认「只丢进收件箱」---- */
+    const typedInbox = await cdp.eval(`(() => {
+      const i = document.querySelector('.capin input');
+      if (!i) return 'no-input';
+      i.focus(); i.value = '端到端测试收件箱';
+      i.dispatchEvent(new Event('input', { bubbles: true }));
+      return i.value;
+    })()`)
+    check('收集页输入框能打字', typedInbox, '端到端测试收件箱')
+    await cdp.eval("(()=>{const b=document.querySelector('.cap-go');if(b)b.click();return !!b})()")
+    await cdp.wait(400)
+    check('默认「只丢进收件箱」真的进了收件箱',
+      await cdp.eval("document.body.innerText.indexOf('端到端测试收件箱') >= 0 ? 'true' : 'false'"), 'true')
+
     /* ---- 记账那一格：两个镜头（记一笔 / 记账）----
        宇定的默认是**记一笔**（记账最高频的动作），所以点底栏那格落在它上面。 */
-    await clickTab(3)
+    await clickTab(2)
     check('点「记账」格落在「记一笔」（默认镜头）',
       await cdp.eval("document.querySelector('.pay-page') && document.querySelector('.pay-page').offsetParent !== null ? 'pay' : 'other'"), 'pay')
     await shotCheck('7b-money-out', '记一笔')
@@ -533,9 +553,6 @@ async function main() {
     check('这一笔记进了流水（收入 +¥123）', afterPay.indexOf('+¥123') >= 0 ? 'true' : afterPay.slice(0, 300), 'true')
     await cdp.shot('7d-ledger-after-pay', SHOTS)
 
-    /* ---- 复盘（底栏最后一格）---- */
-    await clickTab(4); await shotCheck('5-review', '复盘')
-
     /* ---- 空间（右上角那颗齿轮）+ 习惯提醒块 ----
        提醒那一块：H5 里没有原生壳，应该显示「只在 App 里生效」的实话，
        而不是一颗点了没反应的开关。 */
@@ -550,9 +567,10 @@ async function main() {
     check('提醒块出现且说清「只在 App 里生效」', remBlock, '只在装到手机上')
     await cdp.shot('6b-remind-block', SHOTS)
 
-    /* ---- 今日那一格的另外两个镜头 ---- */
+    /* ---- 今日那一格的另外几个镜头（日历 / 四象限 / 复盘）----
+       复盘 2026-10-04 从底栏挪进来了，成了这一排的第四格。 */
     await clickTab(0)
-    for (const [file, label] of [['8-calendar', '日历'], ['9-quadrant', '四象限']]) {
+    for (const [file, label] of [['8-calendar', '日历'], ['9-quadrant', '四象限'], ['5-review', '复盘']]) {
       const ok = await cdp.eval(`(() => {
         const b = Array.from(document.querySelectorAll('.seg-b'))
           .filter(x => x.offsetParent !== null).find(x => x.innerText.trim() === '${label}');
@@ -562,6 +580,18 @@ async function main() {
       check('切到「' + label + '」', ok, 'true')
       await cdp.shot(file, SHOTS)
     }
+    /* 切回「今日」，读页头那颗镜头分段器（不是块里那颗小号的）——
+       它下面紧跟着 .moneyline 金额行，用它定位。 */
+    await clickTab(0)
+    await cdp.eval(`(() => {
+      const b = Array.from(document.querySelectorAll('.seg-b'))
+        .filter(x => x.offsetParent !== null).find(x => x.innerText.trim() === '今日');
+      if (b) b.click(); return !!b;
+    })()`)
+    await cdp.wait(400)
+    check('今日页头四个镜头都在',
+      await cdp.eval("(()=>{const p=Array.from(document.querySelectorAll('.page')).find(x=>x.offsetParent!==null&&x.querySelector('.moneyline'));if(!p)return 'no-today-page';const s=p.querySelector('.seg');return s?Array.from(s.querySelectorAll('.seg-b')).filter(x=>x.offsetParent!==null).map(x=>x.innerText.trim()).join('|'):'no-seg'})()"),
+      '今日|日历|四象限|复盘')
     await cdp.eval("(()=>{const g=document.querySelector('.gear');if(g)g.click();return !!g})()")
     await cdp.wait(350)
     await cdp.eval("(()=>{const c=document.querySelector('.card');if(c)c.click();return !!c})()")
@@ -587,14 +617,17 @@ async function main() {
     await cdp.wait(1500)
     let up = false
     for (let i = 0; i < 40 && !up; i++) {
-      try { up = await cdp.eval("document.querySelectorAll('.tabbar .navi').length === 5") } catch (e) {}
+      try { up = await cdp.eval("document.querySelectorAll('.tabbar .navi').length === 3") } catch (e) {}
       if (!up) await cdp.wait(300)
     }
     const landed = await cdp.eval(
       "document.querySelector('.pay-page') ? 'pay' : " +
       "(document.body.innerText.indexOf('今天记下的') >= 0 ? 'today' : 'other')")
     check('重载之后落在「记一笔」（打开先看=记一笔）', landed, 'pay')
-    await cdp.shot('12-home-ledger', SHOTS)
+    /* 重载之后 `Page.reload` 会让 CDP 的执行上下文重建，紧跟的 captureScreenshot
+       （尤其 `captureBeyondViewport: true`）会偶发超时。这张图不是断言，只是留档，
+       所以包一层 try/catch：截不到不拖垮整轮，前面的 `landed` 断言才是它要验的。 */
+    try { await cdp.wait(500); await cdp.shot('12-home-ledger', SHOTS) } catch (e) {}
   } finally {
     if (cdp && !KEEP_OPEN) cdp.close()
     if (!KEEP_OPEN) {

@@ -22,7 +22,9 @@
       <Domain v-if="seen.domain" v-show="db.CURRENT === 'domain'" />
     </view>
 
-    <CaptureSheet />
+    <!-- ⚠️ 这里原来还有一个「记东西」的弹层（`CaptureSheet`）。
+         2026-10-04 它整块搬进了收集页的顶部，组件删掉了 ——
+         底栏正中那颗加号的功能，现在是收集页上的一个输入框。 -->
     <AddSheet />
     <EditSheet />
     <GoalSheet />
@@ -36,7 +38,6 @@ import { onHide, onShow } from '@dcloudio/uni-app'
 import { db, saveState, quadVarStyle } from '../../stores/db'
 
 import TabBar from '../../components/TabBar.vue'
-import CaptureSheet from '../../components/CaptureSheet.vue'
 import AddSheet from '../../components/AddSheet.vue'
 import EditSheet from '../../components/EditSheet.vue'
 import GoalSheet from '../../components/GoalSheet.vue'

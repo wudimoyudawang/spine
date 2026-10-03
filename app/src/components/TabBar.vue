@@ -10,11 +10,11 @@
       <text class="navi-t">{{ label(t.k, t.t) }}</text>
     </view>
 
-    <!-- 中间那颗加号：点开「记东西」的面板（只记一笔）。
-         记账**不在这里**，它有自己的底栏格 —— 面板里再来一格就是
-         两个入口做同一件事（面板底部那格已经撤掉了）。 -->
-    <view class="navi navi-plus" @click="openCapture()">
-      <view class="plus"><PlusIcon :size="16" /></view>
+    <!-- 收集在**正中间**。那颗「＋」的位置原本就在这里 —— 2026-10-04 把它挪进了
+         收集页（收集页顶部就是一个「想记什么就写什么」的框），
+         于是「先记下来」这件事的位置没变，只是换了一种做法。 -->
+    <view class="navi" :class="{ 'is-on': isOn(MID.k) }" @click="pick(MID.k)">
+      <text class="navi-t">{{ label(MID.k, MID.t) }}</text>
     </view>
 
     <view
@@ -30,30 +30,27 @@
 </template>
 
 <script setup>
-import { db, go, openCapture, openPay } from '../stores/db'
-import PlusIcon from './PlusIcon.vue'
+import { db, go, openPay } from '../stores/db'
 
-/* 四个 Tab 分列「记一笔」两侧，它正好落在正中间。
-   空间和设置不在这儿 —— 它们是右上角那颗齿轮（GearBtn）。
-
-   ⚠️ **这里是 2 + 1 + 2，不是 4 + 1。** 中间那颗加号要落在正中间，
-   左右格数就必须相等；加到 3+1+3 每格只剩 61px，中文两个字就溢出了。
-   所以「记账」要占一格，只能是**拿掉一格换来的** ——
-   2026-10-04 把「收集」和「随心记」并成了一格（它们本来就是同一件事的
-   两种形态：都是「先记下来，回头再说」），腾出来的位置给了记账。 */
-const LEFT = [
-  { k: 'today', t: '今日' },
-  { k: 'inbox', t: '收集' }
-]
-const RIGHT = [
-  { k: 'ledger', t: '记账' },
-  { k: 'review', t: '复盘' }
-]
+/* 三格：**今日 / 收集 / 记账**。
+ *
+ * 2026-10-04 从五格（今日|收集|＋|记账|复盘）改过来，两处腾挪：
+ *   · **「＋」挪进收集页**（宇：加号的功能放到收集页面里面）。
+ *     那个弹层从此不存在了 —— 收集页顶部就是那个「想记什么就写什么」的框。
+ *   · **「复盘」挪进今日页第一排**（和 今日/日历/四象限 同一颗分段器）。
+ *     它本来就是「回头看看」，和那三个是同一类东西。
+ *
+ * 为什么「收集」落在**正中间**：三格是对称的，中间那格天然是它 ——
+ * 而这正好是原来那颗加号的位置（拇指最容易够到的地方），
+ * 「先记下来」这件事的地位没动。 */
+const LEFT = [{ k: 'today', t: '今日' }]
+const MID = { k: 'inbox', t: '收集' }
+const RIGHT = [{ k: 'ledger', t: '记账' }]
 
 /* 一格底下的镜头。它们不是一个新的一级模块，所以在哪一格上都得亮那一格 ——
-   不这么写的话，切到日历底栏就四个格子全灰，看着像没在任何一页上。 */
+   不这么写的话，切到日历底栏就三格全灰，看着像没在任何一页上。 */
 const FAMILY = {
-  today: ['today', 'calendar', 'quadrant'],
+  today: ['today', 'calendar', 'quadrant', 'review'],
   /* 收集那一格底下是收件箱和随心记（页头分段器切）。 */
   inbox: ['inbox', 'notes'],
   /* 记账那一格底下是记一笔和记账页。 */
@@ -67,9 +64,9 @@ function isOn(k) {
 }
 
 /* 「收集」那一格带**未归类条数**。
-   这是它并成一格之后必须补上的东西：收件箱里堆着 5 条没归类，
-   如果底栏上看不出来，「先记下来别丢」就变成了「记下来就忘了」。
-   随心记**不计数** —— 无红点、不催人是它刻意的气质（见 PROMPT 第 2 节）。 */
+   收件箱里堆着 5 条没归类、而底栏上看不出来，「先记下来别丢」就变成了
+   「记下来就忘了」。随心记**不计数** —— 无红点、不催人是它刻意的气质
+   （见 PROMPT 第 2 节）。 */
 function label(k, t) {
   if (k !== 'inbox') return t
   const n = db.INBOX.length
@@ -120,26 +117,8 @@ function pick(k) {
 .navi:active { background: var(--bg); }
 .navi-t { font-size: 11px; }
 
-/* 中间那颗加号：实心圆钮，跟旁边几个纯文字项分开 ——
-   光靠颜色区分不行，当前选中的那个 Tab 也是蓝的。
-
-   38px 而不是 44px：底栏 53.8px 高，44px 的圆上下各只剩 5px 余量，
-   整栏看着很满；38px 各留 8px，才像这一栏本来就长这样。
-   （两种都是严格居中，量过像素 —— 不是位置问题，是尺寸问题。
-     这两张对照图在 spine-analysis/shots/zb-70.png 和 zb-70b.png。）
-
-   加号本身走 PlusIcon，全项目一份代码。 */
-.plus {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  background: var(--accent);
-  /* 白十字靠这个继承过去 —— PlusIcon 里用的是 currentColor */
-  color: #fff;
-  box-shadow: 0 2px 8px rgba(47, 111, 235, .28);
-}
-.navi-plus:active .plus { background: #2A63D2; }
+/* ⚠️ 这里原来还有 `.plus` / `.navi-plus`（中间那颗凸起的加号圆钮）。
+   2026-10-04 加号的功能挪进收集页之后**删掉了**，那些样式跟着一起走。
+   （那条注释里记着「38px 而不是 44px」的理由。谁要把圆钮搬回来，
+   记得那句：底栏 53.8px 高时 44px 的圆上下各只剩 5px 余量，整栏看着很满。） */
 </style>

@@ -52,26 +52,13 @@
          它把人带到这一页的顶上，往下滑就是设置。 -->
     <view class="sect"><text class="sect-t">设置</text></view>
 
-    <view class="block">
-      <view class="block-h">
-        <text class="tag">记一笔</text>
-        <text class="block-note">首页速记</text>
-      </view>
-      <view class="srow">
-        <text class="srow-k">记完自动关</text>
-        <view class="sw" :class="{ 'is-on': db.CAP_AUTO_CLOSE }" @click="db.CAP_AUTO_CLOSE = !db.CAP_AUTO_CLOSE">
-          <view class="sw-dot"></view>
-        </view>
-      </view>
-      <!-- 「快记类目」那一截删掉了：它是一份**只读**的清单，
-           只显示哪些类目开着，本身一个都改不了 —— 能改的地方在记一笔面板的「自定义」里。
-           摆一份改不了的状态在这里，等于让人跑来这儿找开关然后扑个空。 -->
-      <view class="note"><text class="note-t">那排类目在面板上点「自定义」就能调顺序和开关；判断一句话靠的是规则，在下面那块。</text></view>
-    </view>
-
-    <!-- ============ 自动判断规则 ============
-         放在设置页而不是记一笔的面板里：面板要矮到能让出输入法，
-         而规则是偶尔配一次的东西 —— 挤进那几行只会两头都难受。 -->
+    <!-- 「记一笔」那一块**整块删掉了**（2026-10-04）。
+         它原来只有一条「记完自动关」的开关 + 一句「类目在哪调」的提示。
+         那个弹层并进收集页之后开关没有意义了（没有面板可关，
+         `db.CAP_AUTO_CLOSE` 一起删掉），剩下的一句提示撑不起一整张卡。
+         类目在哪里调：**收集页的「自定义」**（就在那排胶囊旁边）。
+         规则为什么在设置页而不在记东西那一块：它是偶尔配一次的东西，
+         挤在输入框下面只会两头都难受。 -->
     <view class="block">
       <view class="block-h">
         <text class="tag">自动判断规则</text>
