@@ -1,6 +1,9 @@
 <template>
   <view class="page">
     <PageHead title="随心记" />
+    <!-- 和收件箱同一格底下的两个镜头（见 inbox.vue）。这一页自己不计数、
+         不带红点 —— 这一条没因为降成镜头而变：它是随口记的地方，不是待办清单。 -->
+    <ViewSeg group="box" />
 
     <view class="block">
       <textarea :maxlength="-1"
@@ -40,6 +43,7 @@
 import { computed, ref } from 'vue'
 import { db, fmtCN, addNote, delArmed, saveState } from '../stores/db'
 import PageHead from '../components/PageHead.vue'
+import ViewSeg from '../components/ViewSeg.vue'
 import { toast, confirmDelete } from '../lib/ui'
 
 const draft = ref('')

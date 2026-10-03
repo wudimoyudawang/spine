@@ -1,6 +1,10 @@
 <template>
   <view class="page">
     <PageHead title="收集" />
+    <!-- 收集 / 随心记。这两个本来并肩占底栏两格，2026-10-04 并成了一格 ——
+         它们压根是同一件事的两种形态：都是「先记下来，回头再说」。
+         顺手把底栏腾出来的那一格给了记账（它比这两个更像一个一级模块）。 -->
+    <ViewSeg group="box" />
 
     <view class="quick">
       <input :maxlength="-1"
@@ -73,6 +77,7 @@
 import { computed, ref } from 'vue'
 import { db, fmtCN, TODAY, addInbox, classifyInbox, delArmed, saveState } from '../stores/db'
 import PageHead from '../components/PageHead.vue'
+import ViewSeg from '../components/ViewSeg.vue'
 import { toast, confirmDelete } from '../lib/ui'
 
 const draft = ref('')

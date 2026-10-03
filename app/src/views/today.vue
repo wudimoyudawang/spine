@@ -5,106 +5,122 @@
          切过去的时候那颗分段器不跳，才知道自己还在同一处。 -->
     <ViewSeg />
 
-    <!-- 今天花了多少。本月的合计也放这儿 —— 单看今天没参照。 -->
-    <view class="moneyline">
+    <!-- 今天花了多少。本月的合计也放这儿 —— 单看今天没参照。
+         整行可点 → 记账页。**不再写「去记账」三个字**：底栏已经有「记账」
+         那一格了，这儿再写一句就是同一件事的第二个入口（这个仓库一直在删的那种）。
+         右边那颗 › 是唯一的方向符号，有它就够说明「这一行能点」。 -->
+    <view class="moneyline" @click="go('ledger')">
       <text class="ml-s">今天</text>
       <text class="ml-b">{{ money(todaySum) }}</text>
       <text class="ml-s">· {{ todayLogs.length }} 笔</text>
       <text class="ml-s ml-gap">本月</text>
       <text class="ml-b">{{ money(monthSum) }}</text>
-      <view class="ml-go" @click="go('ledger')"><text class="ml-go-t">去记账</text></view>
+      <text class="ml-go">›</text>
     </view>
 
-    <!-- 记东西的入口不在这儿了：底栏中间那颗加号打开面板。
-         这一页从此只负责「看今天」，不负责「记」。 -->
+    <!-- 待办 / 习惯 / 计划 收进一颗分段器。
+         原来三块铺在一起，整页 2231px（约 2.8 屏），其中这三块占 75%。
+         收进分段器之后最长的那一档也只 1.5 屏。
 
-    <!-- 逾期和到期的待办在**同一条列表**里：它们本来就是同一种东西（没做完的待办），
-         差的只是到期日早晚。分成两张卡片之后，「今天还剩几件」要在两处各数一遍，
-         两个标题也在做同一件事。合并后按到期日自然排序 —— 欠着的本来就在最前面，
-         「这一天的第一眼看见最欠着的那些事」这条并没有丢，只是不再靠两个卡片实现。 -->
+         ⚠️ 这一颗**小一号、而且是第二颗**：页头那颗管「镜头」（我在哪一格底下），
+         这一颗管「今天看哪一类」。两颗长得一样的话，人会分不清哪颗管什么。
+         项目里已有这个语言 —— 日历页也是「页头大 seg + 一颗小 seg（月/周）」。 -->
     <view class="block">
-      <view class="block-h">
-        <text class="tag">{{ doneView ? '已完成' : '待办' }}</text>
+      <view class="seg blk-seg">
+        <view
+          v-for="t in TABS_VIEW"
+          :key="t.k"
+          class="seg-b"
+          :class="{ 'is-on': tab === t.k }"
+          @click="tab = t.k"
+        >
+          <!-- 逾期那几个单独上橙。它藏在别的档后面时，这是唯一还能看见它的地方 ——
+               不带这个数的话，「把习惯藏起来」就等于把今天的欠账也藏起来了。
+               嵌在同一个 text 里（不是并排两个）：并排的话模板里那个换行会在
+               中间渲染出一个空格，出来是「待办 8 ·4」而不是「待办 8·4」。 -->
+          <text class="seg-t">{{ t.n }} {{ t.c }}<text v-if="t.late" class="seg-late">{{ t.late }}</text></text>
+        </view>
+      </view>
+
+      <!-- 块头这一行只放**动作**：数已经在上面那一格上了，这儿再来一遍是重复。 -->
+      <view class="blk-h">
+        <text v-if="tabNote" class="block-note">{{ tabNote }}</text>
         <view class="block-acts">
-          <text class="block-note">{{ doneView ? tt.done.length + ' 条' : openCount + ' 条' }}<text v-if="!doneView && overCount" class="note-late"> · {{ overCount }} 条逾期</text></text>
-          <view class="addbtn" @click="doneView = !doneView">
-            <text class="addbtn-t">{{ doneView ? '待办' : '已完成' }}</text>
+          <view v-if="tab === 'todo'" class="addbtn" @click="doneView = !doneView">
+            <text class="addbtn-t">{{ doneView ? '看没做完的' : '已完成' }}</text>
           </view>
-          <view v-if="!doneView" class="addbtn" @click="addTop('todo')">
+          <view class="addbtn" @click="addTop(tab)">
             <PlusIcon :size="14" />
-            <text class="addbtn-t">新增待办</text>
+            <text class="addbtn-t">新增{{ tabName }}</text>
           </view>
         </view>
       </view>
 
-      <view v-if="!rows.length" class="empty">
-        <text class="empty-t">{{ doneView ? '今天还没有做完的' : '今天没有到期的待办' }}</text>
-        <text class="empty-t">{{ doneView ? '点左边的方框就能完成一条' : '点上面的「新增待办」加一条' }}</text>
-      </view>
-      <TreeList :rows="rows" :bar="rowBar" @open="edit">
-        <template #lead="{ row }">
-          <DoneBox :on="row.node.status === 'done'" @toggle="toggleDone(row.node)" />
-        </template>
-        <template #default="{ row }">
-          <text class="row-t" :class="{ 'is-done': row.node.status === 'done' }">{{ label(row.node) }}</text>
-          <!-- 逾期那行整行灰字转橙、并写出逾期几天。合进一条列表之后，
-               这是唯一能一眼分出「欠着的」和「今天该做的」的东西 ——
-               只写日期的话，得心算才知道 9-16 是几天前。 -->
-          <text class="row-m" :class="{ 'is-late': isLateRow(row) }">{{ pathPrefix(row) }}{{ domainName(row.node) }}{{ lateNote(row) }}</text>
-        </template>
-      </TreeList>
-    </view>
-
-    <view class="block">
-      <view class="block-h">
-        <text class="tag">习惯</text>
-        <view class="block-acts">
-          <text class="block-note">点右边打卡</text>
-          <view class="addbtn" @click="addTop('habit')">
-        <PlusIcon :size="14" /><text class="addbtn-t">新增习惯</text>
-      </view>
+      <!-- 待办：逾期和到期的在**同一条列表**里（它们本来就是同一种东西，
+           差的只是到期日早晚）。按到期日自然排序，欠着的本来就在最前面。 -->
+      <template v-if="tab === 'todo'">
+        <view v-if="!rows.length" class="empty">
+          <text class="empty-t">{{ doneView ? '今天还没有做完的' : '今天没有到期的待办' }}</text>
+          <text class="empty-t">{{ doneView ? '点左边的方框就能完成一条' : '点上面的「新增待办」加一条' }}</text>
         </view>
-      </view>
-      <TreeList :rows="hb" tickable @open="edit">
-        <template #default="{ row }">
-          <text class="row-t">{{ label(row.node) }}</text>
-          <text class="row-m">{{ pathPrefix(row) }}{{ row.dom.name }} · {{ row.node.m }}</text>
-          <!-- 连续/累计那句和「今天打没打」都由**行对象**带过来（见 db.js 的 crossTree）。
-               原来这两个值在这里长了 5 次调用：streak 三次（v-if + :class + 插值）、
-               habitDoneOn 两次，每调用一次就要扫一遍全部打卡记录再排序。 -->
-          <text v-if="row.streak" class="row-st" :class="{ 'is-on': row.streak.on }">{{ row.streak.s }}</text>
-        </template>
-      </TreeList>
-    </view>
+        <TreeList :rows="rows" :bar="rowBar" @open="edit">
+          <template #lead="{ row }">
+            <DoneBox :on="row.node.status === 'done'" @toggle="toggleDone(row.node)" />
+          </template>
+          <template #default="{ row }">
+            <text class="row-t" :class="{ 'is-done': row.node.status === 'done' }">{{ label(row.node) }}</text>
+            <!-- 逾期那行整行灰字转橙、并写出逾期几天。合进一条列表之后，
+                 这是唯一能一眼分出「欠着的」和「今天该做的」的东西 ——
+                 只写日期的话，得心算才知道 9-16 是几天前。 -->
+            <text class="row-m" :class="{ 'is-late': isLateRow(row) }">{{ pathPrefix(row) }}{{ domainName(row.node) }}{{ lateNote(row) }}</text>
+          </template>
+        </TreeList>
+      </template>
 
-    <!-- 计划：带进度条的长期目标。所有领域的平铺在一起 ——
-         今日页不按领域分组，因为「今天该推哪一件事」是跨领域的问题。
-         今日页的进度只读：改进度是回到空间里干的事，那一页给滑杆。 -->
-    <view v-if="gl.length" class="block">
-      <view class="block-h">
-        <text class="tag">计划</text>
-        <view class="block-acts">
-          <text class="block-note">{{ gl.length }} 个</text>
-          <view class="addbtn" @click="addTop('goal')">
-        <PlusIcon :size="14" /><text class="addbtn-t">新增计划</text>
-      </view>
+      <!-- 习惯 -->
+      <template v-else-if="tab === 'habit'">
+        <view v-if="!hb.length" class="empty">
+          <text class="empty-t">还没有习惯。</text>
+          <text class="empty-t">点上面的「新增习惯」加一个。</text>
         </view>
-      </view>
-      <TreeList :rows="gl" @open="editGoal">
-        <template #default="{ row }">
-          <text class="row-t">{{ label(row.node) }}</text>
-          <text class="row-m">{{ pathPrefix(row) }}{{ row.dom.name }} · 长期 · {{ progressOf(row.spec) }}%</text>
-        </template>
-        <template #tail="{ row }">
-          <view class="bar">
-            <view class="bar-fill" :style="'width:' + progressOf(row.spec) + '%'"></view>
-          </view>
-        </template>
-      </TreeList>
+        <TreeList :rows="hb" tickable @open="edit">
+          <template #default="{ row }">
+            <text class="row-t">{{ label(row.node) }}</text>
+            <text class="row-m">{{ pathPrefix(row) }}{{ row.dom.name }} · {{ row.node.m }}</text>
+            <!-- 连续/累计那句和「今天打没打」都由**行对象**带过来（见 db.js 的 crossTree）。
+                 原来这两个值在这里长了 5 次调用：streak 三次（v-if + :class + 插值）、
+                 habitDoneOn 两次，每调用一次就要扫一遍全部打卡记录再排序。 -->
+            <text v-if="row.streak" class="row-st" :class="{ 'is-on': row.streak.on }">{{ row.streak.s }}</text>
+          </template>
+        </TreeList>
+      </template>
+
+      <!-- 计划：带进度条的长期目标。所有领域的平铺在一起 ——
+           今日页不按领域分组，因为「今天该推哪一件事」是跨领域的问题。
+           今日页的进度只读：改进度是回到领域页干的事，那一页给滑杆。 -->
+      <template v-else>
+        <view v-if="!gl.length" class="empty">
+          <text class="empty-t">还没有长期计划。</text>
+          <text class="empty-t">点上面的「新增计划」加一个。</text>
+        </view>
+        <TreeList :rows="gl" @open="editGoal">
+          <template #default="{ row }">
+            <text class="row-t">{{ label(row.node) }}</text>
+            <text class="row-m">{{ pathPrefix(row) }}{{ row.dom.name }} · 长期 · {{ progressOf(row.spec) }}%</text>
+          </template>
+          <template #tail="{ row }">
+            <view class="bar">
+              <view class="bar-fill" :style="'width:' + progressOf(row.spec) + '%'"></view>
+            </view>
+          </template>
+        </TreeList>
+      </template>
     </view>
 
     <!-- 今天记下的 = 操作流水。连着真实数据的那几条点得开（改的就是那条支出、
-         那条记录）；只有一行字的点开只能移除 —— 不假装能改历史。 -->
+         那条记录）；只有一行字的点开只能移除 —— 不假装能改历史。
+         它**不进上面那颗分段器**：它是「刚才记的落哪儿了」的确认，
+         和「今天该做什么」不是一类；而且刚记完就要瞄一眼，藏起来要多点一下。 -->
     <view class="block">
       <view class="block-h">
         <text class="tag">今天记下的</text>
@@ -144,7 +160,7 @@ import { toast } from '../lib/ui'
    这串原来是在这儿现拼的，和 fmtCN 长得像又不完全一样；抽进数据层了。 */
 const headDate = computed(function () { return fmtCNWide(TODAY) })
 
-/* 三棵树都来自数据层那一份构建处 —— 今日页和领域页读同一批行对象，
+/* 三棵树都来自数据层那一份构建处 —— 今日页和领域页读的是同一批行对象，
    所以「子项跟着父项出现」这条规矩在两页的表现是一样的。 */
 const tt = computed(() => todayTree(TODAY))
 const hb = computed(() => habitTree())
@@ -166,6 +182,39 @@ const flow = computed(() => db.TODAY_LOGS)
 const monthSum = computed(() => moneyTotalOf(TODAY.slice(0, 7)))
 
 const label = labelOf
+
+/* ---- 今天看哪一类 ----
+
+   为什么不记住（`tab` 是个本地 ref，不进 db）：
+   和「录入页的日期不记住上次那个」同一条理由 —— 停在「计划」档过两天再打开，
+   今天 3 条逾期待办就看不见了。「今天该做什么一眼看到」是这一页存在的理由。
+   （页头那颗镜头是记住的，但它管的是「我在哪一格的底下」，不是一回事。） */
+const TAB_NAME = { todo: '待办', habit: '习惯', goal: '计划' }
+const tab = ref('todo')
+const tabName = computed(function () { return TAB_NAME[tab.value] || '待办' })
+
+/* 三格上的数。**必须带数**：不带的话，把习惯藏起来之后就再也不知道
+   今天还有没有习惯没打 —— 那正是藏起来要付的代价，而这个数把它抵掉了。
+   习惯那格给 `2/6`（今天打了 2 个 / 共 6 个）而不是 `6`：
+   后面那个数只说了「有几个习惯」，没回答「今天还剩几个」。 */
+const doneHabits = computed(function () { return hb.value.filter(function (r) { return r.doneToday }).length })
+
+const TABS_VIEW = computed(function () {
+  return [
+    { k: 'todo', n: '待办', c: String(openCount.value), late: overCount.value ? ('·' + overCount.value) : '' },
+    { k: 'habit', n: '习惯', c: hb.value.length ? (doneHabits.value + '/' + hb.value.length) : '0', late: '' },
+    { k: 'goal', n: '计划', c: String(gl.value.length), late: '' }
+  ]
+})
+
+/* 块头那行左边那句话。**不重复分段器上已有的数** ——
+   「5 条」已经在「待办 5」里了，这儿再说一遍是同一句话写两遍。
+   只留「分段器上说不了」的那些：已完成那档有几条、习惯怎么打。 */
+const tabNote = computed(function () {
+  if (tab.value === 'todo') return doneView.value ? ('已完成 ' + tt.value.done.length + ' 条') : ''
+  if (tab.value === 'habit') return '点右边打卡'
+  return ''
+})
 
 /* 待办 / 已完成两个视图，块头那颗按钮切的就是它。
    只存一个布尔，不存「上次看的是哪个」—— 重开应用该回到待办，
@@ -190,7 +239,7 @@ function rowBar(r) {
   return doneView.value ? '' : quadTone(quadOf(r.node))
 }
 
-/* ---- 新增：三个区块各有一颗，走同一个弹窗、换 kind ----
+/* ---- 新增：三档各有一颗，走同一个弹窗、换 kind ----
    今日页的待办写进 ITEMS（到期就是今天），这样它当场就出现在这一页；
    习惯和计划本来就跨领域，写进所属领域的桶。这个分叉只在 commitAdd 里。 */
 function addTop(kind) {
@@ -243,21 +292,36 @@ function toggleDone(it) {
   border: 1px solid var(--line);
   border-radius: var(--r);
 }
-.block-h {
+
+/* 三档分段器：`.blk-seg`（小一号的那一层）在 base.scss ——
+   记账页那颗「记账/记一笔」和这一颗逐字相同，留一份。
+   这里只加这一页自己的：和上面那行内容的间距。 */
+.blk-seg { margin-bottom: 2px; }
+/* 逾期那几个单独上橙。**两种选中态都要写**：这一格被选中时底色是蓝的，
+   橙色压在上面读不出来（base.scss 那条 `.seg-b.is-on .seg-t` 管不到它 ——
+   它是个嵌套 text，没有 seg-t 这个类）。 */
+.blk-seg .seg-late { color: var(--warn); }
+.blk-seg .seg-b.is-on .seg-late { color: #fff; }
+
+/* 块头那行：只有动作，靠右。数在上面那一格上，它不重复。 */
+.blk-h {
   display: flex;
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
-  padding-bottom: 6px;
+  min-height: 34px;
+  padding-bottom: 4px;
 }
-/* 「N 条逾期」那半句。它挂在「5 条」后面，所以是一段内联文字，不是另一个标签 ——
-   （原来逾期是单独一张卡片、有自己的橙色标题，合并之后只剩这半句了。） */
-.note-late { font-size: 12px; color: var(--warn); }
 .block-acts {
   display: flex;
   flex-direction: row;
   align-items: center;
+  margin-left: auto;
 }
+
+/* 「N 条逾期」那半句。它挂在「5 条」后面，所以是一段内联文字，不是另一个标签 ——
+   （原来逾期是单独一张卡片、有自己的橙色标题，合并之后只剩这半句了。） */
+.note-late { font-size: 12px; color: var(--warn); }
 
 /* 区块标题右边的「新增」：文字钮，不抢标题的眼。
    它比行尾那颗加号大一点 —— 那是「加一整条」，加子项是次要动作。 */
@@ -304,11 +368,12 @@ function toggleDone(it) {
   flex-wrap: wrap;
   margin: -2px 0 14px;
 }
+.moneyline:active { opacity: .6; }
 .ml-s { font-size: 12px; color: var(--sub); }
 .ml-b { margin-left: 4px; font-size: 12px; font-weight: 500; color: var(--text); }
 .ml-gap { margin-left: 16px; }
-.ml-go { margin-left: auto; }
-.ml-go-t { font-size: 12px; color: var(--accent); }
+/* 整行可点之后，这颗 › 是唯一的方向符号（原来的「去记账」三个字删了）。 */
+.ml-go { margin-left: auto; font-size: 15px; color: var(--muted); }
 
 /* 计划行的进度条固定在右侧。给固定宽度而不是 flex:1 ——
    固定宽度下那几条杠的左端是对齐的，一眼能比出高低；

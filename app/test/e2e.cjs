@@ -159,18 +159,117 @@ async function main() {
     }
     if (!mounted) throw new Error('应用没挂载起来（首屏没渲染出底栏与区块）')
 
+    /* 底栏是 今日|收集|＋|记账|复盘（2+1+2）—— 索引 2 是那颗加号，按它没意义。
+       下面每一段都用这两个小工具。 */
+    const clickTab = async (i) => { await cdp.eval(`(()=>{const e=document.querySelectorAll('.tabbar .navi')[${i}];if(e)e.click();return !!e})()`); await cdp.wait(350) }
+    const shotCheck = async (file, want) => {
+      await cdp.shot(file, SHOTS)
+      const t = await cdp.eval("document.body.innerText.slice(0,500)")
+      check('「' + want + '」渲染正常', t.replace(/\s/g, '').length > 20 ? 'true' : t, 'true')
+    }
+    /* 页面上有**多个** `.seg-b`（今日页三档、收集页两格、记账页两格）——
+       v-show 让别的页面留在 DOM 里但 display:none，所以按可见性筛，
+       取到的就是「当前这一页上的那颗」。 */
+    const segTexts = `Array.from(document.querySelectorAll('.seg-b')).filter(x => x.offsetParent !== null).map(x => x.innerText.replace(/\\s+/g,' ').trim())`
+
     console.log('=== 端到端：今日页渲染 ===')
     await cdp.shot('1-today', SHOTS)
-    const home = await cdp.eval("Array.from(document.querySelectorAll('.block')).map(b=>b.innerText).join('\\n')")
-    check('习惯行带「连续 … 累计 …」（行字段已接上）', home, '连续 2 周 · 累计 2 周')
-    /* 已打卡的按钮是实心圆 + 白勾（方案 D），没有文字了 —— 改查它的 DOM 类 */
+
+    /* ---- 底栏：五格、中间那颗加号、收集格带未归类条数 ----
+       必须是 2 + 1 + 2 —— 加号要落在正中间，左右格数就得相等。
+       所以「记账」那一格是拿「收集/随心记」并成一格换来的。 */
+    const nav = await cdp.eval(`(() => {
+      return Array.from(document.querySelectorAll('.tabbar .navi'))
+        .map(x => x.querySelector('.plus') ? '＋' : x.innerText.replace(/\\s+/g, ' ').trim())
+        .join('|')
+    })()`)
+    check('底栏：今日|收集|＋|记账|复盘（加号在正中）', nav, '今日|收集 3|＋|记账|复盘')
+
+    /* ---- 今日页有多长 ----
+       「待办/习惯/计划 铺在一起太长了」是这一轮改动的起因，
+       所以把长度量出来钉住：**改之前是 2231px（约 2.8 屏）**。
+       不硬断言「一屏装下」—— 待办一多这页照样会长，那是应该长的；
+       但三块合并之后它不该再回到两屏以上。
+       ⚠️ 量的是**可见那一页自己的高度**，不是 `document.body.scrollHeight`：
+       后者在内容比视口矮时返回的是视口高度，会得到一个「刚好等于视口」的假数
+       （1508 = 视口高，看着像一屏，其实什么都没量到）。 */
+    const viewH = await cdp.eval("Math.round(window.innerHeight)")
+    const todayH = await cdp.eval(`Math.round(Math.max.apply(null,
+      Array.from(document.querySelectorAll('.page'))
+        .filter(x => x.offsetParent !== null)
+        .map(x => x.getBoundingClientRect().height)))`)
+    check('今日页整页高 ' + todayH + 'px（改前 2231px，视口 ' + viewH + 'px）',
+      todayH < viewH * 1.5 ? 'true' : String(todayH), 'true')
+
+    /* ---- 今日页三档分段器 ----
+       三块（待办/习惯/计划）原来一次铺出来，整页 2.8 屏；现在收在一颗分段器后面。
+       数**必须**带：不带的话把习惯藏起来，就再也不知道今天还有没有习惯没打。 */
+    const todayTabs = await cdp.eval(`(() => {
+      return Array.from(document.querySelectorAll('.blk-seg .seg-b'))
+        .filter(x => x.offsetParent !== null)
+        .map(x => x.innerText.replace(/\\s+/g, ' ').trim()).join(' | ')
+    })()`)
+    /* 查**形状**不查具体数字：那几个数跟着今天变（种子日期按天整体平移到今天）。 */
+    check('三档各带一个数（待办 N·M | 习惯 N/M | 计划 N）',
+      /^待办 \d+(·\d+)? \| 习惯 \d+(\/\d+)? \| 计划 \d+$/.test(todayTabs) ? 'true' : todayTabs, 'true')
+    /* 分段器上那个逾期数必须**等于**列表里橙色的行数 ——
+       两处各数一遍的话，「一个说 4、一个说 3」是最难发现的那种错。 */
+    const latePair = await cdp.eval(`(() => {
+      const cell = Array.from(document.querySelectorAll('.blk-seg .seg-b'))
+        .filter(x => x.offsetParent !== null)[0]
+      const m = cell.innerText.replace(/\\s+/g, '').match(/待办(\\d+)(?:·(\\d+))?/)
+      return m ? ('seg-' + (m[2] || '0')) : 'no-match'
+    })()`)
+    const lateRows = await cdp.eval("document.querySelectorAll('.block .row-m.is-late').length")
+    check('分段器上的逾期数 = 列表里橙色的行数', latePair, 'seg-' + lateRows)
+    /* 默认停在「待办」档：另外两档的**内容**不该铺出来
+       （那一档的名字在分段器上，所以查内容要用行里才有的字符串）。 */
+    const onlyTodo = await cdp.eval(`(() => {
+      const t = document.querySelector('.block').innerText
+      return (t.indexOf('交上月报销单') >= 0 ? 'todo ' : '') +
+             (t.indexOf('训练日打卡') >= 0 ? 'habit ' : '') +
+             (t.indexOf('硬拉 100kg') >= 0 ? 'goal ' : '')
+    })()`)
+    check('默认只铺待办那一档', onlyTodo, 'todo ')
+
+    const goTab = async (name) => {
+      const ok = await cdp.eval(`(() => {
+        const b = Array.from(document.querySelectorAll('.blk-seg .seg-b'))
+          .filter(x => x.offsetParent !== null).find(x => x.innerText.indexOf('${name}') === 0)
+        if (!b) return false; b.click(); return true
+      })()`)
+      await cdp.wait(320)
+      return ok
+    }
+
+    check('切到「习惯」档', await goTab('习惯'), 'true')
+    await cdp.shot('1b-today-habit', SHOTS)
+    /* 这几条原来验的是「行字段接上了」。它们读的是**当前铺出来的那一块**，
+       所以必须切到那一档再读 —— 三块合并之后，同时铺出来的只有一块。
+       ⚠️ 「连续 N 周 · 累计 M 周」里那个 N/M 是**跟着今天变的**（种子日期按天整体
+       平移到今天，而「连续」按周切），写死数字的断言大多数日子都是红的。
+       这条断言要验的是「行字段接上了」，所以查形状不查数字。 */
+    const habitTxt = await cdp.eval("document.querySelector('.block').innerText")
+    check('习惯行带「连续 … 累计 …」（形状）', /连续 \d+ [天周个月]+ · 累计 \d+/.test(habitTxt) ? 'true' : habitTxt.slice(0, 200), 'true')
     check('习惯行有已完成态的圆钮（is-done）', await cdp.eval("document.querySelectorAll('.tickc.is-done').length > 0"), 'true')
-    check('计划行有进度', home, '硬拉 100kg')
+    check('切到「计划」档', await goTab('计划'), 'true')
+    await cdp.shot('1c-today-goal', SHOTS)
+    check('计划行有进度', await cdp.eval("document.querySelector('.block').innerText"), '硬拉 100kg')
+    check('切回「待办」档', await goTab('待办'), 'true')
+    check('切回来待办又铺出来了', await cdp.eval("document.querySelector('.block').innerText.indexOf('交上月报销单')>=0"), 'true')
+
+    /* 金额行整行可点 → 记账页（「去记账」三个字删了，底栏已经有那一格）。 */
+    const toLedgerByLine = await cdp.eval("(()=>{const m=document.querySelector('.moneyline');if(!m)return false;m.click();return true})()")
+    await cdp.wait(400)
+    check('点金额行进记账页', toLedgerByLine, 'true')
+    check('确实到了记账页（页头两格在）', await cdp.eval(segTexts + ".join('|')"), '记账|记一笔')
+    await clickTab(0)
 
     console.log('')
     console.log('=== 端到端：走一遍缺陷路径（新增习惯时频率到底存成了什么）===')
+    await goTab('习惯')
     const clicked = await cdp.eval(`(() => {
-      const b = Array.from(document.querySelectorAll('.addbtn')).find(x => x.innerText.indexOf('新增习惯') >= 0);
+      const b = Array.from(document.querySelectorAll('.addbtn')).filter(x => x.offsetParent !== null).find(x => x.innerText.indexOf('新增习惯') >= 0);
       if (!b) return false; b.click(); return true;
     })()`)
     check('点开「新增习惯」', clicked, 'true')
@@ -292,37 +391,41 @@ async function main() {
 
     console.log('')
     console.log('=== 逐页冒烟 + 截图（' + SHOTS + '）===')
-    const clickTab = async (i) => { await cdp.eval(`(()=>{const e=document.querySelectorAll('.tabbar .navi')[${i}];if(e)e.click();return !!e})()`); await cdp.wait(350) }
-    const shotCheck = async (file, want) => {
-      await cdp.shot(file, SHOTS)
-      const t = await cdp.eval("document.body.innerText.slice(0,500)")
-      check('「' + want + '」渲染正常', t.replace(/\s/g, '').length > 20 ? 'true' : t, 'true')
-    }
 
+    /* ---- 收集那一格：底下两个镜头（收集 / 随心记）----
+       2026-10-04 之前它们是底栏并肩的两格，并成一格之后
+       「随心记还能不能进」这件事只能靠这条断言盯着。 */
     await clickTab(1); await shotCheck('3-inbox', '收集')
-    await clickTab(3); await shotCheck('4-notes', '随心记')
-    await clickTab(4); await shotCheck('5-review', '复盘')
-    await cdp.eval("(()=>{const g=document.querySelector('.gear');if(g)g.click();return !!g})()")
-    await cdp.wait(350)
-    await shotCheck('6-spaces', '空间')
-
-    /* 习惯提醒那一块：H5 里没有原生壳，应该显示「只在 App 里生效」的实话，
-       而不是一颗点了没反应的开关。 */
-    const remBlock = await cdp.eval(`(() => {
-      const blocks = Array.from(document.querySelectorAll('.block'));
-      const b = blocks.find(x => x.innerText.indexOf('习惯提醒') >= 0);
-      return b ? b.innerText.replace(/\\s+/g, ' ').slice(0, 160) : 'NOT_FOUND';
-    })()`)
-    check('提醒块出现且说清「只在 App 里生效」', remBlock, '只在装到手机上')
-    await cdp.shot('6b-remind-block', SHOTS)
-
-    const toLedger = await cdp.eval(`(() => {
-      const c = Array.from(document.querySelectorAll('.card')).find(x => x.innerText.indexOf('记账') >= 0);
-      if (!c) return false; c.click(); return true;
+    check('收集页头有两格镜头', await cdp.eval(segTexts + ".join('|')"), '收集|随心记')
+    const toNotes = await cdp.eval(`(() => {
+      const b = Array.from(document.querySelectorAll('.seg-b'))
+        .filter(x => x.offsetParent !== null).find(x => x.innerText.trim() === '随心记');
+      if (!b) return false; b.click(); return true;
     })()`)
     await cdp.wait(400)
-    check('从空间点进记账页', toLedger, 'true')
-    await shotCheck('7-ledger', '记账')
+    check('收集格里的「随心记」镜头进得去', toNotes, 'true')
+    await shotCheck('4-notes', '随心记')
+    /* 再点底栏那一格要**回收集**（固定回默认镜头，和「点今日格回今日」一致）——
+       不回的话，那一格会变成「上次看的那个」，和「今日」那格的行为就对不上了。 */
+    await clickTab(1)
+    check('再点「收集」格回到收集镜头', await cdp.eval("document.body.innerText.indexOf('收件箱') >= 0 ? 'true' : 'false'"), 'true')
+
+    /* ---- 记账那一格 ---- */
+    await clickTab(3); await shotCheck('7-ledger', '记账')
+    check('记账页头两格', await cdp.eval(segTexts + ".join('|')"), '记账|记一笔')
+    /* 第 2 格是**一扇门**，不是模式：点了把录入浮层压上来，关掉还在这儿。 */
+    const openPayFromHead = await cdp.eval(`(() => {
+      const b = Array.from(document.querySelectorAll('.seg-b'))
+        .filter(x => x.offsetParent !== null).find(x => x.innerText.trim() === '记一笔');
+      if (!b) return false; b.click(); return true;
+    })()`)
+    await cdp.wait(400)
+    check('记账页头点「记一笔」开录入页', openPayFromHead, 'true')
+    check('录入页真的起来了', await cdp.eval("!!document.querySelector('.paywrap')"), 'true')
+    await cdp.shot('7e-ledger-to-pay', SHOTS)
+    await cdp.eval("(()=>{const b=document.querySelector('.paywrap .tbtn');if(b)b.click();return !!b})()")
+    await cdp.wait(350)
+    check('关掉录入页仍停在记账页', await cdp.eval("!!document.querySelector('.paywrap')"), 'false')
 
     /* ---- 记账录入页（整页浮层）---------------------------------------------
        它和上面那 9 个视图不是一回事：不进底栏、从「记一笔」点进来、记完返回。
@@ -330,7 +433,8 @@ async function main() {
        光截图看不出「键按了但没记上」。
        2026-10-04 加这一组：新页面上线时它不在任何回归网里。 */
     const openPay = await cdp.eval(`(() => {
-      const b = Array.from(document.querySelectorAll('.qe')).find(x => x.innerText.indexOf('记一笔') >= 0);
+      const b = Array.from(document.querySelectorAll('.seg-b'))
+        .filter(x => x.offsetParent !== null).find(x => x.innerText.trim() === '记一笔');
       if (!b) return false; b.click(); return true;
     })()`)
     await cdp.wait(400)
@@ -392,9 +496,31 @@ async function main() {
     check('这一笔记进了流水（收入 +¥123）', afterPay.indexOf('+¥123') >= 0 ? 'true' : afterPay.slice(0, 300), 'true')
     await cdp.shot('7d-ledger-after-pay', SHOTS)
 
+    /* ---- 复盘（底栏最后一格）---- */
+    await clickTab(4); await shotCheck('5-review', '复盘')
+
+    /* ---- 空间（右上角那颗齿轮）+ 习惯提醒块 ----
+       提醒那一块：H5 里没有原生壳，应该显示「只在 App 里生效」的实话，
+       而不是一颗点了没反应的开关。 */
+    await cdp.eval("(()=>{const g=document.querySelector('.gear');if(g)g.click();return !!g})()")
+    await cdp.wait(350)
+    await shotCheck('6-spaces', '空间')
+    const remBlock = await cdp.eval(`(() => {
+      const blocks = Array.from(document.querySelectorAll('.block'));
+      const b = blocks.find(x => x.innerText.indexOf('习惯提醒') >= 0);
+      return b ? b.innerText.replace(/\\s+/g, ' ').slice(0, 160) : 'NOT_FOUND';
+    })()`)
+    check('提醒块出现且说清「只在 App 里生效」', remBlock, '只在装到手机上')
+    await cdp.shot('6b-remind-block', SHOTS)
+
+    /* ---- 今日那一格的另外两个镜头 ---- */
     await clickTab(0)
     for (const [file, label] of [['8-calendar', '日历'], ['9-quadrant', '四象限']]) {
-      const ok = await cdp.eval(`(()=>{const b=Array.from(document.querySelectorAll('.seg-b')).find(x=>x.innerText.trim()==='${label}');if(b)b.click();return !!b})()`)
+      const ok = await cdp.eval(`(() => {
+        const b = Array.from(document.querySelectorAll('.seg-b'))
+          .filter(x => x.offsetParent !== null).find(x => x.innerText.trim() === '${label}');
+        if (!b) return false; b.click(); return true;
+      })()`)
       await cdp.wait(450)
       check('切到「' + label + '」', ok, 'true')
       await cdp.shot(file, SHOTS)
@@ -406,6 +532,32 @@ async function main() {
     await cdp.shot('10-domain', SHOTS)
     const dom = await cdp.eval("document.body.innerText.slice(0,800)")
     check('领域页渲染正常且习惯行有连续/累计', dom.indexOf('连续') >= 0 ? 'true' : dom.slice(0, 200), 'true')
+
+    /* ---- 最后的「打开应用先看」：**必须重载页面**才算真的验了冷启动 ----
+       `applyHomePage()` 写在 main.js 里、紧跟在 `loadState()` 之后。
+       光点一下设置里的胶囊只改了 db.HOME_PAGE，验不到「下次打开落在哪」——
+       而那正是这一条的全部意义。 */
+    check('设置里有「打开先看」三档',
+      await cdp.eval("Array.from(document.querySelectorAll('.homechip')).map(x=>x.innerText.trim()).join('|')"),
+      '上次停留|今日|记账')
+    const pickHome = await cdp.eval(`(() => {
+      const b = Array.from(document.querySelectorAll('.homechip')).find(x => x.innerText.trim() === '记账');
+      if (!b) return false; b.click(); return true;
+    })()`)
+    check('选「记账」', pickHome, 'true')
+    await cdp.wait(400)
+    await cdp.send('Page.reload', {})
+    await cdp.wait(1500)
+    let up = false
+    for (let i = 0; i < 40 && !up; i++) {
+      try { up = await cdp.eval("document.querySelectorAll('.tabbar .navi').length === 5") } catch (e) {}
+      if (!up) await cdp.wait(300)
+    }
+    const landed = await cdp.eval(
+      "document.body.innerText.indexOf('最近流水') >= 0 ? 'ledger' : " +
+      "(document.body.innerText.indexOf('今天记下的') >= 0 ? 'today' : 'other')")
+    check('重载之后落在「记账」（打开先看=记账）', landed, 'ledger')
+    await cdp.shot('12-home-ledger', SHOTS)
   } finally {
     if (cdp && !KEEP_OPEN) cdp.close()
     if (!KEEP_OPEN) {

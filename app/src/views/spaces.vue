@@ -298,8 +298,27 @@
     </view>
 
     <view class="block">
-      <view class="block-h"><text class="tag">外观</text><text class="block-note">先做浅色，够用</text></view>
+      <view class="block-h"><text class="tag">界面</text><text class="block-note">先做浅色，够用</text></view>
       <view class="srow"><text class="srow-k">主题</text><text class="srow-v">浅色</text></view>
+      <!-- 「打开应用先看哪一页」。三档，默认「上次停留」= 加这一条之前的行为
+           （`CURRENT` 从存储恢复，所以关掉再打开回到上次那一页）。
+           默认要是「今日」，等于把所有人的习惯悄悄改掉一次。
+           跟着设备走（进 UI_KEYS）——「我这台手机打开先看什么」是设备的事，
+           不该跟着档案跑到另一台机器上。 -->
+      <view class="srow srow-tick">
+        <text class="srow-k">打开先看</text>
+        <view class="tickswatches">
+          <view
+            v-for="h in HOME_OPTS"
+            :key="h.v || 'last'"
+            class="homechip"
+            :class="{ 'is-on': (db.HOME_PAGE || '') === h.v }"
+            @click="pickHome(h.v)"
+          >
+            <text class="homechip-t">{{ h.t }}</text>
+          </view>
+        </view>
+      </view>
       <!-- 打卡按钮完成态的颜色。预设色板而不是自由取色：
            uni-app 没有跨端都可靠的颜色选择器，而且八个精选的比一整个调色盘好挑。
            存在 db.TICK_DONE（UI_KEYS，跟设备走），导入档案不改它 —— 外观偏好跟着设备。 -->
@@ -352,6 +371,7 @@ import {
   ruleName, ruleTargetLabel, ruleMatchLabel, ruleStats, ruleMatches, whyNot,
   toggleRule, moveRule, saveRule, armConfirm, delArmed, disarmDelete,
   quadColorOf, setQuadColor, setTickDone, QUAD_COLOR_DEFAULT,
+  setHomePage,
   remindStats,
   resolveCapture, describeCapture
 } from '../stores/db'
@@ -452,6 +472,26 @@ function pickTick(v) {
   setTickDone(v)
   saveState(true)
   toast(v ? '打卡完成色已换' : '已恢复默认绿')
+}
+
+/* ---------------- 打开应用先看哪一页 ----------------
+ * 三档。**默认「上次停留」** —— 那就是加这一条之前的行为（`CURRENT` 从存储恢复，
+ * 关掉再打开回到上次那一页）。默认改成「今日」等于把所有人的习惯悄悄改掉一次，
+ * 而这个仓库的规矩是行为变更能不改就不改（AGENTS.md 6.3）。
+ * 存 db.HOME_PAGE（UI_KEYS，跟设备走）：这是「我这台手机打开先看什么」，
+ * 不该跟着档案跑到另一台机器上。
+ *
+ * 落地在 main.js：`loadState()` 之后立刻 `applyHomePage()` —— 必须在那之前，
+ * 否则视图会先按旧的那一页挂载一帧，屏幕上闪一下今日才跳到记账。 */
+const HOME_OPTS = [
+  { v: '', t: '上次停留' },
+  { v: 'today', t: '今日' },
+  { v: 'ledger', t: '记账' }
+]
+function pickHome(v) {
+  const got = setHomePage(v)
+  saveState(true)
+  toast(got ? ('打开先看「' + (got === 'ledger' ? '记账' : '今日') + '」') : '打开先看「上次停留」')
 }
 
 /* ---------------- 习惯提醒 ----------------
@@ -909,6 +949,24 @@ const test = computed(function () {
 .ticksw.is-on { border: 2px solid var(--text); }
 /* 色板和标签并排放不下时换行 —— 八个色块比一般 srow 的右侧值宽 */
 .srow-tick { flex-wrap: wrap; }
+
+/* 「打开应用先看」那三格。胶囊而不是色块 —— 它是三个名字，不是三个颜色。
+   和色板同一行位置、「打开先看」和「打卡完成色」并排在一个块里。 */
+.homechip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 26px;
+  margin: 0 7px 7px 0;
+  padding: 0 11px;
+  border: 1px solid var(--line2);
+  border-radius: 13px;
+  background: var(--card);
+}
+.homechip-t { font-size: 12px; color: var(--sub); }
+.homechip:active { background: var(--bg); }
+.homechip.is-on { border-color: var(--accent); background: var(--accent-bg); }
+.homechip.is-on .homechip-t { color: var(--accent); font-weight: 500; }
 
 /* 清空数据那块：整块描红边，不是只有那颗钮是红的。
    离得远 + 整块变红，两种信号一起说「这一块和上面那些不一样」。 */

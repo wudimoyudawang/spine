@@ -93,19 +93,6 @@
 
       </view>
 
-      <!-- 切换器紧贴在「记下」上面：手在下半屏操作时，它就在指头边上。
-           「记账」那一格**不再切模式，而是跳到记账录入页**（2026-10-04）——
-           录入要自绘键盘和分类图标网格，这个矮盒子装不下；
-           在这儿再实现一份就等于两个入口做同一件事。 -->
-      <view class="kindsw">
-        <view class="kindsw-b is-on">
-          <text class="kindsw-t">记一笔</text>
-        </view>
-        <view class="kindsw-b" @click="setKind('money')">
-          <text class="kindsw-t">记账</text>
-        </view>
-      </view>
-
       <view class="capgo" @click="submit"><text class="capgo-t">记下</text></view>
     </view>
   </view>
@@ -114,7 +101,7 @@
 <script setup>
 import { computed, nextTick, ref, watch } from 'vue'
 import {
-  db, money, fmtCN, closeCapture, openPay,
+  db, money, fmtCN, closeCapture,
   addMoney, addTodo, addInbox, addNote, addRecord,
   resolveCapture, describeCapture, ruleName, recentPhrases,
   allCaptureOptions, commonCaptureOptions, moveCaptureOption, toggleCaptureCommon,
@@ -214,18 +201,11 @@ function toggleAutoClose() {
   db.CAP_AUTO_CLOSE = !db.CAP_AUTO_CLOSE
 }
 
-/* 「记账」不在这个面板里切模式，而是**跳到记账录入页**（2026-10-04）。
- * 为什么：录入要自绘数字键盘 + 分类图标网格，这个面板装不下（它得矮到让出输入法）；
- * 在面板里再实现一份，就等于两个入口做同一件事 —— 那种重复正是这个仓库
- * 一直在删的东西（见 AGENTS.md 第 9 节那几行「两处各写一份」的事故）。
- * 所以这里只负责「把人送过去」，不负责「顺便也记一笔」。 */
-function setKind(k) {
-  if (k === 'money') {
-    closeCapture()
-    openPay('out')
-    return
-  }
-}
+/* 「记账」不在这个面板里 —— 它有自己的底栏格和整页录入（`MoneyPage`）。
+ * 2026-10-04 之前这儿底部还有一颗「记一笔 / 记账」的切换器：那时候记账没有一级入口，
+ * 只能从面板切过去。底栏给了它一格之后，面板里再留一格就是**两个入口做同一件事**，
+ * 所以整个撤掉了 —— 面板从此只管「记一笔」，而且矮了一截（少一行切换器，
+ * 让给输入法的那点空间更宽裕）。 */
 
 function refocus() {
   focused.value = false
@@ -331,7 +311,6 @@ function done(msg) {
   padding: 0 14px;
 }
 .caphead { flex: none; }
-.kindsw { flex: none; }
 .capgo { flex: none; }
 @keyframes capin {
   from { opacity: 0; transform: translate(-50%, -50%) scale(.96); }
@@ -536,31 +515,12 @@ function done(msg) {
 .mchip.is-on { background: var(--accent); }
 .mchip.is-on .mchip-t { color: #fff; }
 
-.kindsw {
-  display: flex;
-  flex-direction: row;
-  padding: 3px;
-  margin: 12px 0 10px;
-  background: var(--bg);
-  border-radius: 10px;
-}
-.kindsw-b {
-  display: flex;
-  flex: 1 1 0;
-  align-items: center;
-  justify-content: center;
-  min-height: 34px;
-  border-radius: 8px;
-}
-.kindsw-t { font-size: 13px; color: var(--sub); }
-.kindsw-b.is-on { background: var(--card); }
-.kindsw-b.is-on .kindsw-t { color: var(--text); font-weight: 500; }
-
 .capgo {
   display: flex;
   align-items: center;
   justify-content: center;
   min-height: 46px;
+  margin-top: 12px;
   background: var(--accent);
   border-radius: 10px;
 }

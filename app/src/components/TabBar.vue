@@ -7,13 +7,12 @@
       :class="{ 'is-on': isOn(t.k) }"
       @click="pick(t.k)"
     >
-      <text class="navi-t">{{ t.t }}</text>
+      <text class="navi-t">{{ label(t.k, t.t) }}</text>
     </view>
 
-    <!-- 中间那颗加号：点开「记东西」的面板。
-         面板里自带一个切换器，在「记一笔」和「记账」之间切 ——
-         不在这儿摆两个按钮，是因为底栏这一格只有 60px 宽，
-         塞两个入口会把四个 Tab 挤成配角。 -->
+    <!-- 中间那颗加号：点开「记东西」的面板（只记一笔）。
+         记账**不在这里**，它有自己的底栏格 —— 面板里再来一格就是
+         两个入口做同一件事（面板底部那格已经撤掉了）。 -->
     <view class="navi navi-plus" @click="openCapture()">
       <view class="plus"><PlusIcon :size="16" /></view>
     </view>
@@ -25,7 +24,7 @@
       :class="{ 'is-on': isOn(t.k) }"
       @click="pick(t.k)"
     >
-      <text class="navi-t">{{ t.t }}</text>
+      <text class="navi-t">{{ label(t.k, t.t) }}</text>
     </view>
   </view>
 </template>
@@ -35,27 +34,44 @@ import { db, go, openCapture } from '../stores/db'
 import PlusIcon from './PlusIcon.vue'
 
 /* 四个 Tab 分列「记一笔」两侧，它正好落在正中间。
-   空间和设置不在这儿 —— 它们是右上角那颗齿轮（GearBtn）。 */
+   空间和设置不在这儿 —— 它们是右上角那颗齿轮（GearBtn）。
+
+   ⚠️ **这里是 2 + 1 + 2，不是 4 + 1。** 中间那颗加号要落在正中间，
+   左右格数就必须相等；加到 3+1+3 每格只剩 61px，中文两个字就溢出了。
+   所以「记账」要占一格，只能是**拿掉一格换来的** ——
+   2026-10-04 把「收集」和「随心记」并成了一格（它们本来就是同一件事的
+   两种形态：都是「先记下来，回头再说」），腾出来的位置给了记账。 */
 const LEFT = [
   { k: 'today', t: '今日' },
   { k: 'inbox', t: '收集' }
 ]
 const RIGHT = [
-  { k: 'notes', t: '随心记' },
+  { k: 'ledger', t: '记账' },
   { k: 'review', t: '复盘' }
 ]
 
-/* 今日这一格底下有今日 / 日历 / 四象限三个镜头（今日页头那颗分段器切）。
-   它们不是一个新的一级模块，所以在哪一格上都得亮「今日」——
+/* 一格底下的镜头。它们不是一个新的一级模块，所以在哪一格上都得亮那一格 ——
    不这么写的话，切到日历底栏就四个格子全灰，看着像没在任何一页上。 */
 const FAMILY = {
-  today: ['today', 'calendar', 'quadrant']
+  today: ['today', 'calendar', 'quadrant'],
+  /* 收集那一格底下是收件箱和随心记（页头分段器切）。 */
+  inbox: ['inbox', 'notes']
 }
 
 function isOn(k) {
   const fam = FAMILY[k]
   if (fam) return fam.indexOf(db.CURRENT) >= 0
   return db.CURRENT === k
+}
+
+/* 「收集」那一格带**未归类条数**。
+   这是它并成一格之后必须补上的东西：收件箱里堆着 5 条没归类，
+   如果底栏上看不出来，「先记下来别丢」就变成了「记下来就忘了」。
+   随心记**不计数** —— 无红点、不催人是它刻意的气质（见 PROMPT 第 2 节）。 */
+function label(k, t) {
+  if (k !== 'inbox') return t
+  const n = db.INBOX.length
+  return n ? t + ' ' + n : t
 }
 
 function pick(k) { go(k) }

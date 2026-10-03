@@ -2,6 +2,17 @@
   <view class="page">
     <PageHead title="记账" />
 
+    <!-- 这一格底下的两格。**第 2 格不是模式，是一扇门** ——
+         点它把记账录入（整页浮层）压上来，关掉还是这一页。
+         所以它没有选中态：`记账` 是这一页唯一「在页」的状态，
+         给「记一笔」也做一个选中态就等于说这一页有两种模式，而它没有。
+         让它长得像一颗正常的格，是因为它和「记账」确实是并排的两个选择 ——
+         当下想记就点它，想看账就在这儿。 -->
+    <view class="seg blk-seg">
+      <view class="seg-b is-on"><text class="seg-t">记账</text></view>
+      <view class="seg-b" @click="openPay('out')"><text class="seg-t">记一笔</text></view>
+    </view>
+
     <view class="block">
       <view class="block-h">
         <text class="tag">本月</text>
@@ -44,16 +55,8 @@
       </view>
     </view>
 
-    <!-- 记一笔进的是**整页录入**（有自绘键盘和分类图标网格）。
-         这一页从此只负责「看账」——记多一步，换来统计和流水能往上提一截。 -->
-    <view class="block qe" @click="openPay('out')">
-      <view class="qe-row">
-        <text class="qe-k">记一笔</text>
-        <text class="qe-v">支出 / 收入</text>
-        <text class="qe-go">›</text>
-      </view>
-    </view>
-
+    <!-- 品类（支出 / 收入各一份清单）。「记一笔」不再单列一行 ——
+         它已经在上面那颗分段器的第 2 格上了。 -->
     <view class="block qe" @click="catOpen = true">
       <view class="qe-row">
         <text class="qe-k">品类</text>
