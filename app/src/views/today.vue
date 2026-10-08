@@ -1,7 +1,7 @@
 <template>
   <view class="page">
     <PageHead title="今日" :sub="headDate" />
-    <!-- 今日 / 日历 / 四象限。三个镜头一起放在页头下面，位置在三个页面里都一样 ——
+    <!-- 今日 / 日历 / 复盘 / 四象限。四个镜头一起放在页头下面，位置在四个页面里都一样 ——
          切过去的时候那颗分段器不跳，才知道自己还在同一处。 -->
     <ViewSeg />
 
@@ -47,7 +47,12 @@
         <text v-if="tabNote" class="block-note">{{ tabNote }}</text>
         <view class="block-acts">
           <view v-if="tab === 'todo'" class="addbtn" @click="doneView = !doneView">
-            <text class="addbtn-t">{{ doneView ? '看没做完的' : '已完成' }}</text>
+            <!-- 两个状态是**对称的一对**：看着待办时写着「已完成」（点了去看做完的），
+                 看着已完成时写着「未完成」（点了回来看没做完的）。
+                 原来后半句写的是「看没做完的」—— 那是**说明**不是按钮：
+                 一颗按钮上写「看…的」，和它旁边那颗「新增待办」不是一种语法，
+                 也白占四个字。宇 2026-10-08 点出来的。 -->
+            <text class="addbtn-t">{{ doneView ? '未完成' : '已完成' }}</text>
           </view>
           <view class="addbtn" @click="addTop(tab)">
             <PlusIcon :size="14" />

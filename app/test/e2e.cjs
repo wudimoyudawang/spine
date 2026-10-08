@@ -232,6 +232,36 @@ async function main() {
     })()`)
     check('默认只铺待办那一档', onlyTodo, 'todo ')
 
+    /* ---- 待办 / 已完成那对按钮是**对称的一对** ----
+       看着待办时写「已完成」、看着已完成时写「未完成」。
+       原来后半句是「看没做完的」—— 那是说明不是按钮（宇 2026-10-08 点的）。 */
+    const toggleLabel = `(() => {
+      const b = Array.from(document.querySelectorAll('.addbtn'))
+        .filter(x => x.offsetParent !== null)
+        .find(x => /已完成|未完成|看没做完/.test(x.innerText));
+      return b ? b.innerText.replace(/\\s+/g, '') : 'none';
+    })()`
+    check('待办档上那颗按钮写着「已完成」', await cdp.eval(toggleLabel), '已完成')
+    await cdp.eval(`(() => {
+      const b = Array.from(document.querySelectorAll('.addbtn'))
+        .filter(x => x.offsetParent !== null)
+        .find(x => x.innerText.indexOf('已完成') >= 0);
+      if (b) b.click(); return !!b;
+    })()`)
+    await cdp.wait(350)
+    check('点过去之后同一颗按钮写着「未完成」', await cdp.eval(toggleLabel), '未完成')
+    check('列表换成了做完的那些',
+      await cdp.eval("document.querySelectorAll('.block .row-t.is-done').length > 0 ? 'true' : 'false'"), 'true')
+    await cdp.shot('1d-today-done', SHOTS)
+    await cdp.eval(`(() => {
+      const b = Array.from(document.querySelectorAll('.addbtn'))
+        .filter(x => x.offsetParent !== null)
+        .find(x => x.innerText.indexOf('未完成') >= 0);
+      if (b) b.click(); return !!b;
+    })()`)
+    await cdp.wait(350)
+    check('再点回来又写着「已完成」', await cdp.eval(toggleLabel), '已完成')
+
     const goTab = async (name) => {
       const ok = await cdp.eval(`(() => {
         const b = Array.from(document.querySelectorAll('.blk-seg .seg-b'))
@@ -443,6 +473,10 @@ async function main() {
     check('记一笔页上有方向两格，默认停在支出',
       await cdp.eval("(()=>{const t=Array.from(document.querySelectorAll('.dirseg .seg-b')).map(x=>x.innerText.trim());return t.length+':'+t.join('|')})()"), '2:支出|收入')
     check('金额起始是 ¥0', await cdp.eval("document.querySelector('.pay-page .amt-v').innerText"), '¥0')
+    /* 分类**默认就选中**（2026-10-04 宇定：绝大多数是吃饭，每笔手点一遍太亏）。
+       用选中态查而不是查文案 —— 「.amt-k 写着餐饮」也可能是网格根本没渲染。 */
+    check('进「记一笔」默认预选支出清单的「餐饮」',
+      await cdp.eval("(()=>{const c=document.querySelector('.pay-page .cell.is-on .cell-t');return c?c.innerText.trim():'none'})()"), '餐饮')
     /* 这一页**有底栏**（它是个正常镜头，不是浮层）——
        和上一版（浮层盖住底栏）是刻意改的：那个两格切换器要一直在。
        ⚠️ 不能用 `offsetParent !== null` 判底栏可见：`position: fixed` 的元素
@@ -524,6 +558,11 @@ async function main() {
     await cdp.wait(300)
     const inCats = await cdp.eval("Array.from(document.querySelectorAll('.cell:not(.cell-set) .cell-t')).map(x=>x.innerText).join(',')")
     check('切到收入后分类换成收入那一套', inCats, '工资')
+    /* 换方向时预选**跟着换成新方向自己的默认**：收入的清单里没有「餐饮」，
+       留着支出的分类等于给一笔收入记上「餐饮」，界面上还看不出来。
+       收入那份清单是 理财/副业/工资（seed 的 CATS_IN），所以默认落第一格「理财」。 */
+    check('切到收入后预选落在收入清单第一格',
+      await cdp.eval("(()=>{const c=document.querySelector('.pay-page .cell.is-on .cell-t');return c?c.innerText.trim():'none'})()"), '理财')
     check('这一页方向类名切到 is-in', await cdp.eval("!!document.querySelector('.pay-page.is-in')"), 'true')
     await cdp.shot('7c-money-in', SHOTS)
 
@@ -544,11 +583,22 @@ async function main() {
     })()`)
     await cdp.wait(500)
     check('点「完成」', doneBtn, 'true')
-    /* 「完成」= 记下 + 去**记账页**（原来浮层那版是「关掉浮层」，
-       现在没有「关掉」这回事了）。记账页的最近流水里正好能看到刚记的这一笔。
+    /* 「完成」= 记下 + **留在这一页**（2026-10-04 宇改：原来是跳记账页）。
        ⚠️ 不能用「`.pay-page` 还在不在」判：视图是 v-show 切的，它**留在 DOM 里**
-       只是 display:none。判「现在看得见哪一页」要看文本 —— innerText 不带隐藏的。 */
-    check('记完落在记账页', await cdp.eval("document.body.innerText.indexOf('最近流水') >= 0 ? 'true' : 'false'"), 'true')
+       只是 display:none。判「现在看得见哪一页」要看它 offsetParent 在不在。 */
+    check('记完仍停在「记一笔」（不跳记账页）',
+      await cdp.eval("(()=>{const p=document.querySelector('.pay-page');return (p&&p.offsetParent!==null)?'true':'gone'})()"), 'true')
+    check('记完金额清空回到 ¥0', await cdp.eval("document.querySelector('.pay-page .amt-v').innerText"), '¥0')
+    check('记完分类回到该方向的默认（收入 → 理财）',
+      await cdp.eval("(()=>{const c=document.querySelector('.pay-page .cell.is-on .cell-t');return c?c.innerText.trim():'none'})()"), '理财')
+    /* 落库这件事在记一笔页上没有可见证据，所以手动切到「记账」镜头去核对流水。
+       这一步顺带钉住「完成不切镜头」：现在看得见记账页，是因为**人点了那颗分段器**。 */
+    await cdp.eval(`(() => {
+      const b = Array.from(document.querySelectorAll('.seg-b'))
+        .filter(x => x.offsetParent !== null).find(x => x.innerText.trim() === '记账');
+      if (b) b.click(); return !!b;
+    })()`)
+    await cdp.wait(400)
     const afterPay = await cdp.eval("document.body.innerText.replace(/\\s+/g,' ')")
     check('这一笔记进了流水（收入 +¥123）', afterPay.indexOf('+¥123') >= 0 ? 'true' : afterPay.slice(0, 300), 'true')
     await cdp.shot('7d-ledger-after-pay', SHOTS)
@@ -567,10 +617,13 @@ async function main() {
     check('提醒块出现且说清「只在 App 里生效」', remBlock, '只在装到手机上')
     await cdp.shot('6b-remind-block', SHOTS)
 
-    /* ---- 今日那一格的另外几个镜头（日历 / 四象限 / 复盘）----
-       复盘 2026-10-04 从底栏挪进来了，成了这一排的第四格。 */
+    /* ---- 今日那一格的另外几个镜头（日历 / 复盘 / 四象限）----
+       复盘 2026-10-04 从底栏挪进来；同日宇把它的顺序调到日历后面，四象限挪到最后。
+       ⚠️ 循环刻意**停在复盘**：下面那条「复盘页上分段器还在」的检查是照着
+       停在复盘页写的。四象限页也铺了同一颗分段器，把循环顺序改成以它结尾，
+       那条检查会照样绿 —— 但它验的就不再是复盘页了。 */
     await clickTab(0)
-    for (const [file, label] of [['8-calendar', '日历'], ['9-quadrant', '四象限'], ['5-review', '复盘']]) {
+    for (const [file, label] of [['8-calendar', '日历'], ['5-review', '复盘']]) {
       const ok = await cdp.eval(`(() => {
         const b = Array.from(document.querySelectorAll('.seg-b'))
           .filter(x => x.offsetParent !== null).find(x => x.innerText.trim() === '${label}');
@@ -590,6 +643,14 @@ async function main() {
           .filter(x => x.offsetParent !== null).map(x => x.innerText.trim());
         return (b.indexOf('今日') >= 0 && b.indexOf('日历') >= 0 && b.indexOf('复盘') >= 0) ? 'true' : b.join('|');
       })()`), 'true')
+    /* 四象限是这一排的最后一格，补上它的截图（原来它在循环中间）。 */
+    await cdp.eval(`(() => {
+      const b = Array.from(document.querySelectorAll('.seg-b'))
+        .filter(x => x.offsetParent !== null).find(x => x.innerText.trim() === '四象限');
+      if (b) b.click(); return !!b;
+    })()`)
+    await cdp.wait(450)
+    await cdp.shot('9-quadrant', SHOTS)
     /* 切回「今日」，读页头那颗镜头分段器（不是块里那颗小号的）——
        它下面紧跟着 .moneyline 金额行，用它定位。 */
     await clickTab(0)
@@ -601,7 +662,7 @@ async function main() {
     await cdp.wait(400)
     check('今日页头四个镜头都在',
       await cdp.eval("(()=>{const p=Array.from(document.querySelectorAll('.page')).find(x=>x.offsetParent!==null&&x.querySelector('.moneyline'));if(!p)return 'no-today-page';const s=p.querySelector('.seg');return s?Array.from(s.querySelectorAll('.seg-b')).filter(x=>x.offsetParent!==null).map(x=>x.innerText.trim()).join('|'):'no-seg'})()"),
-      '今日|日历|四象限|复盘')
+      '今日|日历|复盘|四象限')
     await cdp.eval("(()=>{const g=document.querySelector('.gear');if(g)g.click();return !!g})()")
     await cdp.wait(350)
     await cdp.eval("(()=>{const c=document.querySelector('.card');if(c)c.click();return !!c})()")

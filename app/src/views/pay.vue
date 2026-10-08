@@ -116,7 +116,7 @@
 
 <script setup>
 import { computed, ref, watch } from 'vue'
-import { db, TODAY, money, fmtCN, catList, addMoney, go, saveState, PAY_DIRS } from '../stores/db'
+import { db, TODAY, money, fmtCN, catList, addMoney, saveState, PAY_DIRS } from '../stores/db'
 import PageHead from '../components/PageHead.vue'
 import ViewSeg from '../components/ViewSeg.vue'
 import CatIcon from '../components/CatIcon.vue'
@@ -129,7 +129,19 @@ const dir = computed(function () { return db.PAY_DIR === 'in' ? 'in' : 'out' })
 
 const cats = computed(function () { return catList(dir.value) })
 
-const picked = ref('')
+/* 进这一页时先替人选好分类（宇 2026-10-04 定的：绝大多数是吃饭，
+   每笔都手点一遍分类是这一页最高频的浪费）。
+   支出那份清单里就有「餐饮」，认名字优先它；收入那份没有，落它自己清单的第一格。
+   按名字认而不是按位置认：用户能把「餐饮」删掉或挪到后面，
+   那时候硬选第 0 格会选到一个他并不常记的东西上 —— 宁可空着让他自己点。 */
+function defaultCat(d) {
+  const list = catList(d)
+  if (d !== 'in' && list.indexOf('餐饮') >= 0) return '餐饮'
+  return list[0] || ''
+}
+
+/* 初值 = 进这一页时预选默认分类；此后由 watch（每次切进 pay）和 setDir（换方向）重新算。 */
+const picked = ref(defaultCat(dir.value))
 /* 金额存的是**算式**（'32+6'），提交时才求值 —— 「保存再记」连着记几笔时
    能看着自己按了什么，而不是只看到一个跳动的结果数。 */
 const amount = ref('')
@@ -203,17 +215,21 @@ function commit(again) {
   const msg = '记下 ' + money(v) + ' · ' + picked.value
   if (again) {
     /* 「保存再记」保留方向、分类和日期，只清金额和备注 ——
-       连着记几笔同类（一顿饭分两次付）时不用每次重挑分类。
-       「完成」走人，「保存再记」留在原地。 */
+       连着记几笔同类（一顿饭分两次付）时不用每次重挑分类。 */
     amount.value = ''
     note.value = ''
     toast(msg)
     return
   }
-  /* 「完成」= 记下 + 去记账页。原来浮层那版是「关掉浮层」，现在没有「关掉」
-     这回事了，所以给它一个自然的去处：记账页的最近流水里正好能看到刚记的这一笔，
-     那比回到一个空键盘上更像「记完了」。 */
-  go('ledger')
+  /* 「完成」= 记下 + 留在这一页，把这一笔抹干净（宇 2026-10-04 改）。
+     原来是 go('ledger') 跳去记账页，理由是「最近流水里正好能看到刚记的这一笔」；
+     宇要的是**记完别把我带走** —— 这一页是常驻的镜头，跳走等于每次都要再点回来。
+     和「保存再记」的差别因此落在**留不留上下文**上：完成回默认（分类重新预选、
+     日期回今天），保存再记连分类日期一起留着。 */
+  amount.value = ''
+  note.value = ''
+  date.value = TODAY
+  picked.value = defaultCat(dir.value)
   toast(msg)
 }
 
@@ -224,9 +240,10 @@ function pick(c) {
 function setDir(d) {
   if (db.PAY_DIR === d) return
   db.PAY_DIR = d
-  /* 换方向必须把分类**清掉**，不能留着：支出的「餐饮」在收入那份清单里不存在，
-     留着就能把一笔收入记到「餐饮」上 —— 那种错在界面上看不出来。 */
-  picked.value = ''
+  /* 换方向必须把分类**换掉**，不能留着：支出的「餐饮」在收入那份清单里不存在，
+     留着就能把一笔收入记到「餐饮」上 —— 那种错在界面上看不出来。
+     换成新方向自己的默认（不是清空）：这一页现在总是有个预选分类。 */
+  picked.value = defaultCat(d)
   catOpen.value = false
 }
 
@@ -234,17 +251,19 @@ function onDate(e) {
   date.value = e.detail.value || TODAY
 }
 
-/* 每次**进来**都从头开始：分类空着（必选、不预选，和记账原来的规矩一致）、
+/* 每次**进来**都从头开始：分类回到这一方向的默认（支出=餐饮、收入=它自己清单第一格）、
    金额和备注清空、日期回到今天。
    日期**不记住上次那个** —— 补记上周的一笔之后忘了改回来，
    下次记今天就会落到上周，那种错在流水里才看得出来。
+   分类回到**默认**而不是上一笔手挑的那个：连着记两笔不同类的，
+   记住上一次会把第二笔悄悄记进第一笔的类里。
 
    **方向不在这里重置**（它归 `openPay(dir)` 管）：从底栏/今日页/空间页进来时
    归零成「支出」，而在「记账」和「记一笔」两个镜头之间来回切时保持不动 ——
    后者是同一格底下的切换，每次都被按回「支出」等于跟人作对。 */
 watch(() => db.CURRENT, function (v) {
   if (v !== 'pay') return
-  picked.value = ''
+  picked.value = defaultCat(dir.value)
   amount.value = ''
   note.value = ''
   date.value = TODAY

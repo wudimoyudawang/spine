@@ -50,7 +50,9 @@ const RIGHT = [{ k: 'ledger', t: '记账' }]
 /* 一格底下的镜头。它们不是一个新的一级模块，所以在哪一格上都得亮那一格 ——
    不这么写的话，切到日历底栏就三格全灰，看着像没在任何一页上。 */
 const FAMILY = {
-  today: ['today', 'calendar', 'quadrant', 'review'],
+  /* 顺序跟着 ViewSeg 的 today 组（今日 / 日历 / 复盘 / 四象限）——
+     这里只是个集合，用 indexOf 判，顺序不影响对错；对不齐只会让人以为两处各有一份。 */
+  today: ['today', 'calendar', 'review', 'quadrant'],
   /* 收集那一格底下是收件箱和随心记（页头分段器切）。 */
   inbox: ['inbox', 'notes'],
   /* 记账那一格底下是记一笔和记账页。 */
