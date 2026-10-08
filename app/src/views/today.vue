@@ -82,19 +82,42 @@
         </TreeList>
       </template>
 
-      <!-- 习惯 -->
+      <!-- 习惯。**按「今天该不该做」分两段**（2026-10-08 加）：
+            上面是今天该做的 + 判不出星期几的（老行为，常驻），
+            下面是今天不排的，折成一行，点开才铺。
+            起因是训练计划：「今天该练哪一天」得一眼看到，
+            不能淹没在另外四天的动作清单里。
+            分组的判定在 db.js 的 `habitGroups()` 里（有对拍的捕获点）。 -->
       <template v-else-if="tab === 'habit'">
-        <view v-if="!hb.length" class="empty">
+        <view v-if="!hbAll.length" class="empty">
           <text class="empty-t">还没有习惯。</text>
           <text class="empty-t">点上面的「新增习惯」加一个。</text>
         </view>
         <TreeList :rows="hb" tickable @open="edit">
           <template #default="{ row }">
-            <text class="row-t">{{ label(row.node) }}</text>
+            <text class="row-t">{{ label(row.node) }}<text v-if="isToday(row)" class="row-today">今天</text></text>
             <text class="row-m">{{ pathPrefix(row) }}{{ row.dom.name }} · {{ row.node.m }}</text>
             <!-- 连续/累计那句和「今天打没打」都由**行对象**带过来（见 db.js 的 crossTree）。
                  原来这两个值在这里长了 5 次调用：streak 三次（v-if + :class + 插值）、
                  habitDoneOn 两次，每调用一次就要扫一遍全部打卡记录再排序。 -->
+            <text v-if="row.streak" class="row-st" :class="{ 'is-on': row.streak.on }">{{ row.streak.s }}</text>
+          </template>
+        </TreeList>
+
+        <!-- 今天不排的：一行收起。**必须留着这个入口** ——
+             「昨天那次忘了打卡想补记」得点得进来，
+             不然今天不是周一，周一那条就彻底找不到了。 -->
+        <view v-if="hbRest.length" class="restbar" @click="showRest = !showRest">
+          <text class="restbar-t">今天不排的 {{ restTopCount }} 项</text>
+          <text class="restbar-go">{{ showRest ? '收起' : '›' }}</text>
+        </view>
+        <!-- 这一段**拍平**（缩进归 0），第二行用 `path` 写出它挂在谁下面 ——
+             父行可能在上面那一段里（「健康作息」常驻、它的「23:30 前睡」今天不排），
+             带着缩进出现在这里就成了「上面那行不见了」的孤儿。 -->
+        <TreeList v-if="showRest" :rows="hbRest" tickable bare @open="edit">
+          <template #default="{ row }">
+            <text class="row-t">{{ label(row.node) }}</text>
+            <text class="row-m">{{ row.path ? row.path + ' / ' : '' }}{{ row.dom.name }} · {{ row.node.m }}</text>
             <text v-if="row.streak" class="row-st" :class="{ 'is-on': row.streak.on }">{{ row.streak.s }}</text>
           </template>
         </TreeList>
@@ -152,7 +175,8 @@ import {
   db, TODAY, money, go, fmtCNWide, pathPrefix, isLateRow, lateNote,
   moneyTotalOf, openAdd, openEdit, openLogEdit, rowBody, dirOf, openPay,
   openGoalAdd, openGoal, labelOf, todayTree, habitTree, goalTree,
-  progressOf, domainName, saveState, quadOf, quadTone, rollRepeat
+  progressOf, domainName, saveState, quadOf, quadTone, rollRepeat,
+  habitGroups, habitToday
 } from '../stores/db'
 import PageHead from '../components/PageHead.vue'
 import PlusIcon from '../components/PlusIcon.vue'
@@ -168,8 +192,27 @@ const headDate = computed(function () { return fmtCNWide(TODAY) })
 /* 三棵树都来自数据层那一份构建处 —— 今日页和领域页读的是同一批行对象，
    所以「子项跟着父项出现」这条规矩在两页的表现是一样的。 */
 const tt = computed(() => todayTree(TODAY))
-const hb = computed(() => habitTree())
+const hbAll = computed(() => habitTree())
 const gl = computed(() => goalTree())
+
+/* 习惯按「今天该不该做」分三段（判定在 db.js 的 habitGroups，有对拍盯着）。
+   · `hb`   平铺出来的：今天该做的 + 判不出星期几的（老行为，常驻）
+   · `hbRest` 今天不排的 —— 折成一行，点开才铺
+   两段合起来就是 `hbAll` 的全部行，不丢不重。 */
+const hg = computed(() => habitGroups(TODAY))
+const hb = computed(() => hg.value.today.concat(hg.value.always))
+const hbRest = computed(() => hg.value.rest)
+/* 折叠那一行说「N 项」，数的是**顶层习惯** —— 数行的话，
+   一棵训练计划树能数出三十几，而人看到的是「三项没排」这个量级。 */
+const restTopCount = computed(() => hbRest.value.filter(function (r) { return r.depth === 0 }).length)
+const showRest = ref(false)
+
+/* 这一行今天该不该做。**只给「自己有排日」的行标**：
+   动作那几行判不出星期几（m 是处方），它们跟着训练日出现，
+   再给每一行都标一个「今天」，6 行动作 6 个标，就吵了。 */
+function isToday(row) {
+  return habitToday(row.node, TODAY) === true
+}
 
 /* 这一行说的是「今天花了多少」，所以**只算支出**（`dirOf`）。
    加收入那天定的：收入要进的是记账页 / 日历 / 复盘三处，这一行不动 ——
@@ -406,6 +449,34 @@ function toggleDone(it) {
   color: var(--muted);
 }
 .row-st.is-on { color: var(--ok); }
+
+/* 「今天」那半个小标。挂在名字后面（内联，不是另起一行）——
+   它是那一行的**修饰**，不是它的说明。底色用 ok 绿：和「今天该做」这个意思一致，
+   也和打卡按钮的完成色同族，扫的时候不会和逾期那行的橙混起来。 */
+.row-today {
+  margin-left: 5px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--ok-bg);
+  font-size: 11px;
+  color: var(--ok);
+}
+
+/* 「今天不排的 N 项 ›」那一行。整行可点，和上面那些行同一个高度语言 ——
+   它是列表的一部分，不是一句说明。 */
+.restbar {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 44px;
+  border-top: 1px solid var(--line);
+}
+.restbar-t { font-size: 13px; color: var(--muted); }
+.restbar-go { font-size: 14px; color: var(--muted); }
+.restbar:active { background: var(--bg); }
+/* 折叠段整体淡一档：它今天不用做，权重不该和上面那一段一样 */
+.restbar + .tree { opacity: .75; }
 
 .empty { padding: 12px 0 16px; }
 .empty-t { display: block; font-size: 13px; color: var(--muted); }

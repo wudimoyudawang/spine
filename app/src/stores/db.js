@@ -11,7 +11,7 @@
  *      （在手机上导出的档案，导进另一台机器后「停在哪一页」跟着跑过去，只会让人莫名其妙）
  */
 import { reactive, ref, watch } from 'vue'
-import { SEED_DATA, SEED_UI } from './seed'
+import { SEED_DATA, SEED_UI, FIXED_DOMAINS } from './seed'
 
 /* ---------------- 日期 ---------------- */
 const WEEK = ['日', '一', '二', '三', '四', '五', '六']
@@ -391,11 +391,37 @@ export function importSnapshot(raw) {
    手抄的代价是「往 DATA_KEYS 里加了新字段、忘了加进那份清单」，后果是那个字段
    清不掉，而「清空数据」是个不可逆操作，静默失败最难发现。
    （原来这里内联了 13 项，另外 3 项分散在下面几行单独赋值。） */
+/* ---------------- 固定空间（2026-10-08） ----------------
+ * 记账 / 健身 / 个人 三个：**不可删、不可改名、清空数据之后仍在**（宇定的）。
+ * 「记账」不是 DOMAINS 的成员（它是空间页上多出来的一张虚拟卡，见 MONEY_SPACE），
+ * 这里管的是另外两个真领域。
+ *
+ * 判定**按 id**而不是按 `d.fixed`：老档案里的健身/个人没有这个标记，
+ * 按标记判的话，导入一份旧档案之后它们就变成能删的了 ——
+ * 而「固定」是出厂设定，不该被一份旧档案改掉。 */
+
+/* 固定空间的一份**深拷贝**。
+   必须拷：`FIXED_DOMAINS` 是模块级常量，直接把它塞进 db 的话，
+   用户在界面上改一个习惯名就改到了那个常量上 —— 之后「清空数据」重建出来的
+   就是被改过的那份，而 `loadSeed()` 也跟着一起脏（出厂数据和种子数据共用一个对象）。 */
+export function fixedDomains() { return JSON.parse(JSON.stringify(FIXED_DOMAINS)) }
+
+/* 这个领域能不能删、能不能改名 */
+export function isFixedDomain(id) {
+  return FIXED_DOMAINS.some(function (d) { return d.id === id })
+}
+
 const EMPTY_VALUE_OF = {
   CAT_WORDS: function () { return {} },
   CAP_CFG: function () { return { order: [], common: {} } },
   REV_TRENDS: function () { return [] },
   QUAD_COLORS: function () { return {} },
+  /* 固定空间的「空」是**出厂就有的那两个**（健身 / 个人），不是 `[]`（2026-10-08）。
+     和下面 IN_CATS 完全同一条道理：它们不是用户数据，是出厂的一部分 ——
+     清空数据清的是「我记的东西」，不该把训练计划也清掉。
+     健身那份里带着整棵训练计划习惯（`seed.js` 的 PLAN_HABITS），
+     所以「清空之后默认习惯是什么」在那一处就有答案。 */
+  DOMAINS: function () { return fixedDomains() },
   /* 收入分类的「空」是**出厂默认**，不是 `[]`。它和上面那几项不一样：
      REV_TRENDS / QUAD_COLORS 是用户配出来的，空了就该是空（读取层各自有兜底色 / 空清单）；
      而 IN_CATS 里的三项是**出厂就有的**，不是用户数据 ——
@@ -631,8 +657,25 @@ export function pickToday(items, today) {
 const EMPTY_DATES = []
 const EMPTY_COUNT = {}
 let HABIT_IDX = null, HABIT_IDX_LEN = -1
-function dropHabitIndex() { HABIT_IDX = null; HABIT_IDX_LEN = -1 }
+/* ⚠️ **这个版本号是必需的，不是装饰**（2026-10-08 补的，踩过一次）。
+ *
+ * `habitIndex` 是个普通对象缓存 —— `HABIT_IDX` 不是 reactive 的。
+ * 于是「谁读到了它」决定了 Vue 能不能发现数据变了：
+ *   · 缓存**冷**的时候在 computed 里重建 → 迭代时读到了每条记录的 `h.n` → 有依赖 ✓
+ *   · 缓存**热**的时候只读 `db.HABIT_LOGS.length` → 依赖只剩长度 ✗
+ * 而「+1 次」恰恰是**长度不变、`n` 变**的那一种（见 bumpHabitLog 的注释）——
+ * 缓存一热，打卡按钮上的「2/3」「3/3」就再也不动了，数据明明是对的。
+ *
+ * 页面里只要多出一个先碰到习惯树的 computed（比如今日页那个「有没有习惯」的判断），
+ * 它就会把缓存预热，后面那个列表的 computed 立刻退化成「只看长度」。
+ * 所以作废必须**同时**让 Vue 知道：`dropHabitIndex()` 里 +1，
+ * `habitIndex()` 开头读一下 —— 任何一次作废都会让依赖它的 computed 重算，
+ * 不管缓存是热的还是冷的。 */
+const HABIT_IDX_VER = ref(0)
+function dropHabitIndex() { HABIT_IDX = null; HABIT_IDX_LEN = -1; HABIT_IDX_VER.value++ }
 function habitIndex() {
+  /* 先读版本号：这一行就是「作废了要让 computed 知道」的全部实现。 */
+  HABIT_IDX_VER.value
   const L = db.HABIT_LOGS || []
   if (HABIT_IDX && HABIT_IDX_LEN === L.length) return HABIT_IDX
   const acc = {}
@@ -708,14 +751,93 @@ export function habitUnit(m) {
    解析不出来的（老数据手填的「工作日」之类）返回 null —— 界面保持原样，
    用户不动滚轮就不改写它，不会悄悄把手填的词冲掉。 */
 export const FREQ_UNITS = ['每日', '每周', '每月']
+/* 「每周几」是**每周的另一种写法**，不是第四种单位 —— 所以它不出现在
+   FREQ_UNITS 里（那一排是三颗，加第四颗会让人以为单位有四种）。
+   频率字段里它表现为「选了『每周』之后多出来的一行星期按钮」。 */
 export function parseFreq(m) {
-  const hit = /^每(天|日|周|月)\s*(\d+)?\s*次?$/.exec(String(m || '').trim())
-  if (!hit) return null
-  return { unit: hit[1] === '周' ? '每周' : hit[1] === '月' ? '每月' : '每日', n: hit[2] ? Number(hit[2]) : 1 }
+  const s = String(m || '').trim()
+  const hit = /^每(天|日|周|月)\s*(\d+)?\s*次?$/.exec(s)
+  if (hit) {
+    return { unit: hit[1] === '周' ? '每周' : hit[1] === '月' ? '每月' : '每日', n: hit[2] ? Number(hit[2]) : 1 }
+  }
+  /* 「每周一、四」：次数 = 选中的天数。不认这种写法的话，
+     FreqField 会把它当成解析不出来的老词、按「每日 1 次」显示 ——
+     用户碰一下任何一颗按钮就把星期几冲掉了。
+     ⚠️ **只认带「每周」前缀这一种形式**，不认光秃秃的「工作日 / 周末」：
+     那两个是用户手填的老词，解析得出来就会在用户碰滚轮时被改写成
+     「每周 5 次」—— 那条「不动滚轮就不冲掉手填的词」的不变量在这里同样适用。
+     （`habitDays()` 认它们，那是**读**；`parseFreq` 认了就是**写**，两回事。） */
+  const w = /^每周\s*[一二三四五六日天、,，/]+$/.exec(s)
+  if (w) {
+    const d = habitDays(s)
+    if (d) return { unit: '每周', n: d.length }
+  }
+  return null
 }
 export function freqText(unit, n) {
   if (n === 1) return unit === '每日' ? '每天' : unit
   return unit + ' ' + n + ' 次'
+}
+
+/* ---------------- 「排在哪几天」 ----------------
+ * 训练计划是**日程型**的（周一练下肢、周四练下肢），而习惯一直是**次数型**的
+ * （「每周 4 次」，哪天做都行）。这中间的差就是**星期几**，也是这一块存在的理由。
+ *
+ * 星期几**存在 `m` 那句话里**（`每周一、四`），不新增数据字段 ——
+ * 理由和 `habitUnit` 从文本判单位是一条：`m` 存的就是显示那句话，
+ * 于是导入导出格式一个字没变、老档案天然兼容、也不用写迁移。
+ *
+ * 返回 `[1..7]`（1 = 周一，和 startOfWeek 同一个口径）或 `null`。
+ * **null = 判不出来**（`每周 4 次`、`一组习惯`、手填的怪词）——
+ * 那些习惯照旧常驻，行为一字不变；只有判得出星期的才参与「今天该做」的过滤。 */
+const WEEK_CHAR = { 一: 1, 二: 2, 三: 3, 四: 4, 五: 5, 六: 6, 日: 7, 天: 7 }
+export function habitDays(m) {
+  const s = String(m || '').trim()
+  if (!s) return null
+  /* 「每天」= 七天全排。它因此永远在「今天该做」里 —— 和它过去常驻的表现一致，
+     只是理由从「不参与过滤」换成了「每天都排」。 */
+  if (/^每(天|日)$/.test(s)) return [1, 2, 3, 4, 5, 6, 7]
+  if (s === '工作日') return [1, 2, 3, 4, 5]
+  if (s === '周末') return [6, 7]
+  const hit = /^每周\s*([一二三四五六日天、,，/]+)$/.exec(s)
+  if (!hit) return null
+  const out = []
+  for (const ch of hit[1]) {
+    const d = WEEK_CHAR[ch]
+    if (d && out.indexOf(d) < 0) out.push(d)
+  }
+  if (!out.length) return null
+  return out.sort(function (a, b) { return a - b })
+}
+
+/* 星期几的显示写法（1..7 → 「一、四」）。`habitDays` 的逆，
+   两处各拼一遍的话，「周一」到底写成「一」还是「周一」迟早会分家。
+   名字复用上面那个 `WEEK`（0 = 周日）：这里 1..7 对应 `WEEK[1]`…`WEEK[0]`。 */
+export function daysText(days) {
+  const d = (days || []).slice().sort(function (a, b) { return a - b })
+  if (d.length === 7) return '每天'
+  if (d.length === 5 && d.join(',') === '1,2,3,4,5') return '工作日'
+  if (d.length === 2 && d.join(',') === '6,7') return '周末'
+  return '每周' + d.map(function (x) { return WEEK[x === 7 ? 0 : x] || '' }).join('、')
+}
+
+/* 今天是星期几（1 = 周一 … 7 = 周日）。和 `weekdayCN` 用同一套
+   `new Date(...)` 口径 —— 它返回名字，这里返回序号。 */
+export function weekdayOf(iso) {
+  const p = String(iso || TODAY).split('-').map(Number)
+  const w = new Date(p[0], p[1] - 1, p[2]).getDay()
+  return w === 0 ? 7 : w
+}
+
+/* 一个习惯**今天该不该做**。三态：
+     true   今天该做（排日里含今天）
+     false  今天不排（排日里没有今天）—— 今日页把它折起来
+     null   判不出星期几 —— 老行为，常驻（不参与过滤）
+   三种回答，所以不能返回布尔。 */
+export function habitToday(node, today) {
+  const days = habitDays(node ? node.m : '')
+  if (!days) return null
+  return days.indexOf(weekdayOf(today)) >= 0
 }
 
 /* 一个打卡日期落在哪个期。周口径和全应用一致：周一为头；
@@ -2214,6 +2336,48 @@ function crossTree(k) {
   return out
 }
 export function habitTree() { return crossTree('habit') }
+
+/* ---------------- 今日页习惯那一档的分组（2026-10-08） ----------------
+ * 训练计划是**日程型**的：「今天该练哪一天」得一眼看到。所以把习惯按今天分成三段：
+ *
+ *   today  今天该做（排日里含今天）
+ *   always 判不出星期几的 —— 老行为，常驻
+ *   rest   今天不排的 —— 今日页把它折起来
+ *
+ * **按行判，不是按顶层块判**。按块判（整棵子树跟着顶层走）的话，
+ * 周一那天「上下肢 4 天分化」今天该做，它的四个训练日和 24 个动作会一起露出来 ——
+ * 29 行，「今天该练哪一天」反而找不到了。按行判之后周一只剩
+ * 「上下肢 4 天分化 / 周一 · 下肢 A / 它的 6 个动作 / 每天有氧」。
+ *
+ * ⚠️ **判不出星期几的行跟着它的父行，不自己决定**：
+ * 训练日下面那 6 个动作的 `m` 是处方（`3×6–10 · RIR 2`），判不出星期几 ——
+ * 让它们「常驻」的话，24 个动作会永远挂在今日页上；跟着父行才对：
+ * 父（训练日）今天该做，动作就露出来；父不排今天，动作也不露。
+ * 顶层且判不出的（「一组习惯」那种分组父项）才是真正的常驻。
+ *
+ * 平铺序列里父行**一定在**子行之前（`flattenTree` 是前序），所以一趟扫过去，
+ * 父行的组已经定了 —— 不用为每个节点回头找父亲。
+ *
+ * 返回的三段各自都是 `habitTree()` 那种平铺行（带 depth / path）。
+ * `rest` 那一段渲染时要**拍平**（缩进归 0、用 `path` 写出它挂在谁下面）：
+ * 父行在「今天」而子行在「今天不排」是可能的（「健康作息」+「23:30 前睡」），
+ * 带着缩进出现在折叠段里，就成了「上面那行不见了」的孤儿。 */
+export function habitGroups(today) {
+  const t = today || TODAY
+  const rows = habitTree()
+  const out = { today: [], always: [], rest: [] }
+  const groupOf = {}
+  for (const r of rows) {
+    const own = habitToday(r.node, t)
+    let g
+    if (own === true) g = 'today'
+    else if (own === false) g = 'rest'
+    else g = groupOf[r.node.parent] || 'always'   /* 父行的组；顶层判不出 → 常驻 */
+    groupOf[r.node.id] = g
+    out[g].push(r)
+  }
+  return out
+}
 export function goalTree() { return crossTree('goal') }
 
 /* 今日页的待办树（已过期 / 今天 两块）。两条规矩都是原型的：

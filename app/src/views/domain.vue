@@ -165,25 +165,37 @@
         </view>
       </view>
 
-      <!-- 领域本身：改名 + 删除。置顶那颗星在空间页的卡片上，这里不重复放。 -->
+      <!-- 领域本身：改名 + 删除。置顶那颗星在空间页的卡片上，这里不重复放。
+           **固定领域（健身 / 个人）不给这两样**（宇 2026-10-08 定的）：
+           名字和存在都是出厂设定 —— 而且「健身」这套里装着整棵训练计划，
+           让人顺手删掉它，等于把那份计划一起删了，而这一点在按钮上看不出来。 -->
       <view class="block">
         <view class="block-h">
           <text class="tag">领域设置</text>
-          <text class="block-note">改名、删除</text>
+          <text class="block-note">{{ isFixed ? '固定领域' : '改名、删除' }}</text>
         </view>
-        <view class="rt-in">
-          <input :maxlength="-1" v-model="nameDraft" class="rin" placeholder="这个领域叫什么" placeholder-class="rph" />
-          <view class="rt-in-btns">
-            <view class="mini mini-go" @click="rename"><text class="mini-t">改名</text></view>
+
+        <template v-if="isFixed">
+          <view class="note">
+            <text class="note-t">「{{ d.name }}」是固定领域，不能改名、也删不掉。</text>
+            <text class="note-t">里面的习惯、待办、目标照常增删改 —— 固定的只是这个入口。</text>
           </view>
-        </view>
-        <view class="btn rt-del" :class="{ 'is-armed': armed === 'domain:' + d.id }" @click="delSelf">
-          <text class="btn-t">{{ armed === 'domain:' + d.id ? '确认删除「' + d.name + '」' : '删除这个领域' }}</text>
-        </view>
-        <view class="note">
-          <text class="note-t">删领域只删这个入口。</text>
-          <text class="note-t">里面的 {{ contentN }} 条会回到收件箱等着重新归类。</text>
-        </view>
+        </template>
+        <template v-else>
+          <view class="rt-in">
+            <input :maxlength="-1" v-model="nameDraft" class="rin" placeholder="这个领域叫什么" placeholder-class="rph" />
+            <view class="rt-in-btns">
+              <view class="mini mini-go" @click="rename"><text class="mini-t">改名</text></view>
+            </view>
+          </view>
+          <view class="btn rt-del" :class="{ 'is-armed': armed === 'domain:' + d.id }" @click="delSelf">
+            <text class="btn-t">{{ armed === 'domain:' + d.id ? '确认删除「' + d.name + '」' : '删除这个领域' }}</text>
+          </view>
+          <view class="note">
+            <text class="note-t">删领域只删这个入口。</text>
+            <text class="note-t">里面的 {{ contentN }} 条会回到收件箱等着重新归类。</text>
+          </view>
+        </template>
       </view>
     </template>
   </view>
@@ -196,7 +208,7 @@ import {
   habitRowExtra, todosOf, topLevel, pathPrefix,
   openAdd, openEdit, openGoal, openGoalAdd, delArmed,
   progressOf, setGoalP, bumpGoal, GOAL_STEPS, recordTypesOf, saveState,
-  saveRecordType, addRecord, renameDomain, domainContentCount
+  saveRecordType, addRecord, renameDomain, domainContentCount, isFixedDomain
 } from '../stores/db'
 import { confirmDelete, toast } from '../lib/ui'
 import PageHead from '../components/PageHead.vue'
@@ -206,6 +218,13 @@ import RtForm from '../components/RtForm.vue'
 
 const d = computed(function () {
   return db.DOMAIN_ID ? domainById(db.DOMAIN_ID) : null
+})
+
+/* 固定领域（健身 / 个人）：不给改名、不给删除（宇 2026-10-08 定的）。
+   判定走数据层的 `isFixedDomain(id)`，它按 id 认 —— 导一份老档案进来
+   也不会把它们变成能删的（见 db.js 那段注释）。 */
+const isFixed = computed(function () {
+  return !!(d.value && isFixedDomain(d.value.id))
 })
 
 const rts = computed(function () {

@@ -134,17 +134,129 @@ export const LOGS=[
   {id:'lg9',kind:'money',dir:'in',date:'2026-09-17',category:'理财',value:186.5}
 ];
 
+/* ============ 训练计划的习惯树 ============
+   照宇给的《新手 7 天增肌减脂计划》建：4 天力量（上下肢各两次）+ 周三/周六有氧
+   + 每天有氧 + 周日完全休息。
+
+   ⚠️ **`m` 在这里有两个不同的意思，看清再改**：
+     · 训练日那几行（周一 · 下肢 A…）的 `m` 是**频率**：`每周一`。
+       它让这条习惯「排在那一天」—— 今天不是周一，它就不在「今天该做的」里。
+       `habitDays()` 从这句话读星期几，**不新增数据字段**（老档案天然兼容，
+       导入导出格式一个字没变）。
+     · 动作那几行的 `m` 是**处方**（组×次 · RIR · 休息），不是频率。
+       它不含「每周 / 每月」，所以 `habitUnit()` 判成「天」、`habitDays()` 判不出星期 ——
+       **跟着父项（训练日）走**正是要的结果：周一那天的动作只在周一铺出来。
+     ⚠️ 动作的处方里**不要出现「每天 / 每周 / 工作日」这类词**：
+       那会让 `habitDays()` 把它当成排日习惯，从此不再跟着训练日走。
+
+   父项（h-fit-1）的 m 是 `每周一、二、四、五` —— 它就是训练日的集合，
+   打卡它 = 「本周练了几次」（4 次那个数）。它和子项不重复：
+   子项回答的是「周二这一次练了没」。
+
+   里面的 id 是**写死的**：固定空间在「清空数据」之后按这份重建，
+   id 跟着变的话，已有的打卡记录（HABIT_LOGS 按 key 挂）就全断了。
+   （`h-fit-1` 这个 id 是原来「训练日打卡」那条，2026-10-08 扩成整棵树时沿用了它，
+   历史打卡记录因此没丢。） */
+const PLAN_HABITS = [
+  { id: 'h-fit-1', t: '上下肢 4 天分化', m: '每周一、二、四、五', parent: null },
+
+  { id: 'h-plan-mon', t: '周一 · 下肢 A', m: '每周一', parent: 'h-fit-1' },
+  { id: 'h-plan-mon-1', t: '杠铃深蹲', m: '3×6–10 · RIR 2 · 休 2–3 分', parent: 'h-plan-mon' },
+  { id: 'h-plan-mon-2', t: '罗马尼亚硬拉', m: '3×8–10 · RIR 2 · 休 2 分', parent: 'h-plan-mon' },
+  { id: 'h-plan-mon-3', t: '腿举', m: '3×10–12 · RIR 1 · 休 90 秒', parent: 'h-plan-mon' },
+  { id: 'h-plan-mon-4', t: '俯卧腿弯举', m: '3×12–15 · RIR 1 · 休 60 秒', parent: 'h-plan-mon' },
+  { id: 'h-plan-mon-5', t: '站姿提踵', m: '3×12–15 · RIR 1 · 休 60 秒', parent: 'h-plan-mon' },
+  { id: 'h-plan-mon-6', t: '平板支撑', m: '3×40–60 秒 · RIR 1 · 休 45 秒', parent: 'h-plan-mon' },
+
+  { id: 'h-plan-tue', t: '周二 · 上肢 A', m: '每周二', parent: 'h-fit-1' },
+  { id: 'h-plan-tue-1', t: '杠铃卧推', m: '3×6–10 · RIR 2 · 休 2–3 分', parent: 'h-plan-tue' },
+  { id: 'h-plan-tue-2', t: '坐姿绳索划船', m: '3×8–12 · RIR 2 · 休 90 秒', parent: 'h-plan-tue' },
+  { id: 'h-plan-tue-3', t: '上斜哑铃卧推', m: '3×8–12 · RIR 1–2 · 休 90 秒', parent: 'h-plan-tue' },
+  { id: 'h-plan-tue-4', t: '高位下拉', m: '3×10–12 · RIR 1 · 休 90 秒', parent: 'h-plan-tue' },
+  { id: 'h-plan-tue-5', t: '哑铃侧平举', m: '3×12–15 · RIR 1 · 休 60 秒', parent: 'h-plan-tue' },
+  { id: 'h-plan-tue-6', t: '绳索下压（三头）', m: '3×12–15 · RIR 1 · 休 60 秒', parent: 'h-plan-tue' },
+
+  { id: 'h-plan-thu', t: '周四 · 下肢 B', m: '每周四', parent: 'h-fit-1' },
+  { id: 'h-plan-thu-1', t: '罗马尼亚硬拉', m: '3×6–8 · RIR 2 · 休 2–3 分', parent: 'h-plan-thu' },
+  { id: 'h-plan-thu-2', t: '保加利亚分腿蹲', m: '3×8–10 / 腿 · RIR 2 · 休 90 秒', parent: 'h-plan-thu' },
+  { id: 'h-plan-thu-3', t: '杠铃臀推', m: '3×10–12 · RIR 1 · 休 90 秒', parent: 'h-plan-thu' },
+  { id: 'h-plan-thu-4', t: '坐姿腿屈伸', m: '3×12–15 · RIR 1 · 休 60 秒', parent: 'h-plan-thu' },
+  { id: 'h-plan-thu-5', t: '坐姿提踵', m: '3×15–20 · RIR 1 · 休 60 秒', parent: 'h-plan-thu' },
+  { id: 'h-plan-thu-6', t: '农夫行走', m: '3×30 米 · RIR 1 · 休 60 秒', parent: 'h-plan-thu' },
+
+  { id: 'h-plan-fri', t: '周五 · 上肢 B', m: '每周五', parent: 'h-fit-1' },
+  { id: 'h-plan-fri-1', t: '坐姿哑铃肩推', m: '3×6–10 · RIR 2 · 休 2 分', parent: 'h-plan-fri' },
+  { id: 'h-plan-fri-2', t: '辅助引体向上', m: '3×6–10 · RIR 2 · 休 2 分', parent: 'h-plan-fri' },
+  { id: 'h-plan-fri-3', t: '哑铃单臂划船', m: '3×10–12 / 侧 · RIR 1 · 休 90 秒', parent: 'h-plan-fri' },
+  { id: 'h-plan-fri-4', t: '双杠臂屈伸', m: '3×10–12 · RIR 1 · 休 90 秒', parent: 'h-plan-fri' },
+  { id: 'h-plan-fri-5', t: '绳索面拉', m: '3×15–20 · RIR 1 · 休 60 秒', parent: 'h-plan-fri' },
+  { id: 'h-plan-fri-6', t: '哑铃弯举', m: '3×10–12 · RIR 1 · 休 60 秒', parent: 'h-plan-fri' },
+
+  /* 上面四个训练日挂在「上下肢 4 天分化」底下；下面这四条是**独立的顶层习惯** ——
+     它们不是那个分化的一部分（周三/周六是有氧日、周日是休息日、每天有氧是日常）。 */
+  { id: 'h-plan-wed', t: '周三 · 有氧 + 核心', m: '每周三', parent: null },
+  { id: 'h-plan-wed-1', t: '低强度稳态有氧 35–40 分钟', m: '心率 120–140 · 能说话不喘', parent: 'h-plan-wed' },
+  { id: 'h-plan-wed-2', t: '悬垂举腿 或 卷腹', m: '3×12–20', parent: 'h-plan-wed' },
+  { id: 'h-plan-wed-3', t: '侧平板支撑', m: '每侧 3×40 秒', parent: 'h-plan-wed' },
+  { id: 'h-plan-wed-4', t: '拉伸 10 分钟', m: '髋屈肌 / 腘绳肌 / 胸大肌 / 背阔肌', parent: 'h-plan-wed' },
+
+  { id: 'h-plan-sat', t: '周六 · 体能 + 灵活性', m: '每周六', parent: null },
+  { id: 'h-plan-sat-1', t: '间歇训练 或 稳态有氧 40 分钟', m: '间歇 8–10 轮 × 20 秒快 / 40 秒慢', parent: 'h-plan-sat' },
+  { id: 'h-plan-sat-2', t: '全身拉伸 + 泡沫轴', m: '15 分钟 · 股四头 / 臀 / 胸椎', parent: 'h-plan-sat' },
+
+  /* 休息日也是一条**可打卡的习惯**（宇 2026-10-08 定的）：
+     计划里「这天别练」是一条明确指令，打卡它正好防住休息日偷偷加练。 */
+  { id: 'h-plan-sun', t: '周日 · 完全休息', m: '每周日', parent: null },
+  { id: 'h-plan-sun-1', t: '散步 6000–8000 步', m: '轻松活动 · 不安排任何训练', parent: 'h-plan-sun' },
+  { id: 'h-plan-sun-2', t: '睡眠 7–9 小时', m: '这周最重要的一项', parent: 'h-plan-sun' },
+
+  /* 时长按日子不同（力量日后 15–25 分钟、有氧日 35–45 分钟），
+     所以这一条只写「每天」—— 具体排法看周三/周六那两条。 */
+  { id: 'h-plan-cardio', t: '每天有氧', m: '每天', parent: null }
+]
+
+/* ============ 固定空间 ============
+   出厂就有、**不可删、不可改名、清空数据之后仍在**（宇 2026-10-08 定的：
+   记账 / 健身 / 个人 三个）。「记账」不是 DOMAINS 的成员 ——
+   它是空间页上多出来的一张虚拟卡（见 db.js 的 MONEY_SPACE），
+   这里这两个才是真的领域。
+
+   `DOMAINS` 是**示例数据**（上面的训练计划 + 学习/工作两个示例领域），
+   清空数据会把它整个抹掉；`FIXED_DOMAINS` 是**出厂的一部分**，
+   清空之后按它重建（`EMPTY_VALUE_OF.DOMAINS` 那一项）——
+   和 `IN_CATS` 是同一条道理：那三项不是用户数据，是出厂就有的。 */
+export const FIXED_DOMAINS = [
+  { id: 'fitness', name: '健身', pinned: true, fixed: true, habits: PLAN_HABITS, goals: [] },
+  { id: 'life', name: '个人', pinned: false, fixed: true, habits: [], goals: [] }
+]
+
+function fixedCopy(id) { return JSON.parse(JSON.stringify(FIXED_DOMAINS.filter(d => d.id === id)[0])) }
+
+/* 示例数据里的 健身 / 个人 = 固定空间那份 + 几条示例目标/习惯。
+   从 FIXED_DOMAINS 拷而不是重写一遍：重写的话，训练计划就有两份定义，
+   改一处漏一处，而且**漏掉的那份不会报错**（只是「清空之后和示例里长得不一样」）。 */
+const seedFitness = fixedCopy('fitness')
+seedFitness.goals = [
+  { id: 'g-fitness-1', t: '硬拉 100kg', m: '当前 80kg × 5 次', p: 80, parent: null },
+  { id: 'g-fitness-1a', t: '周期一：85kg × 5', m: '两周内', p: 100, parent: 'g-fitness-1' },
+  { id: 'g-fitness-1b', t: '周期二：95kg × 3', m: '再两周', p: 40, parent: 'g-fitness-1' },
+  { id: 'g-fitness-2', t: '体脂降到 18%', m: '当前约 21%', p: 35, parent: null }
+]
+
+const seedLife = fixedCopy('life')
+seedLife.habits = [
+  { id: 'h-life-1', t: '健康作息', m: '一组习惯', parent: null },
+  { id: 'h-life-2', t: '饮水 2L', m: '每天', parent: 'h-life-1' },
+  { id: 'h-life-3', t: '23:30 前睡', m: '工作日', parent: 'h-life-1' }
+]
+seedLife.goals = [
+  { id: 'g-life-1', t: '家庭年度旅行成行', m: '还没定目的地', p: 50, parent: null },
+  { id: 'g-life-1a', t: '定目的地和日期', m: '这个月内', p: 100, parent: 'g-life-1' },
+  { id: 'g-life-1b', t: '办签证', m: '看目的地', p: 20, parent: 'g-life-1' }
+]
+
 export const DOMAINS=[
-  {
-    id:'fitness',name:'健身',pinned:true,
-    habits:[{id:'h-fit-1',t:'训练日打卡',m:'每周 4 次',parent:null}],
-    goals:[
-      {id:'g-fitness-1',t:'硬拉 100kg',m:'当前 80kg × 5 次',p:80,parent:null},
-      {id:'g-fitness-1a',t:'周期一：85kg × 5',m:'两周内',p:100,parent:'g-fitness-1'},
-      {id:'g-fitness-1b',t:'周期二：95kg × 3',m:'再两周',p:40,parent:'g-fitness-1'},
-      {id:'g-fitness-2',t:'体脂降到 18%',m:'当前约 21%',p:35,parent:null}
-    ]
-  },
+  seedFitness,
   {
     id:'study',name:'学习',pinned:false,
     habits:[{id:'h-study-1',t:'阅读 30 分钟',m:'每天',parent:null}],
@@ -159,19 +271,7 @@ export const DOMAINS=[
     habits:[{id:'h-work-1',t:'下班前清空收件箱',m:'工作日',parent:null}],
     goals:[{id:'g-work-1',t:'知识库项目 v1 上线',m:'方案已定 · 待开工',p:45,parent:null}]
   },
-  {
-    id:'life',name:'个人',pinned:false,
-    habits:[
-      {id:'h-life-1',t:'健康作息',m:'一组习惯',parent:null},
-      {id:'h-life-2',t:'饮水 2L',m:'每天',parent:'h-life-1'},
-      {id:'h-life-3',t:'23:30 前睡',m:'工作日',parent:'h-life-1'}
-    ],
-    goals:[
-      {id:'g-life-1',t:'家庭年度旅行成行',m:'还没定目的地',p:50,parent:null},
-      {id:'g-life-1a',t:'定目的地和日期',m:'这个月内',p:100,parent:'g-life-1'},
-      {id:'g-life-1b',t:'办签证',m:'看目的地',p:20,parent:'g-life-1'}
-    ]
-  }
+  seedLife
 ];
 
 export const RECORD_TYPES=[

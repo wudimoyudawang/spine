@@ -3,10 +3,16 @@
     <PageHead title="空间" />
 
     <view class="grid">
+      <!-- 固定领域（健身 / 个人）和普通领域一起铺，差别只在**卡上有没有那颗星**：
+           固定的不给置顶、也不给改名删除（名字和存在都是出厂设定）。
+           样式上不加底色 —— 「记账」那张卡是强调色，因为它是**另一种东西**
+           （虚拟卡，连领域都不是）；这两个是真领域，一个「固定」徽章说清就够了，
+           三张卡都染上强调色，这一屏就没有重点了。 -->
       <view v-for="d in db.DOMAINS" :key="d.id" class="card" @click="openDomain(d)">
         <view class="card-top">
           <text class="card-t">{{ d.name }}</text>
-          <view class="pin" :class="{ 'is-on': d.pinned }" @click.stop="pin(d)">
+          <text v-if="isFixed(d)" class="card-badge">固定</text>
+          <view v-else class="pin" :class="{ 'is-on': d.pinned }" @click.stop="pin(d)">
             <text class="pin-t">{{ d.pinned ? '★' : '☆' }}</text>
           </view>
         </view>
@@ -359,6 +365,7 @@ import {
   toggleRule, moveRule, saveRule, armConfirm, delArmed, disarmDelete,
   quadColorOf, setQuadColor, setTickDone, QUAD_COLOR_DEFAULT,
   setHomePage,
+  isFixedDomain,
   remindStats,
   resolveCapture, describeCapture
 } from '../stores/db'
@@ -371,6 +378,11 @@ import { toast, confirmDelete } from '../lib/ui'
 function summary(d) {
   return summaryOf(d, recordTypesOf(db.RECORD_TYPES, d.id).length)
 }
+
+/* 固定领域（健身 / 个人）：不可删、不可改名（宇 2026-10-08 定的）。
+   判定走数据层的 `isFixedDomain(id)` —— 它按 id 认，不看节点上的 `fixed` 标记，
+   这样导一份老档案进来，它们也不会变成能删的（见 db.js 那段注释）。 */
+function isFixed(d) { return isFixedDomain(d.id) }
 
 const moneySummary = computed(function () {
   /* 和今日页的「本月」、记账页的合计读的是同一处（db.monthMoney）——

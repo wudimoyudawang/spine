@@ -23,8 +23,15 @@ const frozenClock = require('./lib/frozen-clock.cjs')
 const pad2 = n => (n < 10 ? '0' : '') + n
 const iso = d => d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate())
 
-function stable(v) {
-  if (Array.isArray(v)) return v.map(stable)
+/* 从 id 派生一个稳定的盐（0..996）。用来决定「这条习惯跳过哪几个打卡日」——
+   换成 id 之后，数据的形状只跟 id 有关，和「它排在第几个」无关了。 */
+function saltOf(id) {
+  let h = 0
+  for (let i = 0; i < String(id).length; i++) h = (h * 31 + String(id).charCodeAt(i)) % 997
+  return h
+}
+
+function stable(v) {  if (Array.isArray(v)) return v.map(stable)
   if (v && typeof v === 'object') {
     const o = {}
     for (const k of Object.keys(v).sort()) o[k] = stable(v[k])
@@ -71,6 +78,8 @@ async function collect(M) {
     addCat, renameCat, delCat, DEFAULT_IN_CATS,
     /* 打开应用先看哪一页 / 去记一笔（2026-10-04 加） */
     setHomePage, applyHomePage, openPay, PAY_DIRS,
+    /* 排在哪几天 / 固定空间（2026-10-08 加） */
+    habitDays, daysText, weekdayOf, habitToday, isFixedDomain, fixedDomains, habitGroups,
     quadOf, setQuad, quadName, quadTone, quadColorOf, quadVarStyle, setQuadColor,
     FREQ_UNITS, parseFreq, freqText,
     parseDatePhrase, firstNumber, restOf, resolveCapture, describeCapture,
@@ -101,12 +110,17 @@ async function collect(M) {
 
     const habitIds = []
     db.DOMAINS.forEach(d => (d.habits || []).forEach(h => habitIds.push(h.id)))
-    let n = 0
     for (const id of habitIds) {
-      n++
-      if (n % 3 === 0) continue                    /* 每三个留一个「一次都没打过」 */
+      /* ⚠️ 这里原来用的是「第几个习惯」（`n++` / `n % 3` / `(d + n) % 7`）。
+         那是**位置相关**的：往任何一个领域里加一条习惯，它后面所有习惯的序号
+         就都推后一位，于是打卡分布全变 —— 几十个捕获点的值一起变，
+         **真正的回归就淹在这堆噪音里**（2026-10-08 给健身加训练计划时，
+         40 条习惯让 40 个捕获点集体变脸，全是这个原因）。
+         改成从 **id 派生**：id 不变，这套数据就一个字节都不动。 */
+      const salt = saltOf(id)
+      if (salt % 3 === 0) continue                 /* 每三个留一个「一次都没打过」 */
       for (let d = 0; d < 40; d++) {
-        if ((d + n) % 7 === 0) continue            /* 制造断裂 */
+        if ((d + salt) % 7 === 0) continue         /* 制造断裂 */
         db.HABIT_LOGS.push({ key: id, date: iso(new Date(2026, 5, 1 + d)) })
       }
     }
@@ -189,6 +203,48 @@ async function collect(M) {
     targetEq: r.target === habitRowExtra(r.node).target,
     periodEq: r.periodCount === habitRowExtra(r.node).periodCount
   })))
+
+  /* 今日页习惯那一档的三段分组（2026-10-08 加）。钉四条：
+     · 三段合起来就是 habitTree() 的全部行（不丢不重）
+     · 每行的**自身判定**和它所在的段一致（有排日的按今天分）
+     · 判不出星期几的**顶层**行必须在「常驻」段（老行为一字不变）
+     · 判不出星期几的**子行**必须和它的父行同段（动作挂在训练日下面就是这样） */
+  for (const day of ['2026-09-21', '2026-09-23', '2026-09-27', '2026-10-08']) {
+    cap('habitGroups:' + day, () => {
+      const g = habitGroups(day)
+      const ids = k => g[k].map(r => r.node.id)
+      const all = ids('today').concat(ids('always')).concat(ids('rest'))
+      const src = habitTree().map(r => r.node.id)
+      const gOf = {}
+      for (const k of ['today', 'always', 'rest']) for (const r of g[k]) gOf[r.node.id] = k
+      const wrong = []
+      const orphan = []
+      for (const k of ['today', 'always', 'rest']) {
+        for (const r of g[k]) {
+          const own = habitToday(r.node, day)
+          if (own === true && k !== 'today') wrong.push(r.node.id + ':today->' + k)
+          if (own === false && k !== 'rest') wrong.push(r.node.id + ':rest->' + k)
+          /* 判不出的：顶层必须常驻；子行必须和父同段 */
+          if (own === null) {
+            if (r.depth === 0) {
+              if (k !== 'always') wrong.push(r.node.id + ':null-top->' + k)
+            } else if (gOf[r.node.parent] && gOf[r.node.parent] !== k) {
+              orphan.push(r.node.id + ':' + k + ' vs 父 ' + gOf[r.node.parent])
+            }
+          }
+        }
+      }
+      return {
+        today: ids('today'),
+        always: ids('always'),
+        rest: ids('rest'),
+        noLossNoDup: JSON.stringify(all.slice().sort()) === JSON.stringify(src.slice().sort()),
+        rowCountEq: all.length === src.length,
+        wrong: wrong,
+        orphan: orphan
+      }
+    })
+  }
   /* 计划行不该带这些字段 */
   cap('goalTree.noExtras', () => goalTree().map(r => [
     Object.prototype.hasOwnProperty.call(r, 'streak'),
@@ -354,11 +410,39 @@ async function collect(M) {
   cap('isoOfCnDate', () => ['9月18日', '9月18日 周三', '1月1日', '', null, '12月31日'].map(x => isoOfCnDate(x, '2026-09-23')))
   cap('cnDateOf', () => ['2026-09-18', '2026-01-01', '', 'x'].map(cnDateOf))
   cap('exportFileName', () => exportFileName())
-  cap('parseFreq.roundTrip', () => ['每天', '每日', '每周', '每月', '每周 3 次', '每月 12 次', '工作日', '', '一周四次'].map(x => {
+  cap('parseFreq.roundTrip', () => ['每天', '每日', '每周', '每月', '每周 3 次', '每月 12 次',
+    '工作日', '', '一周四次',
+    /* 星期几那一种写法（2026-10-08 加）：**必须能原样往返**，
+       不然 FreqField 一打开就把它当成「解析不出来」的默认值，
+       用户碰一下任何一颗按钮就把星期几冲成「每周 5 次」了。
+       ⚠️ 光秃秃的「工作日」仍然返回 null —— 它是手填的老词，
+       解析得出来就会在用户碰滚轮时被改写掉（那条不变量见 parseFreq 的注释）。 */
+    '每周一', '每周一、四', '每周一、二、四、五', '每周六、日', '每周三'].map(x => {
     const p = parseFreq(x)
     return [x, p, p ? freqText(p.unit, p.n) : null]
   }))
   cap('FREQ_UNITS', () => FREQ_UNITS)
+
+  /* ---- 「排在哪几天」（2026-10-08 加，训练计划的地基）----
+     三件事分开钉：解析出星期几、拼回人话、今天该不该做。
+     `daysText` 是 `habitDays` 的逆，「工作日 / 周末 / 每天」这三个名字
+     必须能**来回对上** —— 对不上的话，界面上显示的和实际过滤的就不是一回事。 */
+  cap('habitDays', () => ['每天', '每日', '工作日', '周末', '每周一', '每周一、四',
+    '每周日', '每周一、二、四、五', '每周 4 次', '一组习惯', '', '一周四次', '每周'].map(x => [x, habitDays(x)]))
+  cap('daysText.roundTrip', () => [[1], [1, 4], [1, 2, 4, 5], [6, 7], [1, 2, 3, 4, 5], [1, 2, 3, 4, 5, 6, 7], [], [7], [2, 5]].map(d => {
+    const t = daysText(d)
+    return [d, t, habitDays(t)]
+  }))
+  cap('weekdayOf', () => ['2026-10-08', '2026-10-05', '2026-10-11', '2026-09-21', '2026-09-20'].map(x => [x, weekdayOf(x)]))
+  /* habitToday 是**三态**：true 今天该做 / false 今天不排 / null 判不出来（常驻）。
+     返回布尔就分不出后两种 —— 而「判不出来的照旧常驻」正是兼容老习惯的关键。 */
+  cap('habitToday', () => [
+    { m: '每天' }, { m: '工作日' }, { m: '周末' }, { m: '每周一、四' }, { m: '每周三' },
+    { m: '每周 4 次' }, { m: '一组习惯' }, { m: '' }
+  ].map(n => {
+    const out = ['2026-10-08', '2026-10-10', '2026-10-11'].map(t => habitToday(n, t))
+    return [n.m, out]
+  }))
   cap('QUAD_COLORS.default', () => db.QUAD_COLORS)
   cap('REV_TRENDS.default', () => db.REV_TRENDS)
   cap('localCounts', () => localCounts())
@@ -381,6 +465,38 @@ async function collect(M) {
     }
     return [r, shape, localCounts(), snapshot(), quadVarStyle()]
   })
+
+  /* 清空数据之后**固定空间和训练计划还在**（宇 2026-10-08 定的）。
+     这条单独立一个捕获点，因为 seq.clearAllData 那边只数了「array:2」——
+     数得出来有两个领域，数不出它们是哪两个、里面还剩什么。
+     这正是这一条的需求本身：「清空所有数据的默认习惯」= 训练计划那棵树。 */
+  cap('seq.clearAllData.keepsFixedPlan', () => {
+    loadSeed()
+    /* 先确认示例数据里也是这一份（固定空间是 DOMAINS 的一部分，不是另抄一份） */
+    const before = db.DOMAINS.map(d => d.id)
+    clearAllData()
+    const after = db.DOMAINS.map(d => [d.id, d.name, !!d.fixed])
+    const fit = db.DOMAINS.filter(d => d.id === 'fitness')[0]
+    const tree = flattenTree(fit ? fit.habits : [], null, 0)
+      .map(r => [r.node.id, r.node.t, r.node.m, r.depth])
+    const planRoot = fit ? fit.habits.filter(h => h.id === 'h-fit-1')[0] : null
+    return {
+      seedIds: before,
+      after: after,
+      habitCount: fit ? fit.habits.length : 0,
+      /* 整棵训练计划，含层级 —— 只数个数的话，树被接错地方也看不出来 */
+      tree: tree,
+      /* 根节点的星期的：它决定「今天该不该练」 */
+      rootDays: habitDays(planRoot ? planRoot.m : ''),
+      rootToday: habitToday(planRoot, '2026-10-08'),
+      /* 示例数据里那两条**不该**跟着固定空间跑（它们是用户数据，清掉） */
+      goalsKept: fit ? fit.goals.length : -1,
+      lifeHabits: (db.DOMAINS.filter(d => d.id === 'life')[0] || { habits: [] }).habits.length,
+      studyGone: db.DOMAINS.some(d => d.id === 'study') ? '还在' : '没了'
+    }
+  })
+
+  cap('isFixedDomain', () => ['fitness', 'life', 'study', 'work', 'money', '', null, 'life2'].map(x => [x, isFixedDomain(x)]))
 
   /* C5：加同级子项时，待办 / 习惯 / 计划三处的落位必须一致 */
   cap('seq.addSubOrder', () => {

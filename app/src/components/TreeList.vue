@@ -6,7 +6,7 @@
     <TreeRow
       v-for="r in rows"
       :key="r.node.id"
-      :depth="r.depth"
+      :depth="bare ? 0 : r.depth"
       :kids="r.kids"
       :closed="r.closed"
       :add-on="subOn === r.spec"
@@ -106,7 +106,12 @@ defineProps({
      计划行要按行带上父项的名字（「某某」的子项，拆成几步走）。 */
   addPh: { type: [String, Function], default: '子项内容，回车建好' },
   /* 习惯行：行尾给一个打卡按钮 */
-  tickable: { type: Boolean, default: false }
+  tickable: { type: Boolean, default: false },
+  /* 拍平：所有行都按顶层缩进画（`depth` 一律当 0）。
+     用在「今天不排的」那一段 —— 那一段是从树上摘下来的行，
+     父行可能留在上面另一段里，带着缩进就成了「上面那行不见了」的孤儿。
+     拍平之后各家自己用 `row.path` 写出它挂在谁下面。 */
+  bare: { type: Boolean, default: false }
 })
 defineEmits(['open'])
 

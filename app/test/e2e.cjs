@@ -282,6 +282,36 @@ async function main() {
     const habitTxt = await cdp.eval("document.querySelector('.block').innerText")
     check('习惯行带「连续 … 累计 …」（形状）', /连续 \d+ [天周个月]+ · 累计 \d+/.test(habitTxt) ? 'true' : habitTxt.slice(0, 200), 'true')
     check('习惯行有已完成态的圆钮（is-done）', await cdp.eval("document.querySelectorAll('.tickc.is-done').length > 0"), 'true')
+
+    /* ---- 习惯那一档按「今天该不该做」分两段（2026-10-08 加）----
+       训练计划是日程型的，「今天该练哪一天」得一眼看到。
+       ⚠️ 这几条都**不依赖今天是周几**：标「今天」的行数会随星期变
+       （周末「工作日」那两条就不该标），所以查的是形状和「点开会变多」。 */
+    check('今天该做的行有「今天」小标', await cdp.eval("document.querySelectorAll('.block .row-today').length > 0"), 'true')
+    const restText = await cdp.eval("(()=>{const b=document.querySelector('.restbar');return b?b.innerText.replace(/\\s+/g,' ').trim():'(没有折叠行)'})()")
+    check('今天不排的折成一行（形状：今天不排的 N 项）', /^今天不排的 \d+ 项/.test(restText) ? 'true' : restText, 'true')
+    const beforeFold = await cdp.eval("document.querySelectorAll('.block .trow').length")
+    await cdp.eval("(()=>{const b=document.querySelector('.restbar');if(b)b.click();return !!b})()")
+    await cdp.wait(350)
+    const afterFold = await cdp.eval("document.querySelectorAll('.block .trow').length")
+    check('点开折叠行真的铺出了今天不排的（' + beforeFold + ' → ' + afterFold + ' 行）',
+      afterFold > beforeFold ? 'true' : beforeFold + '/' + afterFold, 'true')
+    /* 折叠那一段是**拍平**的：里面不该有缩进（缩进会变成「上面那行不见了」的孤儿）。
+       缩进是 `.trow` 上的内联 `padding-left: depth*18px`，所以量它。 */
+    check('折叠段里的行是拍平的（没有缩进孤儿）',
+      await cdp.eval(`(() => {
+        const trees = document.querySelectorAll('.block .tree');
+        const last = trees[trees.length - 1];
+        if (!last) return 'no-tree';
+        const pads = {};
+        Array.from(last.querySelectorAll('.trow')).forEach(r => { pads[getComputedStyle(r).paddingLeft] = 1 });
+        const ks = Object.keys(pads);
+        return ks.length <= 1 ? 'true' : ks.join(',');
+      })()`), 'true')
+    await cdp.shot('1e-today-habit-fold', SHOTS)
+    await cdp.eval("(()=>{const b=document.querySelector('.restbar');if(b)b.click();return !!b})()")
+    await cdp.wait(250)
+    check('再点收回折叠段', await cdp.eval("document.querySelectorAll('.block .trow').length"), String(beforeFold))
     check('切到「计划」档', await goTab('计划'), 'true')
     await cdp.shot('1c-today-goal', SHOTS)
     check('计划行有进度', await cdp.eval("document.querySelector('.block').innerText"), '硬拉 100kg')
@@ -349,6 +379,60 @@ async function main() {
     check('那一行自身带「每周 3 次」', rowText, '每周 3 次')
     check('那一行没有落成默认的「每天」', rowText.indexOf('· 每天') < 0 ? 'ok' : rowText, 'ok')
 
+    /* ---- 频率字段新增的「每周几」（2026-10-08 加，训练计划的地基）----
+       走一遍真链路：选「每周」→ 多出一排星期 → 点周一、周四 → 存下来是「每周一、四」。
+       光靠组件测试验不到这一段 —— 那边只测 FreqField 有没有把 change 发出去，
+       存进哪句话、列表上显示成什么样，得整条路走通才算。 */
+    const openHabitAgain = await cdp.eval(`(() => {
+      const b = Array.from(document.querySelectorAll('.addbtn')).filter(x => x.offsetParent !== null).find(x => x.innerText.indexOf('新增习惯') >= 0);
+      if (!b) return false; b.click(); return true;
+    })()`)
+    check('再开一次「新增习惯」', openHabitAgain, 'true')
+    await cdp.wait(300)
+    await cdp.eval(`(() => {
+      const i = document.querySelector('.modal input');
+      if (!i) return false;
+      i.focus(); i.value = '端到端每周几'; i.dispatchEvent(new Event('input', { bubbles: true }));
+      return true;
+    })()`)
+    check('点「每周」', await cdp.eval(`(() => {
+      const u = Array.from(document.querySelectorAll('.modal .ucell')).find(x => x.innerText.trim() === '每周');
+      if (!u) return false; u.click(); return true;
+    })()`), 'true')
+    await cdp.wait(200)
+    check('选「每周」之后才出现那排星期（七颗，一~日）',
+      await cdp.eval("Array.from(document.querySelectorAll('.modal .dayb')).map(x=>x.innerText.trim()).join('')"), '一二三四五六日')
+    check('没选星期时次数那一行还在',
+      await cdp.eval("!!document.querySelector('.modal .stepv') ? 'true' : '不在'"), 'true')
+    await cdp.eval(`(() => {
+      const b = Array.from(document.querySelectorAll('.modal .dayb')).find(x => x.innerText.trim() === '一');
+      if (b) b.click(); return !!b;
+    })()`)
+    await cdp.wait(150)
+    await cdp.eval(`(() => {
+      const b = Array.from(document.querySelectorAll('.modal .dayb')).find(x => x.innerText.trim() === '四');
+      if (b) b.click(); return !!b;
+    })()`)
+    await cdp.wait(200)
+    check('选了星期之后次数那一行收起来（次数 = 选中的天数）',
+      await cdp.eval("document.querySelector('.modal .stepv') ? '还在' : 'true'"), 'true')
+    check('提示写着选中的那几天', await cdp.eval("(() => { const h = document.querySelector('.modal .days-hint'); return h ? h.innerText.trim() : '没提示' })()"), '每周一、四')
+    await cdp.shot('2b-addhabit-weekdays', SHOTS)
+    await cdp.eval(`(() => {
+      const b = Array.from(document.querySelectorAll('.modal .btn')).find(x => x.innerText.trim() === '新增');
+      if (b) b.click(); return !!b;
+    })()`)
+    await cdp.wait(400)
+    /* 新习惯排在「今天不排的」里也正常（今天是周几决定它排在哪一段），
+       所以先把折叠那一段铺开再找它 —— 顺便证明折叠段里的行照样读得到。 */
+    await cdp.eval("(() => { const b = document.querySelector('.restbar'); if (b) b.click(); return !!b })()")
+    await cdp.wait(350)
+    const weekRow = await cdp.eval(`(() => {
+      const r = Array.from(document.querySelectorAll('.trow')).find(x => x.innerText.indexOf('端到端每周几') >= 0);
+      return r ? r.innerText.replace(/\\n+/g, ' ┃ ') : 'NOT_FOUND';
+    })()`)
+    check('存下来是「每周一、四」（不是「每周 2 次」）', weekRow, '每周一、四')
+
     console.log('')
     console.log('=== 端到端：多次打卡与长按撤销（CDP 派发真实触摸）===')
     /* 开触摸模拟：桌面 Edge 没有触摸输入，而 uni 的 longpress 只监听 touchstart。
@@ -389,6 +473,14 @@ async function main() {
     await cdp.wait(300)
     check('点一下 = 本期 +1（0/3 → 1/3）', await tickLabel(), '1/3')
 
+    /* ⚠️ 这一条不只是「再点一下」——它是**习惯索引缓存陈旧**那个缺陷的唯一哨兵。
+       症状：数据明明 +1 了（toast 说「本期 2/3」），但按钮上的数字不动。
+       根因是 `habitIndex()` 那个非反应式缓存：缓存热的时候只读得到
+       `db.HABIT_LOGS.length`，而「+1 次」恰恰长度不变、只改 `n`，
+       Vue 就不知道要重算。页面上只要多出一个先碰习惯树的 computed，缓存就被预热，
+       症状立刻出现（2026-10-08 给今日页加「今天该不该做」的分组时踩到的）。
+       修法是 `HABIT_IDX_VER`（见 db.js）。
+       **别把这条改写成「点一次看一眼」** —— 差异只在第二次点击上。 */
     tk = await tickAt()
     await cdp.eval(`(() => {
       const r = Array.from(document.querySelectorAll('.trow')).find(x => x.innerText.indexOf('端到端测试习惯') >= 0);
@@ -397,7 +489,6 @@ async function main() {
     })()`)
     await cdp.wait(300)
     check('再点一下 = 2/3', await tickLabel(), '2/3')
-
     /* 长按：走 uni-h5 自己的 longpress 模拟链路 —— 它监听的是 window 的
        touchstart（350ms 定时器后派发 longpress）。
        **但 touchstart 必须派发在元素上，不能派发在 window 上**：uni-h5 合成
@@ -616,6 +707,46 @@ async function main() {
     })()`)
     check('提醒块出现且说清「只在 App 里生效」', remBlock, '只在装到手机上')
     await cdp.shot('6b-remind-block', SHOTS)
+
+    /* ---- 固定空间：记账 / 健身 / 个人（2026-10-08 定的）----
+       三张卡上都带「固定」徽章，而且**都没有置顶那颗星**（固定的不给置顶、不给改名删除）。 */
+    const fixedCards = await cdp.eval(`(() => {
+      const cards = Array.from(document.querySelectorAll('.card'));
+      const out = [];
+      for (const c of cards) {
+        const name = (c.querySelector('.card-t') || {}).innerText || '';
+        const badge = c.querySelector('.card-badge');
+        const pin = c.querySelector('.pin');
+        if (badge || name === '记账') out.push(name + (badge ? '[固定]' : '[漏了徽章]') + (pin ? '[有星!]' : ''));
+      }
+      /* 排一下序再比 —— 卡片的先后（领域循环在前、记账卡在后）是排版的事，
+         这条断言要盯的是「哪三张卡、有没有徽章、有没有星」。 */
+      return out.sort().join('|');
+    })()`)
+    check('空间页：记账 / 健身 / 个人 三张卡带「固定」徽章且没有置顶星',
+      fixedCards, ['健身[固定]', '个人[固定]', '记账[固定]'].sort().join('|'))
+    await cdp.shot('6c-spaces-fixed', SHOTS)
+    /* 不固定的领域（学习 / 工作）仍然有那颗星 —— 别把「固定」做成了「所有卡都没星」 */
+    check('非固定领域仍然可以置顶',
+      await cdp.eval("(() => { const c = Array.from(document.querySelectorAll('.card')).find(x => (x.querySelector('.card-t')||{}).innerText === '学习'); return c && c.querySelector('.pin') ? 'true' : 'false' })()"),
+      'true')
+
+    /* 固定领域**不给改名、不给删除**：进领域页看那一块 */
+    await cdp.eval(`(() => {
+      const c = Array.from(document.querySelectorAll('.card')).find(x => (x.querySelector('.card-t')||{}).innerText === '健身');
+      if (c) c.click(); return !!c;
+    })()`)
+    await cdp.wait(450)
+    const fixedDomainBlock = await cdp.eval(`(() => {
+      const b = Array.from(document.querySelectorAll('.block')).find(x => x.innerText.indexOf('领域设置') >= 0);
+      return b ? b.innerText.replace(/\\s+/g, ' ') : 'NOT_FOUND';
+    })()`)
+    check('固定领域页说清「不能改名、也删不掉」', fixedDomainBlock, '固定领域')
+    check('固定领域页**没有**改名输入框和删除按钮',
+      await cdp.eval("(() => { const b = Array.from(document.querySelectorAll('.block')).find(x => x.innerText.indexOf('领域设置') >= 0); if (!b) return 'no-block'; return (b.querySelector('.rin') || b.querySelector('.rt-del')) ? '还有入口' : 'true' })()"),
+      'true')
+    await cdp.shot('10b-fixed-domain', SHOTS)
+    await clickTab(0)
 
     /* ---- 今日那一格的另外几个镜头（日历 / 复盘 / 四象限）----
        复盘 2026-10-04 从底栏挪进来；同日宇把它的顺序调到日历后面，四象限挪到最后。
