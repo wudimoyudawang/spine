@@ -22,7 +22,7 @@
 const fs = require('fs')
 const http = require('http')
 const path = require('path')
-const { spawn } = require('child_process')
+const { spawn, spawnSync } = require('child_process')
 
 const APP = path.resolve(__dirname, '..')
 const DIST = path.join(APP, 'dist', 'build', 'h5')
@@ -33,6 +33,12 @@ const argv = process.argv.slice(2)
 const shotsArg = argv.indexOf('--shots')
 const SHOTS = shotsArg >= 0 ? path.resolve(argv[shotsArg + 1]) : path.join(__dirname, '.shots')
 const KEEP_OPEN = argv.includes('--keep-open')
+/* 「只跑断言，不截图」（`--no-shots`）。截图**不是断言**，它只是留档给人的 ——
+   而 `captureBeyondViewport` 在长页面（空间那页三千多像素）上偶尔要几十秒，
+   撞上 30/90 秒超时就会拖住整轮：一次验证要等十几分钟，看起来还像测试挂了。
+   要断言结果时用它；要看图时照旧跑完整版。
+   ⚠️ 用了它 `.shots/` 里的图**不会刷新**，别拿旧图当这次的证据。 */
+const NO_SHOTS = argv.includes('--no-shots')
 
 const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.json': 'application/json; charset=utf-8', '.png': 'image/png', '.svg': 'image/svg+xml', '.woff2': 'font/woff2' }
 
@@ -65,26 +71,60 @@ class Cdp {
     let m; try { m = JSON.parse(raw) } catch (e) { return }
     if (m.id && this.waiting.has(m.id)) { const w = this.waiting.get(m.id); this.waiting.delete(m.id); w(m) }
   }
-  send(method, params) {
+  /* timeoutMs 可调：截图（尤其 `captureBeyondViewport` 的长页面）比别的调用重得多，
+     30 秒偶尔不够 —— 那会让整轮在**最后几张图**上挂掉，看起来像「断言失败」，
+     其实前面全过了。默认 30 秒不变，截图那条路自己给宽一点。 */
+  send(method, params, timeoutMs) {
     const id = ++this.id
+    const ms = timeoutMs || 30000
     return new Promise((res, rej) => {
       this.waiting.set(id, m => m.error ? rej(new Error(method + ': ' + m.error.message)) : res(m.result))
       this.ws.send(JSON.stringify({ id, method, params: params || {} }))
-      setTimeout(() => { if (this.waiting.has(id)) { this.waiting.delete(id); rej(new Error(method + ' 超时')) } }, 30000)
+      setTimeout(() => { if (this.waiting.has(id)) { this.waiting.delete(id); rej(new Error(method + ' 超时')) } }, ms)
     })
   }
+  /* ⚠️ `Execution context was destroyed` 是**临时**错误，必须重试一次。
+     它意味着「页面正在换执行上下文」（刚导航完、重载中、或渲染进程重启），
+     跟断言的内容毫无关系 —— 同一句表达式晚半秒再发就成功了。
+     不重试的话，这个错误会在**任一** eval 上冒出来把整轮打断，
+     而且位置随机（挂载轮询、某个 wait、某次读 DOM 都可能），
+     看起来像「测试不稳定」甚至像代码坏了。
+     只重试这一种错误：真正的失败（页面内异常、超时）照旧直接抛。 */
   async eval(expr) {
-    const r = await this.send('Runtime.evaluate', { expression: expr, returnByValue: true, awaitPromise: true })
-    if (r.exceptionDetails) throw new Error('页面内异常: ' + (r.exceptionDetails.exception && (r.exceptionDetails.exception.description || r.exceptionDetails.exception.value) || r.exceptionDetails.text))
-    return r.result.value
+    for (let i = 0; ; i++) {
+      try {
+        const r = await this.send('Runtime.evaluate', { expression: expr, returnByValue: true, awaitPromise: true })
+        if (r.exceptionDetails) throw new Error('页面内异常: ' + (r.exceptionDetails.exception && (r.exceptionDetails.exception.description || r.exceptionDetails.exception.value) || r.exceptionDetails.text))
+        return r.result.value
+      } catch (e) {
+        const transient = /Execution context was destroyed|Cannot find context|Inspected target navigated/.test(String(e && e.message))
+        if (i >= 2 || !transient) throw e
+        await new Promise(function (r) { setTimeout(r, 600) })
+      }
+    }
   }
   async wait(ms) { await this.eval('new Promise(r=>setTimeout(r,' + ms + '))') }
   async shot(name, dir) {
-    const r = await this.send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: true })
+    if (NO_SHOTS) return ''      /* 见 NO_SHOTS 的说明：断言要的是「跑得完」 */
     fs.mkdirSync(dir, { recursive: true })
     const p = path.join(dir, name + '.png')
-    fs.writeFileSync(p, Buffer.from(r.data, 'base64'))
-    return p
+    /* 截图给 90 秒 + 失败重试一次：长页面（空间那页三千多像素）的
+       `captureBeyondViewport` 偶尔真会超过 30 秒，而那一张挂掉会把**整轮**
+       中断在最后 —— 前面几十条 PASS 全白跑，看起来还像断言失败。
+       截图不是断言，重试一次没有正确性代价。 */
+    for (let i = 0; i < 2; i++) {
+      try {
+        process.stdout.write('      [截图 ' + name + (i ? ' 重试…' : ' …'))
+        const r = await this.send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: true }, 90000)
+        fs.writeFileSync(p, Buffer.from(r.data, 'base64'))
+        process.stdout.write(' ok]\n')
+        return p
+      } catch (e) {
+        process.stdout.write(' ' + e.message + ']\n')
+        if (i === 1) throw e
+        await this.wait(800)
+      }
+    }
   }
   close() { try { this.ws.close() } catch (e) {} }
 }
@@ -576,6 +616,116 @@ async function main() {
     check('记一笔是正常一页（底栏在，不是浮层）',
       await cdp.eval("(()=>{const w=document.querySelector('.paywrap');const t=document.querySelector('.tabbar');const vis=!!(t&&t.getBoundingClientRect().height>0);return (!w&&vis)?'true':'false'})()"), 'true')
 
+    /* ---- 分类设置里的固定类目（2026-10-08 宇定：初始类目不可删、不可改名）----
+       走一遍真链路：网格末尾那格「分类设置」→ 看固定那几行有没有那两颗钮。
+       闸门在数据层（有对拍的捕获点），这里验的是**界面上不给人一条走不通的路**。 */
+    await cdp.eval(`(() => {
+      const c = Array.from(document.querySelectorAll('.pay-page .cell')).find(x => x.innerText.indexOf('分类设置') >= 0);
+      if (c) c.click(); return !!c;
+    })()`)
+    await cdp.wait(400)
+    check('分类设置打开了', await cdp.eval("!!document.querySelector('.cs-list')"), 'true')
+    const fixedRows = await cdp.eval(`(() => {
+      const rows = Array.from(document.querySelectorAll('.cs-row'));
+      const fixed = [], free = [];
+      for (const r of rows) {
+        const name = (r.querySelector('.cs-t') || {}).innerText || '';
+        const mark = r.querySelector('.cs-fixed');
+        const ops = r.querySelectorAll('.cs-mini').length;
+        if (mark) fixed.push(name + '(' + ops + '钮)');
+        else free.push(name + '(' + ops + '钮)');
+      }
+      return { fixed: fixed.join(','), free: free.join(',') };
+    })()`)
+    check('初始类目都带「固定」小标、且一颗操作钮都没有（7 个）',
+      fixedRows.fixed, '餐饮(0钮),出行(0钮),数码(0钮),生活(0钮),娱乐(0钮),医疗(0钮),服饰(0钮)')
+    check('用户自己建的类目仍然是两颗钮（改名 + 删）', fixedRows.free, '')
+    await cdp.shot('7f-cat-fixed', SHOTS)
+    /* 收入那一档：出厂那三项也固定。
+       ⚠️ 顺序不能反 —— 切方向会**关掉这个弹窗**（`setDir` 里 `catOpen = false`，
+       因为「支出」选的分类在收入清单里不存在），所以要先收起、切方向、再打开。 */
+    const closeCatSheet = async () => {
+      await cdp.eval(`(() => {
+        const b = Array.from(document.querySelectorAll('.modal-f .btn')).find(x => x.innerText.trim() === '完成');
+        if (b) b.click(); return !!b;
+      })()`)
+      await cdp.wait(300)
+    }
+    const openCatSheet = async () => {
+      await cdp.eval(`(() => {
+        const c = Array.from(document.querySelectorAll('.pay-page .cell')).find(x => x.innerText.indexOf('分类设置') >= 0);
+        if (c) c.click(); return !!c;
+      })()`)
+      await cdp.wait(400)
+    }
+    const pickDir = async (name) => {
+      await cdp.eval(`(() => {
+        const b = Array.from(document.querySelectorAll('.dirseg .seg-b')).find(x => x.innerText.trim() === '${name}');
+        if (b) b.click(); return !!b;
+      })()`)
+      await cdp.wait(400)
+    }
+    await closeCatSheet()
+    await pickDir('收入')
+    await openCatSheet()
+    check('切到收入，出厂那三项也是固定的',
+      await cdp.eval(`(() => {
+        const rows = Array.from(document.querySelectorAll('.cs-row'));
+        return rows.map(r => ((r.querySelector('.cs-t')||{}).innerText||'') + (r.querySelector('.cs-fixed') ? '[固定]' : '[可改]')).join('|');
+      })()`),
+      '理财[固定]|副业[固定]|工资[固定]')
+    /* 加一个自己的 → 它**不带**固定标、有那两颗钮；删掉它不影响固定的那些 */
+    await cdp.eval(`(() => {
+      const b = document.querySelector('.cs-add'); if (b) b.click(); return !!b;
+    })()`)
+    await cdp.wait(250)
+    /* ⚠️ 要取 `uni-input` **里面那个原生 input** —— `.cs-in-in` 是 uni-app 包出来的
+       外壳，在它上面设 value 什么都不发生（`v-model` 监听的是里面那个）。
+       这个坑的普遍版本见 PROMPT「H5 里 <input> 包成 <uni-input>」那条。 */
+    const typedNewCat = await cdp.eval(`(() => {
+      const i = document.querySelector('.cs-in input');
+      if (!i) return 'no-native-input';
+      i.focus(); i.value = '奖金';
+      i.dispatchEvent(new Event('input', { bubbles: true }));
+      return i.value;
+    })()`)
+    check('写进新类目名', typedNewCat, '奖金')
+    await cdp.eval(`(() => {
+      const b = Array.from(document.querySelectorAll('.cs-btn')).find(x => x.innerText.trim() === '创建');
+      if (b) b.click(); return !!b;
+    })()`)
+    await cdp.wait(400)
+    check('新加的「奖金」不带固定标、有两颗钮',
+      await cdp.eval(`(() => {
+        const r = Array.from(document.querySelectorAll('.cs-row')).find(x => ((x.querySelector('.cs-t')||{}).innerText||'') === '奖金');
+        if (!r) return 'NOT_FOUND';
+        return (r.querySelector('.cs-fixed') ? '有固定标' : '没固定标') + '·' + r.querySelectorAll('.cs-mini').length + '钮';
+      })()`), '没固定标·2钮')
+    /* 删掉它：两段确认。第一下只是武装，第二下才真删。 */
+    await cdp.eval(`(() => {
+      const r = Array.from(document.querySelectorAll('.cs-row')).find(x => ((x.querySelector('.cs-t')||{}).innerText||'') === '奖金');
+      const b = r && r.querySelector('.cs-mini-del'); if (b) b.click(); return !!b;
+    })()`)
+    await cdp.wait(250)
+    check('第一下只是武装成「确认删」',
+      await cdp.eval(`(() => {
+        const r = Array.from(document.querySelectorAll('.cs-row')).find(x => ((x.querySelector('.cs-t')||{}).innerText||'') === '奖金');
+        const b = r && r.querySelector('.cs-mini-del'); return b ? b.innerText.trim() : 'NOT_FOUND';
+      })()`), '确认删')
+    await cdp.eval(`(() => {
+      const r = Array.from(document.querySelectorAll('.cs-row')).find(x => ((x.querySelector('.cs-t')||{}).innerText||'') === '奖金');
+      const b = r && r.querySelector('.cs-mini-del'); if (b) b.click(); return !!b;
+    })()`)
+    await cdp.wait(400)
+    check('自己加的能删掉，固定的那三项一个不少',
+      await cdp.eval(`(() => {
+        const rows = Array.from(document.querySelectorAll('.cs-row'));
+        return rows.map(r => (r.querySelector('.cs-t')||{}).innerText||'').join('|');
+      })()`), '理财|副业|工资')
+    /* 收弹窗、切回「支出」方向 —— 后面的用例照旧 */
+    await closeCatSheet()
+    await pickDir('支出')
+
     /* 切到「记账」格：**同一颗分段器、同一个位置**，切过去它不跳。 */
     check('切到「记账」格', await cdp.eval(`(() => {
       const b = Array.from(document.querySelectorAll('.seg-b'))
@@ -833,6 +983,14 @@ async function main() {
   } finally {
     if (cdp && !KEEP_OPEN) cdp.close()
     if (!KEEP_OPEN) {
+      /* ⚠️ **必须杀进程树，不能只 kill 父进程**（2026-10-08 踩到）。
+         Edge 起一次是一整个进程树（一个主进程 + 渲染/GPU/网络几十个子进程），
+         `browser.kill()` 只干掉父进程，子进程**全部变成孤儿活下来**。
+         跑几轮下来机器上堆了 46 个 msedge —— 不报错，只是让下一次
+         `Page.captureScreenshot` 慢到超时、`Runtime.evaluate` 报
+         「Execution context was destroyed」，看起来像代码坏了，其实是机器被拖垮。
+         `taskkill /T` 是 Windows 上唯一能连带子孙一起收的写法（Node 的 kill 不做这件事）。 */
+      try { spawnSync('taskkill', ['/F', '/T', '/PID', String(browser.pid)], { stdio: 'ignore' }) } catch (e) {}
       try { browser.kill() } catch (e) {}
       try { srv.close() } catch (e) {}
     }

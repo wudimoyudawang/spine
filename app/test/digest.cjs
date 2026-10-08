@@ -75,7 +75,9 @@ async function collect(M) {
     /* 收支方向（2026-10-04 加）。放一行的理由和上面那些一样：
        对拍的取材脚本要能**看得见**新行为，否则「收入」这一整块就在回归网之外。 */
     dirOf, isIncome, dirName, monthSummary, moneyIn, addMoney, commitMoneyText,
-    addCat, renameCat, delCat, DEFAULT_IN_CATS,
+    addCat, renameCat, delCat, DEFAULT_IN_CATS, DEFAULT_CATS,
+    /* 固定类目（2026-10-08 加）：出厂那批不可删、不可改名 */
+    isFixedCat,
     /* 打开应用先看哪一页 / 去记一笔（2026-10-04 加） */
     setHomePage, applyHomePage, openPay, PAY_DIRS,
     /* 排在哪几天 / 固定空间（2026-10-08 加） */
@@ -422,6 +424,23 @@ async function collect(M) {
     return [x, p, p ? freqText(p.unit, p.n) : null]
   }))
   cap('FREQ_UNITS', () => FREQ_UNITS)
+
+  /* ---- 固定类目（2026-10-08 加：出厂那批不可删、不可改名）----
+     判定按**名字**，所以「不可改名」不是顺手加的规矩而是必须的：
+     允许改名的话它就不在这份名单里了，等于绕个弯把它删掉。
+     两个方向各查一遍 —— 支出和收入是**两份清单**，「餐饮」在收入那边不是固定的。 */
+  cap('isFixedCat', () => {
+    const out = []
+    for (const c of DEFAULT_CATS) out.push([c, 'out', isFixedCat(c, 'out'), isFixedCat(c, 'in')])
+    for (const c of DEFAULT_IN_CATS) out.push([c, 'in', isFixedCat(c, 'in'), isFixedCat(c, 'out')])
+    /* 非固定的：用户自己加的、空、null，以及方向写错的情况 */
+    out.push(['买菜', 'out', isFixedCat('买菜', 'out')])
+    out.push(['奖金', 'in', isFixedCat('奖金', 'in')])
+    out.push(['', 'out', isFixedCat('', 'out')])
+    out.push([null, 'out', isFixedCat(null, 'out')])
+    out.push(['餐饮', 'nope', isFixedCat('餐饮', 'nope')])
+    return out
+  })
 
   /* ---- 「排在哪几天」（2026-10-08 加，训练计划的地基）----
      三件事分开钉：解析出星期几、拼回人话、今天该不该做。
@@ -940,14 +959,49 @@ async function collect(M) {
     r.push([addCat('奖金', 'in'), db.IN_CATS.slice(), db.CATS.slice()])
     r.push(addCat('奖金', 'in'))                       /* 重名挡住 */
     r.push(addCat('餐饮', 'in'))                       /* 和支出清单同名**不算**冲突：两份清单 */
-    r.push([renameCat('工资', '薪水', 'in'), db.IN_CATS.slice()])
+    /* ⚠️ 这一条原来改的是「工资」。2026-10-08 之后出厂那几个是**固定类目**、
+       改不了名了 —— 所以改成先加一个非固定的「奖金」再改它。
+       这条要验的是「收入侧改名不动 CAT_WORDS」，不是「工资能不能改名」。 */
+    r.push([renameCat('奖金', '薪水', 'in'), db.IN_CATS.slice()])
     /* ⚠️ 收入侧改名不动 CAT_WORDS */
     r.push({ wordsHasGongzi: !!db.CAT_WORDS['工资'], wordsHasXinshui: !!db.CAT_WORDS['薪水'] })
-    r.push(renameCat('薪水', '奖金', 'in'))            /* 撞名挡住 */
-    r.push([delCat('奖金', 'in'), db.IN_CATS.slice()])
+    r.push(renameCat('薪水', '餐饮', 'in'))            /* 撞名挡住（「餐饮」上面刚加进收入清单） */
+    r.push([delCat('薪水', 'in'), db.IN_CATS.slice()])
     r.push(db.LOGS.filter(l => l.kind === 'money').map(l => [dirOf(l), l.category]))
     /* 支出那一路一个字节都不该变 */
     r.push(db.CATS.slice())
+    return r
+  })
+
+  /* 固定类目：**删不掉、也改不了名**，而且**没有副作用**
+     （清单不动、已记的那些流水的分类名一个字不改）。
+     闸门在数据层（`delCat` / `renameCat`），不是只把按钮藏起来。 */
+  cap('seq.fixedCatGuards', () => {
+    loadSeed()
+    addMoney(32, '午餐', '餐饮', 'out')
+    addMoney(12000, '工资', '工资', 'in')
+    const r = []
+    const beforeOut = db.CATS.slice()
+    const beforeIn = db.IN_CATS.slice()
+    const beforeLogs = JSON.stringify(db.LOGS.map(l => l.category))
+    /* 支出侧 */
+    r.push([delCat('餐饮'), db.CATS.slice()])
+    r.push([renameCat('餐饮', '吃饭'), db.CATS.slice()])
+    r.push([renameCat('生活', '日用'), db.CATS.slice()])
+    /* 收入侧 */
+    r.push([delCat('工资', 'in'), db.IN_CATS.slice()])
+    r.push([renameCat('理财', '投资', 'in'), db.IN_CATS.slice()])
+    /* 「餐饮」在收入那边**不是**固定的（两份清单各认各的）—— 加进去能删 */
+    r.push([addCat('餐饮', 'in'), db.IN_CATS.slice()])
+    r.push([delCat('餐饮', 'in'), db.IN_CATS.slice()])
+    /* 「工资」在支出那边也不是固定的 */
+    r.push([addCat('工资'), db.CATS.slice()])
+    r.push([delCat('工资'), db.CATS.slice()])
+    r.push({
+      outUnchanged: JSON.stringify(db.CATS.slice().filter(x => beforeOut.indexOf(x) >= 0)) === JSON.stringify(beforeOut),
+      inUnchanged: JSON.stringify(db.IN_CATS.slice().filter(x => beforeIn.indexOf(x) >= 0)) === JSON.stringify(beforeIn),
+      logsUnchanged: JSON.stringify(db.LOGS.map(l => l.category)) === beforeLogs
+    })
     return r
   })
 

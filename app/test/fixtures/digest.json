@@ -42146,6 +42146,93 @@
   "每周",
   "每月"
  ],
+ "isFixedCat": [
+  [
+   "餐饮",
+   "out",
+   true,
+   false
+  ],
+  [
+   "出行",
+   "out",
+   true,
+   false
+  ],
+  [
+   "数码",
+   "out",
+   true,
+   false
+  ],
+  [
+   "生活",
+   "out",
+   true,
+   false
+  ],
+  [
+   "娱乐",
+   "out",
+   true,
+   false
+  ],
+  [
+   "医疗",
+   "out",
+   true,
+   false
+  ],
+  [
+   "服饰",
+   "out",
+   true,
+   false
+  ],
+  [
+   "理财",
+   "in",
+   true,
+   false
+  ],
+  [
+   "副业",
+   "in",
+   true,
+   false
+  ],
+  [
+   "工资",
+   "in",
+   true,
+   false
+  ],
+  [
+   "买菜",
+   "out",
+   false
+  ],
+  [
+   "奖金",
+   "in",
+   false
+  ],
+  [
+   "",
+   "out",
+   false
+  ],
+  [
+   null,
+   "out",
+   false
+  ],
+  [
+   "餐饮",
+   "nope",
+   true
+  ]
+ ],
  "habitDays": [
   [
    "每天",
@@ -42477,7 +42564,7 @@
    "AUTO_RULES": "array:0",
    "CAPTURE_MODES": "array:0",
    "CAP_CFG": "object:2",
-   "CATS": "array:0",
+   "CATS": "array:7",
    "CAT_WORDS": "object:0",
    "CLOSED_NODES": "object:0",
    "DOMAINS": "array:2",
@@ -42494,7 +42581,7 @@
    "TODAY_LOGS": "array:0"
   },
   {
-   "cats": 0,
+   "cats": 7,
    "domains": 2,
    "goals": 0,
    "habits": 41,
@@ -42504,7 +42591,7 @@
    "notes": 0,
    "records": 0
   },
-  "{\"v\":{\"ITEMS\":[],\"HABIT_LOGS\":[],\"INBOX\":[],\"NOTES\":[],\"NOTE_PROMPTS\":[],\"LOGS\":[],\"DOMAINS\":[{\"id\":\"fitness\",\"name\":\"健身\",\"pinned\":true,\"fixed\":true,\"habits\":[{\"id\":\"h-fit-1\",\"t\":\"上下肢 4 天分化\",\"m\":\"每周一、二、四、五\",\"parent\":null},{\"id\":\"h-plan-mon\",\"t\":\"周一 · 下肢 A\",\"m\":\"每周一\",\"parent\":\"h-fit-1\"},{\"id\":\"h-plan-mon-1\",\"t\":\"杠铃深蹲\",\"m\":\"3×6–10 · RIR 2 · 休 2–3 分\",\"parent\":\"h-plan-mon\"},{\"id\":\"h-plan-mon-2\",\"t\":\"罗马尼亚硬拉\",\"m\":\"3×8–10 · RIR 2 · 休 2 分\",\"parent\":\"h-plan-mon\"},{\"id\":\"h-plan-mon-3\",\"t\":\"腿举\",\"m\":\"3×10–12 · RIR 1 · 休 90 秒\",\"parent\":\"h-plan-mon\"},{\"id\":\"h-plan-mon-4\",\"t\":\"俯卧腿弯举\",\"m\":\"3×12–15 · RIR 1 · 休 60 秒\",\"parent\":\"h-plan-mon\"},{\"id\":\"h-plan-mon-5\",\"t\":\"站姿提踵\",\"m\":\"3×12–15 · RIR 1 · 休 60 秒\",\"parent\":\"h-plan-mon\"},{\"id\":\"h-plan-mon-6\",\"t\":\"平板支撑\",\"m\":\"3×40–60 秒 · RIR 1 · 休 45 秒\",\"parent\":\"h-plan-mon\"},{\"id\":\"h-plan-tue\",\"t\":\"周二 · 上肢 A\",\"m\":\"每周二\",\"parent\":\"h-fit-1\"},{\"id\":\"h-plan-tue-1\",\"t\":\"杠铃卧推\",\"m\":\"3×6–10 · RIR 2 · 休 2–3 分\",\"parent\":\"h-plan-tue\"},{\"id\":\"h-plan-tue-2\",\"t\":\"坐姿绳索划船\",\"m\":\"3×8–12 · RIR 2 · 休 90 秒\",\"parent\":\"h-plan-tue\"},{\"id\":\"h-plan-tue-3\",\"t\":\"上斜哑铃卧推\",\"m\":\"3×8–12 · RIR 1–2 · 休 90 秒\",\"parent\":\"h-plan-tue\"},{\"id\":\"h-plan-tue-4\",\"t\":\"高位下拉\",\"m\":\"3×10–12 · RIR 1 · 休 90 秒\",\"parent\":\"h-plan-tue\"},{\"id\":\"h-plan-tue-5\",\"t\":\"哑铃侧平举\",\"m\":\"3×12–15 · RIR 1 · 休 60 秒\",\"parent\":\"h-plan-tue\"},{\"id\":\"h-plan-tue-6\",\"t\":\"绳索下压（三头）\",\"m\":\"3×12–15 · RIR 1 · 休 60 秒\",\"parent\":\"h-plan-tue\"},{\"id\":\"h-plan-thu\",\"t\":\"周四 · 下肢 B\",\"m\":\"每周四\",\"parent\":\"h-fit-1\"},{\"id\":\"h-plan-thu-1\",\"t\":\"罗马尼亚硬拉\",\"m\":\"3×6–8 · RIR 2 · 休 2–3 分\",\"parent\":\"h-plan-thu\"},{\"id\":\"h-plan-thu-2\",\"t\":\"保加利亚分腿蹲\",\"m\":\"3×8–10 / 腿 · RIR 2 · 休 90 秒\",\"parent\":\"h-plan-thu\"},{\"id\":\"h-plan-thu-3\",\"t\":\"杠铃臀推\",\"m\":\"3×10–12 · RIR 1 · 休 90 秒\",\"parent\":\"h-plan-thu\"},{\"id\":\"h-plan-thu-4\",\"t\":\"坐姿腿屈伸\",\"m\":\"3×12–15 · RIR 1 · 休 60 秒\",\"parent\":\"h-plan-thu\"},{\"id\":\"h-plan-thu-5\",\"t\":\"坐姿提踵\",\"m\":\"3×15–20 · RIR 1 · 休 60 秒\",\"parent\":\"h-plan-thu\"},{\"id\":\"h-plan-thu-6\",\"t\":\"农夫行走\",\"m\":\"3×30 米 · RIR 1 · 休 60 秒\",\"parent\":\"h-plan-thu\"},{\"id\":\"h-plan-fri\",\"t\":\"周五 · 上肢 B\",\"m\":\"每周五\",\"parent\":\"h-fit-1\"},{\"id\":\"h-plan-fri-1\",\"t\":\"坐姿哑铃肩推\",\"m\":\"3×6–10 · RIR 2 · 休 2 分\",\"parent\":\"h-plan-fri\"},{\"id\":\"h-plan-fri-2\",\"t\":\"辅助引体向上\",\"m\":\"3×6–10 · RIR 2 · 休 2 分\",\"parent\":\"h-plan-fri\"},{\"id\":\"h-plan-fri-3\",\"t\":\"哑铃单臂划船\",\"m\":\"3×10–12 / 侧 · RIR 1 · 休 90 秒\",\"parent\":\"h-plan-fri\"},{\"id\":\"h-plan-fri-4\",\"t\":\"双杠臂屈伸\",\"m\":\"3×10–12 · RIR 1 · 休 90 秒\",\"parent\":\"h-plan-fri\"},{\"id\":\"h-plan-fri-5\",\"t\":\"绳索面拉\",\"m\":\"3×15–20 · RIR 1 · 休 60 秒\",\"parent\":\"h-plan-fri\"},{\"id\":\"h-plan-fri-6\",\"t\":\"哑铃弯举\",\"m\":\"3×10–12 · RIR 1 · 休 60 秒\",\"parent\":\"h-plan-fri\"},{\"id\":\"h-plan-wed\",\"t\":\"周三 · 有氧 + 核心\",\"m\":\"每周三\",\"parent\":null},{\"id\":\"h-plan-wed-1\",\"t\":\"低强度稳态有氧 35–40 分钟\",\"m\":\"心率 120–140 · 能说话不喘\",\"parent\":\"h-plan-wed\"},{\"id\":\"h-plan-wed-2\",\"t\":\"悬垂举腿 或 卷腹\",\"m\":\"3×12–20\",\"parent\":\"h-plan-wed\"},{\"id\":\"h-plan-wed-3\",\"t\":\"侧平板支撑\",\"m\":\"每侧 3×40 秒\",\"parent\":\"h-plan-wed\"},{\"id\":\"h-plan-wed-4\",\"t\":\"拉伸 10 分钟\",\"m\":\"髋屈肌 / 腘绳肌 / 胸大肌 / 背阔肌\",\"parent\":\"h-plan-wed\"},{\"id\":\"h-plan-sat\",\"t\":\"周六 · 体能 + 灵活性\",\"m\":\"每周六\",\"parent\":null},{\"id\":\"h-plan-sat-1\",\"t\":\"间歇训练 或 稳态有氧 40 分钟\",\"m\":\"间歇 8–10 轮 × 20 秒快 / 40 秒慢\",\"parent\":\"h-plan-sat\"},{\"id\":\"h-plan-sat-2\",\"t\":\"全身拉伸 + 泡沫轴\",\"m\":\"15 分钟 · 股四头 / 臀 / 胸椎\",\"parent\":\"h-plan-sat\"},{\"id\":\"h-plan-sun\",\"t\":\"周日 · 完全休息\",\"m\":\"每周日\",\"parent\":null},{\"id\":\"h-plan-sun-1\",\"t\":\"散步 6000–8000 步\",\"m\":\"轻松活动 · 不安排任何训练\",\"parent\":\"h-plan-sun\"},{\"id\":\"h-plan-sun-2\",\"t\":\"睡眠 7–9 小时\",\"m\":\"这周最重要的一项\",\"parent\":\"h-plan-sun\"},{\"id\":\"h-plan-cardio\",\"t\":\"每天有氧\",\"m\":\"每天\",\"parent\":null}],\"goals\":[]},{\"id\":\"life\",\"name\":\"个人\",\"pinned\":false,\"fixed\":true,\"habits\":[],\"goals\":[]}],\"RECORD_TYPES\":[],\"CAPTURE_MODES\":[],\"AUTO_RULES\":[],\"TODAY_LOGS\":[],\"CAT_WORDS\":{},\"CATS\":[],\"CAP_CFG\":{\"order\":[],\"common\":{}},\"REV_TRENDS\":[],\"QUAD_COLORS\":{},\"IN_CATS\":[\"理财\",\"副业\",\"工资\"]},\"s\":{\"CURRENT\":\"today\",\"DOMAIN_ID\":\"\",\"CAPTURE_MODE\":\"auto\",\"TICK_DONE\":\"\",\"NOTIFY_ON\":false,\"HOME_PAGE\":\"\"}}",
+  "{\"v\":{\"ITEMS\":[],\"HABIT_LOGS\":[],\"INBOX\":[],\"NOTES\":[],\"NOTE_PROMPTS\":[],\"LOGS\":[],\"DOMAINS\":[{\"id\":\"fitness\",\"name\":\"健身\",\"pinned\":true,\"fixed\":true,\"habits\":[{\"id\":\"h-fit-1\",\"t\":\"上下肢 4 天分化\",\"m\":\"每周一、二、四、五\",\"parent\":null},{\"id\":\"h-plan-mon\",\"t\":\"周一 · 下肢 A\",\"m\":\"每周一\",\"parent\":\"h-fit-1\"},{\"id\":\"h-plan-mon-1\",\"t\":\"杠铃深蹲\",\"m\":\"3×6–10 · RIR 2 · 休 2–3 分\",\"parent\":\"h-plan-mon\"},{\"id\":\"h-plan-mon-2\",\"t\":\"罗马尼亚硬拉\",\"m\":\"3×8–10 · RIR 2 · 休 2 分\",\"parent\":\"h-plan-mon\"},{\"id\":\"h-plan-mon-3\",\"t\":\"腿举\",\"m\":\"3×10–12 · RIR 1 · 休 90 秒\",\"parent\":\"h-plan-mon\"},{\"id\":\"h-plan-mon-4\",\"t\":\"俯卧腿弯举\",\"m\":\"3×12–15 · RIR 1 · 休 60 秒\",\"parent\":\"h-plan-mon\"},{\"id\":\"h-plan-mon-5\",\"t\":\"站姿提踵\",\"m\":\"3×12–15 · RIR 1 · 休 60 秒\",\"parent\":\"h-plan-mon\"},{\"id\":\"h-plan-mon-6\",\"t\":\"平板支撑\",\"m\":\"3×40–60 秒 · RIR 1 · 休 45 秒\",\"parent\":\"h-plan-mon\"},{\"id\":\"h-plan-tue\",\"t\":\"周二 · 上肢 A\",\"m\":\"每周二\",\"parent\":\"h-fit-1\"},{\"id\":\"h-plan-tue-1\",\"t\":\"杠铃卧推\",\"m\":\"3×6–10 · RIR 2 · 休 2–3 分\",\"parent\":\"h-plan-tue\"},{\"id\":\"h-plan-tue-2\",\"t\":\"坐姿绳索划船\",\"m\":\"3×8–12 · RIR 2 · 休 90 秒\",\"parent\":\"h-plan-tue\"},{\"id\":\"h-plan-tue-3\",\"t\":\"上斜哑铃卧推\",\"m\":\"3×8–12 · RIR 1–2 · 休 90 秒\",\"parent\":\"h-plan-tue\"},{\"id\":\"h-plan-tue-4\",\"t\":\"高位下拉\",\"m\":\"3×10–12 · RIR 1 · 休 90 秒\",\"parent\":\"h-plan-tue\"},{\"id\":\"h-plan-tue-5\",\"t\":\"哑铃侧平举\",\"m\":\"3×12–15 · RIR 1 · 休 60 秒\",\"parent\":\"h-plan-tue\"},{\"id\":\"h-plan-tue-6\",\"t\":\"绳索下压（三头）\",\"m\":\"3×12–15 · RIR 1 · 休 60 秒\",\"parent\":\"h-plan-tue\"},{\"id\":\"h-plan-thu\",\"t\":\"周四 · 下肢 B\",\"m\":\"每周四\",\"parent\":\"h-fit-1\"},{\"id\":\"h-plan-thu-1\",\"t\":\"罗马尼亚硬拉\",\"m\":\"3×6–8 · RIR 2 · 休 2–3 分\",\"parent\":\"h-plan-thu\"},{\"id\":\"h-plan-thu-2\",\"t\":\"保加利亚分腿蹲\",\"m\":\"3×8–10 / 腿 · RIR 2 · 休 90 秒\",\"parent\":\"h-plan-thu\"},{\"id\":\"h-plan-thu-3\",\"t\":\"杠铃臀推\",\"m\":\"3×10–12 · RIR 1 · 休 90 秒\",\"parent\":\"h-plan-thu\"},{\"id\":\"h-plan-thu-4\",\"t\":\"坐姿腿屈伸\",\"m\":\"3×12–15 · RIR 1 · 休 60 秒\",\"parent\":\"h-plan-thu\"},{\"id\":\"h-plan-thu-5\",\"t\":\"坐姿提踵\",\"m\":\"3×15–20 · RIR 1 · 休 60 秒\",\"parent\":\"h-plan-thu\"},{\"id\":\"h-plan-thu-6\",\"t\":\"农夫行走\",\"m\":\"3×30 米 · RIR 1 · 休 60 秒\",\"parent\":\"h-plan-thu\"},{\"id\":\"h-plan-fri\",\"t\":\"周五 · 上肢 B\",\"m\":\"每周五\",\"parent\":\"h-fit-1\"},{\"id\":\"h-plan-fri-1\",\"t\":\"坐姿哑铃肩推\",\"m\":\"3×6–10 · RIR 2 · 休 2 分\",\"parent\":\"h-plan-fri\"},{\"id\":\"h-plan-fri-2\",\"t\":\"辅助引体向上\",\"m\":\"3×6–10 · RIR 2 · 休 2 分\",\"parent\":\"h-plan-fri\"},{\"id\":\"h-plan-fri-3\",\"t\":\"哑铃单臂划船\",\"m\":\"3×10–12 / 侧 · RIR 1 · 休 90 秒\",\"parent\":\"h-plan-fri\"},{\"id\":\"h-plan-fri-4\",\"t\":\"双杠臂屈伸\",\"m\":\"3×10–12 · RIR 1 · 休 90 秒\",\"parent\":\"h-plan-fri\"},{\"id\":\"h-plan-fri-5\",\"t\":\"绳索面拉\",\"m\":\"3×15–20 · RIR 1 · 休 60 秒\",\"parent\":\"h-plan-fri\"},{\"id\":\"h-plan-fri-6\",\"t\":\"哑铃弯举\",\"m\":\"3×10–12 · RIR 1 · 休 60 秒\",\"parent\":\"h-plan-fri\"},{\"id\":\"h-plan-wed\",\"t\":\"周三 · 有氧 + 核心\",\"m\":\"每周三\",\"parent\":null},{\"id\":\"h-plan-wed-1\",\"t\":\"低强度稳态有氧 35–40 分钟\",\"m\":\"心率 120–140 · 能说话不喘\",\"parent\":\"h-plan-wed\"},{\"id\":\"h-plan-wed-2\",\"t\":\"悬垂举腿 或 卷腹\",\"m\":\"3×12–20\",\"parent\":\"h-plan-wed\"},{\"id\":\"h-plan-wed-3\",\"t\":\"侧平板支撑\",\"m\":\"每侧 3×40 秒\",\"parent\":\"h-plan-wed\"},{\"id\":\"h-plan-wed-4\",\"t\":\"拉伸 10 分钟\",\"m\":\"髋屈肌 / 腘绳肌 / 胸大肌 / 背阔肌\",\"parent\":\"h-plan-wed\"},{\"id\":\"h-plan-sat\",\"t\":\"周六 · 体能 + 灵活性\",\"m\":\"每周六\",\"parent\":null},{\"id\":\"h-plan-sat-1\",\"t\":\"间歇训练 或 稳态有氧 40 分钟\",\"m\":\"间歇 8–10 轮 × 20 秒快 / 40 秒慢\",\"parent\":\"h-plan-sat\"},{\"id\":\"h-plan-sat-2\",\"t\":\"全身拉伸 + 泡沫轴\",\"m\":\"15 分钟 · 股四头 / 臀 / 胸椎\",\"parent\":\"h-plan-sat\"},{\"id\":\"h-plan-sun\",\"t\":\"周日 · 完全休息\",\"m\":\"每周日\",\"parent\":null},{\"id\":\"h-plan-sun-1\",\"t\":\"散步 6000–8000 步\",\"m\":\"轻松活动 · 不安排任何训练\",\"parent\":\"h-plan-sun\"},{\"id\":\"h-plan-sun-2\",\"t\":\"睡眠 7–9 小时\",\"m\":\"这周最重要的一项\",\"parent\":\"h-plan-sun\"},{\"id\":\"h-plan-cardio\",\"t\":\"每天有氧\",\"m\":\"每天\",\"parent\":null}],\"goals\":[]},{\"id\":\"life\",\"name\":\"个人\",\"pinned\":false,\"fixed\":true,\"habits\":[],\"goals\":[]}],\"RECORD_TYPES\":[],\"CAPTURE_MODES\":[],\"AUTO_RULES\":[],\"TODAY_LOGS\":[],\"CAT_WORDS\":{},\"CATS\":[\"餐饮\",\"出行\",\"数码\",\"生活\",\"娱乐\",\"医疗\",\"服饰\"],\"CAP_CFG\":{\"order\":[],\"common\":{}},\"REV_TRENDS\":[],\"QUAD_COLORS\":{},\"IN_CATS\":[\"理财\",\"副业\",\"工资\"]},\"s\":{\"CURRENT\":\"today\",\"DOMAIN_ID\":\"\",\"CAPTURE_MODE\":\"auto\",\"TICK_DONE\":\"\",\"NOTIFY_ON\":false,\"HOME_PAGE\":\"\"}}",
   "--q1:#D64545;--q1-bg:#fae9e9;--q2:#E08E2B;--q2-bg:#fbf1e6;--q3:#3B7DD8;--q3-bg:#e7effa;--q4:#8A8F99;--q4-bg:#f1f2f3"
  ],
  "seq.clearAllData.keepsFixedPlan": {
@@ -42957,7 +43044,7 @@
  ],
  "seq.deleteNode": {
   "counts": {
-   "cats": 6,
+   "cats": 7,
    "domains": 3,
    "goals": 8,
    "habits": 44,
@@ -42982,9 +43069,7 @@
     "what": "记录项"
    },
    {
-    "detail": "已记的 3 笔不改",
-    "label": "餐饮",
-    "what": "品类"
+    "error": "「餐饮」是初始品类，删不掉"
    },
    {
     "detail": "数据一条没动，只是不再单独看",
@@ -43047,7 +43132,7 @@
    "records": 18
   },
   "counts": {
-   "cats": 0,
+   "cats": 7,
    "domains": 2,
    "goals": 0,
    "habits": 41,
@@ -43062,7 +43147,7 @@
    "AUTO_RULES": "array:0",
    "CAPTURE_MODES": "array:0",
    "CAP_CFG": "object:2",
-   "CATS": "array:0",
+   "CATS": "array:7",
    "CAT_WORDS": "object:0",
    "DOMAINS": "array:2",
    "HABIT_LOGS": "array:0",
@@ -43142,7 +43227,7 @@
  "seq.importReplace.malformed": {
   "catWordsIsObject": true,
   "counts": {
-   "cats": 0,
+   "cats": 7,
    "domains": 0,
    "goals": 0,
    "habits": 0,
@@ -43511,14 +43596,14 @@
   },
   [
    {
-    "moved": 2,
+    "moved": 0,
     "name": "薪水"
    },
    [
     "理财",
     "副业",
+    "工资",
     "薪水",
-    "奖金",
     "餐饮"
    ]
   ],
@@ -43527,17 +43612,17 @@
    "wordsHasXinshui": false
   },
   {
-   "error": "已经有「奖金」了"
+   "error": "已经有「餐饮」了"
   },
   [
    {
-    "name": "奖金",
+    "name": "薪水",
     "used": 0
    },
    [
     "理财",
     "副业",
-    "薪水",
+    "工资",
     "餐饮"
    ]
   ],
@@ -43548,7 +43633,7 @@
    ],
    [
     "in",
-    "薪水"
+    "工资"
    ],
    [
     "out",
@@ -43580,7 +43665,7 @@
    ],
    [
     "in",
-    "薪水"
+    "工资"
    ],
    [
     "in",
@@ -43596,6 +43681,127 @@
    "医疗",
    "服饰"
   ]
+ ],
+ "seq.fixedCatGuards": [
+  [
+   {
+    "error": "「餐饮」是初始品类，删不掉"
+   },
+   [
+    "餐饮",
+    "出行",
+    "数码",
+    "生活",
+    "娱乐",
+    "医疗",
+    "服饰"
+   ]
+  ],
+  [
+   {
+    "error": "「餐饮」是初始品类，改不了名"
+   },
+   [
+    "餐饮",
+    "出行",
+    "数码",
+    "生活",
+    "娱乐",
+    "医疗",
+    "服饰"
+   ]
+  ],
+  [
+   {
+    "error": "「生活」是初始品类，改不了名"
+   },
+   [
+    "餐饮",
+    "出行",
+    "数码",
+    "生活",
+    "娱乐",
+    "医疗",
+    "服饰"
+   ]
+  ],
+  [
+   {
+    "error": "「工资」是初始品类，删不掉"
+   },
+   [
+    "理财",
+    "副业",
+    "工资"
+   ]
+  ],
+  [
+   {
+    "error": "「理财」是初始品类，改不了名"
+   },
+   [
+    "理财",
+    "副业",
+    "工资"
+   ]
+  ],
+  [
+   {
+    "name": "餐饮"
+   },
+   [
+    "理财",
+    "副业",
+    "工资",
+    "餐饮"
+   ]
+  ],
+  [
+   {
+    "name": "餐饮",
+    "used": 0
+   },
+   [
+    "理财",
+    "副业",
+    "工资"
+   ]
+  ],
+  [
+   {
+    "name": "工资"
+   },
+   [
+    "餐饮",
+    "出行",
+    "数码",
+    "生活",
+    "娱乐",
+    "医疗",
+    "服饰",
+    "工资"
+   ]
+  ],
+  [
+   {
+    "name": "工资",
+    "used": 0
+   },
+   [
+    "餐饮",
+    "出行",
+    "数码",
+    "生活",
+    "娱乐",
+    "医疗",
+    "服饰"
+   ]
+  ],
+  {
+   "inUnchanged": true,
+   "logsUnchanged": true,
+   "outUnchanged": true
+  }
  ],
  "seq.income.legacyArchive": {
   "count": 2,

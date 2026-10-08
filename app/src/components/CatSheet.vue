@@ -21,12 +21,18 @@
             <text v-if="usedOf(c)" class="cs-m">记过 {{ usedOf(c) }} 笔</text>
           </view>
           <view class="cs-ops">
-            <view class="cs-mini" @click="renameStart(c)">
-              <text class="cs-mini-t">{{ editOn === c ? '收起' : '改名' }}</text>
-            </view>
-            <view class="cs-mini cs-mini-del" @click="delGo(c)">
-              <text class="cs-mini-t">{{ armed === catSpec(c) ? '确认删' : '删' }}</text>
-            </view>
+            <!-- 固定类目（出厂那批）只给一个小标，不摆那两颗钮 ——
+                 摆出来再点了报错，比不摆更烦。闸门仍然在数据层
+                 （renameCat / delCat），这里只是不给人一条走不通的路。 -->
+            <text v-if="isFixed(c)" class="cs-fixed">固定</text>
+            <template v-else>
+              <view class="cs-mini" @click="renameStart(c)">
+                <text class="cs-mini-t">{{ editOn === c ? '收起' : '改名' }}</text>
+              </view>
+              <view class="cs-mini cs-mini-del" @click="delGo(c)">
+                <text class="cs-mini-t">{{ armed === catSpec(c) ? '确认删' : '删' }}</text>
+              </view>
+            </template>
           </view>
 
           <!-- 改名的输入行插在**这一条的正下面**，看得出来在改谁 -->
@@ -54,6 +60,7 @@
 
       <view class="modal-f">
         <text class="modal-hint">{{ isIn ? '删掉只去掉选项，已记的收入不改；改名会把那几笔一起改。' : '删掉只去掉选项，已记的流水不改；改名会把那几笔一起改。' }}</text>
+        <text class="modal-hint">带「固定」的是初始品类，删不掉也改不了名。</text>
         <view class="btn btn-main" @click="$emit('close')"><text class="btn-t btn-main-t">完成</text></view>
       </view>
     </view>
@@ -71,7 +78,7 @@
  */
 import { computed, nextTick, ref, watch } from 'vue'
 import {
-  db, catList, addCat, renameCat, catUsed, delArmed, saveState
+  db, catList, addCat, renameCat, catUsed, delArmed, saveState, isFixedCat
 } from '../stores/db'
 import { toast, confirmDelete } from '../lib/ui'
 
@@ -119,6 +126,8 @@ function focus() {
 }
 
 function usedOf(c) { return catUsed(c, props.dir) }
+/* 出厂类目 = 固定类目：界面上不摆改名 / 删除那两颗钮（闸门在数据层）。 */
+function isFixed(c) { return isFixedCat(c, props.dir) }
 
 function commit() {
   const v = draft.value.trim()
@@ -176,6 +185,14 @@ function delGo(c) {
 .cs-mini:active { background: var(--bg); }
 .cs-mini-del:active { background: var(--danger-bg); }
 .cs-mini-del:active .cs-mini-t { color: var(--danger); }
+/* 「固定」那个小标。和两类钮**同高同位置**，这样一整列的首尾是对齐的 ——
+   它占的是那两颗钮的地方，不是另起的一个东西。 */
+.cs-fixed {
+  display: flex; align-items: center; justify-content: center;
+  height: 28px; margin-left: 6px; padding: 0 10px;
+  border: 1px solid var(--accent); border-radius: 14px;
+  font-size: 11px; color: var(--accent);
+}
 
 .cs-in { display: flex; flex-direction: row; align-items: center; padding: 2px 0 10px; }
 .cs-in-in {

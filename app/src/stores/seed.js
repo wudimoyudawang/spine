@@ -8,13 +8,24 @@
 
 export const TODAY='2026-09-18';
 
-export const CATS=['餐饮','出行','数码','生活','娱乐','医疗','服饰'];
+/* 出厂类目 = **固定类目**（2026-10-08 宇定）：不可删、不可改名，
+   清空数据之后仍在。和固定空间（记账 / 健身 / 个人）是同一条道理 ——
+   它们不是用户数据，是出厂的一部分。
+
+   ⚠️ 这里是**唯一一份定义**：db.js 从这里 import 再导出（`DEFAULT_CATS` /
+   `DEFAULT_IN_CATS`）。以前是两处各写一遍（seed 的 CATS、db 里的 DEFAULT_IN_CATS），
+   改一处漏一处，而漏掉的那份**不会报错** —— 只是「清空之后恢复的」
+   和「种子里给的」悄悄不是一回事。 */
+export const DEFAULT_CATS = ['餐饮', '出行', '数码', '生活', '娱乐', '医疗', '服饰']
+export const DEFAULT_IN_CATS = ['理财', '副业', '工资']
+
+export const CATS = DEFAULT_CATS.slice()
 
 /* 收入分类是**另一份清单**（2026-10-04 加）。和 CATS 各管各的 ——
  * 「餐饮」出现在收入里没有意义，反过来也一样，共用一份只会让分类统计发浑。
  * 它和 CATS 一样是用户能自己增删改的，所以跟着档案走（进 DATA_KEYS）。
  * 默认这三项是照记账录入页收入那一档的样子配的。 */
-export const IN_CATS=['理财','副业','工资'];
+export const IN_CATS = DEFAULT_IN_CATS.slice();
 
 export const CAT_WORDS={
   '餐饮':['早餐','早饭','午餐','午饭','晚餐','晚饭','咖啡','奶茶','外卖','吃饭','聚餐','零食','夜宵','水果'],

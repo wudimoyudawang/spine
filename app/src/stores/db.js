@@ -11,7 +11,10 @@
  *      （在手机上导出的档案，导进另一台机器后「停在哪一页」跟着跑过去，只会让人莫名其妙）
  */
 import { reactive, ref, watch } from 'vue'
-import { SEED_DATA, SEED_UI, FIXED_DOMAINS } from './seed'
+import { SEED_DATA, SEED_UI, FIXED_DOMAINS, DEFAULT_CATS, DEFAULT_IN_CATS } from './seed'
+/* 再导出一次：这两个常量一直是 db.js 的对外接口（对拍、CatSheet 都在用），
+   但**定义**搬去了 seed.js —— 那里才是「出厂数据」该待的地方，也是唯一一份。 */
+export { DEFAULT_CATS, DEFAULT_IN_CATS }
 
 /* ---------------- 日期 ---------------- */
 const WEEK = ['日', '一', '二', '三', '四', '五', '六']
@@ -92,25 +95,29 @@ export const QUAD_COLOR_DEFAULT = { q1: '#D64545', q2: '#E08E2B', q3: '#3B7DD8',
 export const QUAD_KEYS = ['q1', 'q2', 'q3', 'q4']
 export const DEFAULT_REV_TRENDS = [{ k: 'money' }, { k: 'rt', id: 'rt_weight' }, { k: 'rt', id: 'rt_kcal_in' }]
 
-/* 收入分类的**出厂默认**（2026-10-04 加）。
+/* 出厂分类（**固定类目**，2026-10-08 宇定）：不可删、不可改名，清空数据之后仍在。
  *
- * 为什么它是个常量、而不是只在种子数据里写一份：
- * 「档案里没有 IN_CATS」有三种来路，三种都得落到同一个答案上 ——
+ * 为什么它们必须是常量、而不是只在种子数据里写一份：
+ * 「档案里没有 CATS / IN_CATS」有三种来路，三种都得落到同一个答案上 ——
  *   ① 老档案导入（`replaceAll` 按 DATA_KEYS 逐项换，缺项即清空）
  *   ② 老 localStorage（`restore` 是「缺就保留本机现值」）
  *   ③ 用户点了「清空数据」
  * 这三条路各自有落点：①③ 走 `EMPTY_VALUE_OF`，② 靠 `db` 这个 reactive 的初值
- * ——两处都指向这里。**不要**在 `ensureIds` 里按「空不空」判：用户把收入分类
- * 真的删光了得到的也是 `[]`，补回去等于跟他的选择对抗。
+ * ——两处都指向这里。**不要**在 `ensureIds` 里按「空不空」判。
  * （`undefined ≠ []` 这个区分靠 `replaceAll` 的 `hasOwnProperty` 做，那里才是
- * 唯一分得清「那时候还没有这一项」和「用户清空了」的地方。） */
-export const DEFAULT_IN_CATS = ['理财', '副业', '工资']
+ * 唯一分得清「那时候还没有这一项」和「用户清空了」的地方。）
+ *
+ * ⚠️ 定义在 `seed.js`（唯一一份），上面 import 进来、这里再导出一次。 */
+
 
 /* ---------------- 状态 ---------------- */
 export const db = reactive({
   ITEMS: [], HABIT_LOGS: [], INBOX: [], NOTES: [], NOTE_PROMPTS: [],
   LOGS: [], DOMAINS: [], RECORD_TYPES: [], CAPTURE_MODES: [],
-  AUTO_RULES: [], TODAY_LOGS: [], CAT_WORDS: {}, CATS: [],
+  AUTO_RULES: [], TODAY_LOGS: [], CAT_WORDS: {},
+  /* 支出分类。初值给**出厂默认**而不是空数组 —— 它们现在也是固定类目，
+     理由和下面的 IN_CATS 一样（三条路都得落到同一个答案上）。 */
+  CATS: DEFAULT_CATS.slice(),
   /* 收入分类。**和 CATS 各管各的** —— 两份清单，两个 tab 各配一套图标，
      共用一份会让「餐饮」出现在收入里，分类统计也跟着发浑。
      它和 CATS 一样是用户能自己增删改的，所以进 DATA_KEYS。
@@ -422,13 +429,16 @@ const EMPTY_VALUE_OF = {
      健身那份里带着整棵训练计划习惯（`seed.js` 的 PLAN_HABITS），
      所以「清空之后默认习惯是什么」在那一处就有答案。 */
   DOMAINS: function () { return fixedDomains() },
-  /* 收入分类的「空」是**出厂默认**，不是 `[]`。它和上面那几项不一样：
-     REV_TRENDS / QUAD_COLORS 是用户配出来的，空了就该是空（读取层各自有兜底色 / 空清单）；
-     而 IN_CATS 里的三项是**出厂就有的**，不是用户数据 ——
-     老档案（那时候还没有收入分类）导进来、或者用户清空数据之后，
-     收入那一边不该一个分类都选不到。
-     用户真要清空收入分类，得到的是 `IN_CATS: []`，那一个是**显式写在档案里**的，
-     走的是 replaceAll 的另一条分支（hasOwnProperty 为真），不会被这里覆盖。 */
+  /* 两份分类清单的「空」都是**出厂默认**，不是 `[]`（2026-10-08 起）。
+     它们和上面那几项不一样：REV_TRENDS / QUAD_COLORS 是用户配出来的，
+     空了就该是空；而这两份里的名字是**出厂就有的**，现在还是固定类目
+     （不可删、不可改名）—— 清空数据之后一个分类都选不到，记账根本没法记。
+     ⚠️ 支出这一项是**顺手补的**：在那之前 `CATS` 没有 `EMPTY_VALUE_OF`，
+     所以清空数据会得到「收入三项还在、支出空着」—— 两边不一致，
+     而这件事在界面上只表现为「记账页一个分类都没有」，很难联想到是清空干的。
+     （老档案里 `IN_CATS: []` 那种「用户显式清空过」的写法走的是 replaceAll 的
+     另一条分支，hasOwnProperty 为真，不会被这里覆盖。） */
+  CATS: function () { return DEFAULT_CATS.slice() },
   IN_CATS: function () { return DEFAULT_IN_CATS.slice() }
 }
 export function clearAllData() {
@@ -1183,6 +1193,18 @@ function catClash(name, except, dir) {
   return catList(dir).indexOf(name) >= 0 && name !== except
 }
 
+/* 出厂类目 = **固定类目**（2026-10-08 宇定：不可删、不可改名）。
+ * 支出看 `DEFAULT_CATS`、收入看 `DEFAULT_IN_CATS` —— 两份清单各认各的，
+ * 「餐饮」是固定的、「理财」是固定的，互不影响。
+ *
+ * ⚠️ 判定按**名字**，所以「不可改名」不是顺手加的规矩，是**必须的**：
+ * 允许改名的话，把「餐饮」改成别的，它就不在这份名单里了 ——
+ * 等于绕个弯把它删掉了，「固定」形同虚设。 */
+export function isFixedCat(name, dir) {
+  const list = dir === 'in' ? DEFAULT_IN_CATS : DEFAULT_CATS
+  return list.indexOf(String(name || '')) >= 0
+}
+
 export function addCat(name, dir) {
   const d = dir === 'in' ? 'in' : 'out'
   const v = String(name || '').trim()
@@ -1207,6 +1229,10 @@ export function renameCat(from, name, dir) {
   const i = arr.indexOf(from)
   if (i < 0) return { error: '这个品类已经不在了' }
   if (!v) return { error: '先写个名字' }
+  /* 固定类目不给改名。**这不是顺手加的规矩**：固定是按名字认的
+     （见 isFixedCat），允许改名就等于允许绕个弯把它去掉。
+     拦在这儿而不是只把按钮藏起来 —— 藏起来只是界面上看不见。 */
+  if (isFixedCat(from, d)) return { error: '「' + from + '」是初始品类，改不了名' }
   if (catClash(v, from, d)) return { error: '已经有「' + v + '」了' }
   if (v === from) return { name: v, moved: 0 }
   arr[i] = v
@@ -1223,12 +1249,17 @@ export function renameCat(from, name, dir) {
 
 /* 删一个品类只把它从清单里拿走。已记的那几笔一个字不改 ——
    它们还带着旧分类，所以 catList() 会把它补回候选末尾，
-   老记录照样能改回这个类。（分类可以错，数据不该丢。） */
+   老记录照样能改回这个类。（分类可以错，数据不该丢。）
+ *
+ * **固定类目（出厂那批）删不掉**（2026-10-08 宇定）。
+   拦在数据层而不是只把按钮藏起来 —— 藏起来只是界面上看不见，
+   `delCat` 是对外接口，对拍和搜索都能碰到它。 */
 export function delCat(name, dir) {
   const d = dir === 'in' ? 'in' : 'out'
   const arr = catArr(d)
   const i = arr.indexOf(name)
   if (i < 0) return { error: '这个品类已经不在了' }
+  if (isFixedCat(name, d)) return { error: '「' + name + '」是初始品类，删不掉' }
   const used = catUsed(name, d)
   arr.splice(i, 1)
   return { name: name, used: used }
